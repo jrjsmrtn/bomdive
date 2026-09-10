@@ -23,6 +23,7 @@ Tier-specific artifacts:
 - `docs/adr/` — foundation ADRs plus the decisions this project exists to make
 - `docs/inception/` — the SPARK analysis and its **evidence**, which is re-runnable
 - `docs/reference/audience-registry.md` — A1–A4 and the artifacts each is owed
+- `docs/roadmap/roadmap.md` — the phases, and what is deliberately not a phase
 - `docs/roadmap/watched-pglite-age.md` — a watched trigger, with a checker
 - `docs/reference/quality-configuration.md` — the gates, and what is deliberately absent
 - `scripts/` — `check-evidence-refs.py` (a gate), and `check-pglite-trigger.py` (**not** a
@@ -31,12 +32,24 @@ Tier-specific artifacts:
 - git on `main` + `develop`, conventional commits
 
 **Deliberately not adopted at t1** — decisions, not oversights: Diátaxis `docs/` tree (nothing to
-sort yet), C4 model, sprint cadence, `SECURITY.md` (Private profile), `LICENSE`, `.github/`
-(no GitHub remote).
+sort yet — though `docs/reference/` has grown organically), C4 model (a single binary reading a
+file does not earn one), sprint cadence (one contributor, no deadline), `SECURITY.md` (Private
+profile), `LICENSE`, `.github/` (no GitHub remote).
+
+⚠ **A roadmap was adopted at t1 anyway**, which `bootstrap-project` lists as a t2 artifact. Taken
+deliberately: real phases existed and needed recording, and adopting a whole tier to get one
+document is cargo-culting it. The rest of t2 stays unadopted for the reasons above.
 
 Promotion triggers being watched:
 
-- **t1 → t2** if a second contributor appears, or docs outgrow README + ADRs.
+- **t1 → t2** if a second contributor appears, **or user-facing documentation needs sorting** —
+  meaning tutorials and how-tos exist and are hard to find, not merely that the doc count grew.
+
+  ⚠ **The previous wording was "docs outgrow README + ADRs", and it was too vague to act on.** By
+  2026-09-10 there were 14 documents, so it had arguably fired while meaning nothing: the growth was
+  into evidence and reference, which already have homes. A trigger that fires on volume rather than
+  on a felt problem is not a trigger. Diátaxis sorts *user-facing* docs, and there are none yet
+  because there is no code.
 - **Private → Public** is a separate axis, running through the `public-release` gate and needing
   its own ADR. Public is *defensible* — the tool is generic and carries no homelab shape — but it
   is unproven, so it stays private. Precedent: `okf-gate`.

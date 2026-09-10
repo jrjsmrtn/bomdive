@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   human and the JSON surface.
 - Watched trigger for a cgo-free graph backend via PGlite + Apache AGE, with a self-testing
   checker (`docs/roadmap/watched-pglite-age.md`, `scripts/check-pglite-trigger.py`).
+- `docs/roadmap/roadmap.md` — three phases plus a 1.0 gate, and an explicit list of what is *not*
+  a phase. Adopted at t1 as a deliberate deviation; the rest of t2 stays unadopted.
 - Foundation ADRs, plus ADR-0006 recording the Miller-column view as a first-class renderer and
   the lazy-expansion requirement it puts on the traversal model.
 - Fixture corpus (`testdata/`): 19 generated CycloneDX fixtures, each isolating one shape

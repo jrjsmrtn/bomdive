@@ -44,6 +44,7 @@ graph. Coverage is always reported: a partial graph is never rendered as complet
 | Reproducible measurements | [`docs/inception/evidence/`](docs/inception/evidence/) |
 | Audiences and their artifacts | [`docs/reference/audience-registry.md`](docs/reference/audience-registry.md) |
 | Decision log | [`docs/adr/`](docs/adr/) |
+| Phases, and what is not a phase | [`docs/roadmap/roadmap.md`](docs/roadmap/roadmap.md) |
 | Watched: cgo-free graph backend | [`docs/roadmap/watched-pglite-age.md`](docs/roadmap/watched-pglite-age.md) |
 
 ## License
