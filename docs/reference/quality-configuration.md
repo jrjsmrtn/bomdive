@@ -142,6 +142,44 @@ found in this project was found by *mutation testing*, not by a coverage number 
 tests that executed the right lines and asserted the wrong thing. Treat the floor as a smoke alarm
 and the mutations as the actual test of the tests.
 
+## Conformance: testing against documents we did not write
+
+Every committed fixture is **synthetic** — deliberately, so each isolates one shape. That leaves a
+blind spot: nothing tested lsxbom against a BOM somebody else authored.
+
+The CycloneDX specification repository carries its own conformance corpus at
+`tools/src/test/resources/<version>/` — **359 `valid-*.json` and 141 `invalid-*.json`**,
+Apache-2.0. A *negative* corpus is the valuable half, because it exercises the rejection path.
+
+```bash
+./scripts/check-conformance.sh                 # cached; --refresh to re-fetch
+./scripts/check-conformance.sh --version 1.7
+```
+
+**What is asserted, and what deliberately is not:**
+
+| | |
+|---|---|
+| `valid-*` | **MUST parse.** A viewer that cannot open a conformant BOM is broken |
+| `invalid-*` | **Not required to be rejected** — reported, never gated |
+
+lsxbom is a viewer, not a validator; `cdx-validate` and `sbom-utility` own that. Refusing to show a
+slightly-malformed document would be unhelpful, the way `ls` still lists a directory containing a
+corrupt entry. What would be dishonest is *claiming* a document is valid, and we never do.
+
+⚠ **It found a real upstream bug on its first run.** `valid-attestation-1.6.json` — a document the
+spec itself calls valid — fails because `cyclonedx-go` v0.12.0 cannot decode
+`declarations.evidence[].data[].classification`. Reproduced against the library directly, so it is
+not ours; related open issue **CycloneDX/cyclonedx-go#275**. Note the *shape* of the failure: the
+whole BOM is rejected over a section lsxbom never reads.
+
+⚠ **The known-failure allowlist names a cause per entry**, and cannot absorb our own regressions:
+planting a parser break made 34 documents fail as **unexplained** and the check exited 1.
+
+Other corpora surveyed and not adopted: `CycloneDX/sbom-examples` (83 BOMs, **CC0-1.0**, including
+3 OBOM / 1 HBOM / 5 CBOM — the only *public* OBOM samples found, worth revisiting for fixtures),
+`cyclonedx-go`'s own testdata (89 JSON, 91 XML), and cdxgen's 277 test files.
+
 ## Profiling
 
 Added because a benchmark said the walk was slow and a **guess about why was wrong**: the suspect

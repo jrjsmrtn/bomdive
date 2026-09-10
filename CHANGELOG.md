@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `scripts/check-conformance.sh` — runs lsxbom against the CycloneDX specification's own
+  conformance corpus (359 valid / 141 invalid documents). Found an upstream `cyclonedx-go` defect on
+  its first run: a document the spec calls valid fails to decode.
 - `scripts/check-coverage.sh` — a ≥80% floor for every package under `internal/`, wired into the
   pre-push gate and reconciled against `go list`, so a package with no tests at all cannot go
   unreported. ADR-0002 amended to match what is enforced.
