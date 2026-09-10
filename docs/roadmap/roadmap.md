@@ -67,7 +67,10 @@ phase is complete as documentation and no engine is ever linked.
 
 - [ ] Phases 1 and 2 stable, CLI surface no longer moving
 - [ ] XML input claimed only once tested (free from the library, currently unclaimed)
-- [ ] Performance budget met: `tree` over a 10 MB / ~10⁴-component BOM in under 2 seconds
+- [x] Performance budget met: `tree` over a 10 MB / ~10⁴-component BOM in under 2 seconds —
+      measured **0.05s** end to end on a real 10 MB BOM, and **13ms** for load+walk of a synthetic
+      10k-component one. `BenchmarkLoad10k` / `BenchmarkWalk10k` and a budget test make it
+      reproducible without depending on any particular file
 - [ ] A decision on Private → Public, which needs its own ADR
 
 ## Not phases

@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pulled in transitively by the TUI library. Not reachable from this code, but a supply-chain tool
   shipping a known-vulnerable dependency is a poor look and the fix was free.
 
+### Performance
+
+- `Walk` was **O(n²)** on a deep dependency chain: path membership was a linear scan of a slice.
+  With a set it is **41× faster** — 115ms → 2.8ms over a 10k-component BOM with a 10k-deep spine.
+  Reproducible benchmarks (`BenchmarkLoad10k`, `BenchmarkWalk10k`) and a budget test now guard it.
+
 ### Added
 
 - **`lsxbom browse`** — the Finder-style column view. Each column lists the children of the

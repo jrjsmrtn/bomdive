@@ -33,6 +33,12 @@ type Visit struct {
 // maxDepth <= 0 means unlimited. Returning false from fn stops the walk.
 func (g *Graph) Walk(ref string, maxDepth int, fn func(Visit) bool) {
 	emitted := map[string]bool{}
+	// onPath is a SET, not a slice scan. The obvious implementation walks the path
+	// slice looking for cur, which is O(depth) per visit and therefore O(n^2) on a
+	// deep chain — measured at 115ms for a 10k-deep spine. A first guess blamed the
+	// sort in Children and memoising it made things slightly WORSE, which is how
+	// the real cost was found.
+	onPathSet := map[string]bool{}
 	var path []string
 
 	var rec func(cur, parent string, depth int) bool
@@ -42,13 +48,7 @@ func (g *Graph) Walk(ref string, maxDepth int, fn func(Visit) bool) {
 			return true // dangling: reported via Coverage, never invented here
 		}
 
-		onPath := false
-		for _, p := range path {
-			if p == cur {
-				onPath = true
-				break
-			}
-		}
+		onPath := onPathSet[cur]
 		repeat := onPath || emitted[cur]
 
 		if !fn(Visit{Node: n, Depth: depth, Parent: parent, Repeat: repeat, Cycle: onPath}) {
@@ -63,7 +63,11 @@ func (g *Graph) Walk(ref string, maxDepth int, fn func(Visit) bool) {
 		}
 
 		path = append(path, cur)
-		defer func() { path = path[:len(path)-1] }()
+		onPathSet[cur] = true
+		defer func() {
+			path = path[:len(path)-1]
+			delete(onPathSet, cur)
+		}()
 		for _, child := range g.Children(cur) {
 			if !rec(child.Ref, cur, depth+1) {
 				return false

@@ -108,6 +108,42 @@ func TestDiamondEmitsSharedNodeOnceWithSubtree(t *testing.T) {
 	}
 }
 
+// A diamond is NOT a cycle, and the two are rendered differently on purpose.
+//
+// This exists because mutation testing showed the earlier tests could not tell
+// them apart: leaving a node in the on-path set after unwinding marks every later
+// re-encounter as a cycle, and every assertion still passed.
+func TestSharedNodeIsARepeatNotACycle(t *testing.T) {
+	g := fixture(t, "diamond")
+	roots, _ := g.Roots()
+	var sawRepeat bool
+	g.Walk(roots[0].Ref, 0, func(v Visit) bool {
+		if v.Node.Name == "shared" && v.Repeat {
+			sawRepeat = true
+			if v.Cycle {
+				t.Error("a diamond's shared node was marked as a cycle; the on-path set is not being unwound")
+			}
+		}
+		return true
+	})
+	if !sawRepeat {
+		t.Fatal("shared was never re-encountered; the fixture or the walk changed")
+	}
+}
+
+// Two sibling branches that touch the same subtree must not make each other look
+// cyclic — the on-path set has to shrink as the walk unwinds.
+func TestOnPathSetIsUnwound(t *testing.T) {
+	g := fixture(t, "tree-simple")
+	roots, _ := g.Roots()
+	g.Walk(roots[0].Ref, 0, func(v Visit) bool {
+		if v.Cycle {
+			t.Errorf("%s marked as a cycle in an acyclic BOM", v.Node.Name)
+		}
+		return true
+	})
+}
+
 // ADR-0004 picks node-uniqueness. Under relationship-uniqueness (Cypher) x IS
 // reachable from itself via x->y->x; under node-uniqueness it is not. This pins
 // the choice, and poc6-cycle-semantics.sh shows the two really differ.
