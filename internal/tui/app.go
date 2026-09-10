@@ -39,12 +39,17 @@ type ui struct {
 	root      *tview.Flex
 	filtering bool
 
-	// help is the `?` overlay, and pages is what puts it OVER the view rather than
-	// replacing it — a reader asking what "partial" means should not lose their
-	// place in the document to find out.
-	help    *tview.TextView
-	pages   *tview.Pages
-	helping bool
+	// Two overlays, deliberately separate. `?` EXPLAINS this document — what the
+	// status label means here, why the leftmost column shows what it shows. `H`
+	// LISTS THE KEYS. They answer different questions ("why does it say that" and
+	// "what can I press"), and merging them buries the contextual half under a key
+	// table the reader has usually already learned.
+	//
+	// pages is what puts them OVER the view rather than replacing it: a reader
+	// asking what "partial" means should not lose their place to find out.
+	overlayView *tview.TextView
+	pages       *tview.Pages
+	overlay     overlayKind
 
 	// width is the screen width, captured by the before-draw hook. tview exposes no
 	// GetScreen, so this is the only honest way to know how wide a pane may be.
@@ -127,8 +132,8 @@ func newUI(g *bom.Graph, source string) *ui {
 		AddItem(body, 0, 1, true).
 		AddItem(u.status, 1, 0, false)
 
-	u.help = tview.NewTextView().SetDynamicColors(true).SetWrap(true)
-	u.help.SetBorder(true).SetTitle(" what this means — ? or Esc to close ")
+	u.overlayView = tview.NewTextView().SetDynamicColors(true).SetWrap(true)
+	u.overlayView.SetBorder(true)
 
 	u.pages = tview.NewPages().AddPage("main", u.root, true, true)
 
@@ -185,32 +190,53 @@ var colourTag = regexp.MustCompile(`\[[a-zA-Z-]+\]`)
 // toggleHelp opens or closes the overlay. The text is rebuilt on OPEN rather than
 // on redraw: it describes the current selection's context, and a stale help screen
 // explaining a component the cursor has left is worse than none.
-func (u *ui) toggleHelp() {
-	u.helping = !u.helping
-	if !u.helping {
-		u.pages.RemovePage("help")
+// overlayKind is which of the two overlays is up, if either.
+type overlayKind int
+
+const (
+	overlayNone overlayKind = iota
+	overlayExplain
+	overlayHelp
+)
+
+// showOverlay opens one overlay, switches between them, or closes. Asking for the
+// one already open closes it, so the key that opened it also dismisses it.
+func (u *ui) showOverlay(kind overlayKind) {
+	u.pages.RemovePage("overlay")
+	if kind == u.overlay || kind == overlayNone {
+		u.overlay = overlayNone
 		return
 	}
-	text := u.helpText()
-	u.help.SetText(text).ScrollToBeginning()
-	// Rebuilt rather than shown: the box is sized to this document's text, and the
+	u.overlay = kind
+
+	title, text := " what this means — ? or Esc to close ", u.explainText()
+	if kind == overlayHelp {
+		title, text = " keys — H or Esc to close ", u.helpText()
+	}
+	u.overlayView.SetText(text).ScrollToBeginning()
+	u.overlayView.SetTitle(title)
+	// Rebuilt rather than shown: the box is sized to the text it holds, and the
 	// screen may have been resized since the last time it was opened.
-	u.pages.RemovePage("help")
-	u.pages.AddPage("help", centred(u.help, u.overlayRows(text)), true, true)
+	u.pages.AddPage("overlay", centred(u.overlayView, u.overlayRows(text)), true, true)
 }
 
 func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 	if u.filtering {
 		return ev // the input field owns the keyboard
 	}
-	// While the overlay is up it owns the keyboard too, except for quitting. Any
-	// navigation key would move a view the reader cannot see.
-	if u.helping {
+	// While an overlay is up it owns the keyboard, except for quitting and for the
+	// other overlay's key — any navigation key would move a view the reader cannot
+	// see. Anything else closes, so no keypress leaves the reader stuck.
+	if u.overlay != overlayNone {
 		switch {
 		case ev.Key() == tcell.KeyCtrlC, ev.Rune() == 'q':
 			u.app.Stop()
+		case ev.Rune() == '?':
+			u.showOverlay(overlayExplain)
+		case ev.Rune() == 'H':
+			u.showOverlay(overlayHelp)
 		default:
-			u.toggleHelp()
+			u.showOverlay(overlayNone)
 		}
 		return nil
 	}
@@ -269,7 +295,12 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 		case 'K':
 			u.scrollDetail(-1)
 		case '?':
-			u.toggleHelp()
+			u.showOverlay(overlayExplain)
+			return nil
+		// H, not h: h is Left, and this tool's premise is that ls/tree muscle memory
+		// carries over. J and K are already the shifted forms of j and k.
+		case 'H':
+			u.showOverlay(overlayHelp)
 			return nil
 		case '/':
 			u.filtering = true
@@ -485,14 +516,16 @@ func (u *ui) statusText() string {
 	// status bar has no room to say what "partial" means, and a word a reader
 	// cannot expand is a word that misleads.
 	return fmt.Sprintf("[darkgray]coverage[-] %d/%d (%d%%)%s  [darkgray]"+
-		"↑↓ →← nav  ⇞⇟ detail  ⇥flip /filter [-][white]?[-][darkgray]help q quit[-]",
+		"↑↓ →← nav  ⇞⇟ detail  ⇥flip /filter [-][white]?[-][darkgray]why [-]"+
+		"[white]H[-][darkgray]keys q quit[-]",
 		c.InGraph, c.Components, c.Percent(), warn)
 }
 
-// helpText explains THIS document and THIS view, not the program in general. The
-// status bar can only afford one word for the graph state, so the word has to be
-// expandable on demand or it is just jargon.
-func (u *ui) helpText() string {
+// explainText answers "why does it say that", for THIS document: what the status
+// bar's one word means here, what the coverage numbers mean, and why the leftmost
+// column shows what it shows. It carries no key table — that is `H`, and a reader
+// who wants to know what "partial" means is not asking to be taught the keyboard.
+func (u *ui) explainText() string {
 	g := u.model.Graph()
 	c := g.Coverage()
 
@@ -514,15 +547,28 @@ func (u *ui) helpText() string {
 			n, strings.Join(c.Dangling, ", "))
 	}
 
-	b.WriteString("\n[darkgray]keys[-]\n" +
-		"  ↑↓ / j k    move within a column\n" +
-		"  →← / l h    descend into a component, or back out\n" +
-		"  ⇥           flip between depends-on and depended-on-by\n" +
-		"  ⇞ ⇟ / J K   scroll the detail pane; Home/End jump to its ends\n" +
-		"  /           filter the current column, Esc clears it\n" +
-		"  ? or Esc    close this\n" +
-		"  q           quit\n")
+	b.WriteString("\n[darkgray]press H for the keys.[-]\n")
 	return b.String()
+}
+
+// helpText answers "what can I press". Static, unlike explainText — the keys do not
+// depend on the document.
+func (u *ui) helpText() string {
+	return "[darkgray]navigate[-]\n" +
+		"  ↑ ↓ / j k    move within a column\n" +
+		"  → ← / l h    descend into a component, or back out\n" +
+		"  ⇥            flip between depends-on and depended-on-by\n" +
+		"  /            filter the current column; Esc clears the filter\n" +
+		"\n[darkgray]detail pane[-]\n" +
+		"  ⇞ ⇟          scroll a page; Ctrl-U and Ctrl-D do the same\n" +
+		"  J K          scroll a line\n" +
+		"  Home End     jump to either end\n" +
+		"\n[darkgray]overlays[-]\n" +
+		"  ?            explain THIS document — what the status label means here\n" +
+		"  H            this list\n" +
+		"  Esc          close an overlay\n" +
+		"\n[darkgray]quit[-]\n" +
+		"  q            quit; Ctrl-C does the same\n"
 }
 
 // axisText says what the entry column lists AND why that axis was chosen, because

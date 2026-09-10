@@ -467,7 +467,7 @@ func TestStatusLabelsEachGraphStateDistinctly(t *testing.T) {
 
 // `?` must explain the word the status bar had no room to explain, for THIS
 // document — and it must go away again.
-func TestHelpOverlayExplainsTheStatusLabel(t *testing.T) {
+func TestExplainOverlayExplainsTheStatusLabel(t *testing.T) {
 	g, err := bom.Load(filepath.Join("..", "..", "testdata", "no-dependencies-absent.cdx.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -495,6 +495,49 @@ func TestEscapeClosesTheHelpOverlay(t *testing.T) {
 	out := driveKeys(t, "tree-simple", ru('?'), sp(tcell.KeyEscape))
 	if strings.Contains(out, "what this means") {
 		t.Errorf("Esc left the overlay open:\n%s", out)
+	}
+}
+
+// The two overlays answer different questions and must stay separate: `?` explains
+// THIS document, `H` lists the keys. Merging them buries the contextual half under
+// a key table, which is why they were split.
+func TestExplanationAndHelpAreSeparateOverlays(t *testing.T) {
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "partial-coverage.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	explain := flatten(driveKeys(t, "partial-coverage", ru('?')))
+	help := flatten(driveKeys(t, "partial-coverage", ru('H')))
+
+	if !strings.Contains(explain, flatten(g.Coverage().Explain())) {
+		t.Errorf("? does not explain the document:\n%s", explain)
+	}
+	if strings.Contains(explain, "flip between depends-on") {
+		t.Error("? carries the key table; the explanation is buried under it")
+	}
+	if !strings.Contains(help, "flip between depends-on") {
+		t.Errorf("H does not list the keys:\n%s", help)
+	}
+	if strings.Contains(help, flatten(g.Coverage().Explain())) {
+		t.Error("H carries the document explanation; the two overlays are the same again")
+	}
+}
+
+// `h` stays Left. It is vi navigation, and this tool's premise is that ls/tree
+// muscle memory carries over — which is why help is H and not h.
+func TestLowercaseHStillNavigatesLeft(t *testing.T) {
+	descended := driveKeys(t, "tree-simple", ru('l'))
+	if !strings.Contains(descended, ">") {
+		t.Fatalf("l did not descend, so this test proves nothing:\n%s", descended)
+	}
+	back := driveKeys(t, "tree-simple", ru('l'), ru('h'))
+	for _, title := range []string{"what this means", "keys —"} {
+		if strings.Contains(back, title) {
+			t.Errorf("h opened the %q overlay instead of going back:\n%s", title, back)
+		}
+	}
+	if strings.Contains(back, ">") {
+		t.Errorf("h did not go back a column:\n%s", back)
 	}
 }
 

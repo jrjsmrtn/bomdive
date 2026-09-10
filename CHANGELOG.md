@@ -47,9 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`?` in `browse` explains the status bar**, for the document in front of you: what the coverage
-  numbers mean, why the leftmost column shows what it shows, any dangling `dependsOn` targets, and
-  the key bindings. The status bar has room for one word, and a word a reader cannot expand is
-  jargon — `partial` in particular meant nothing without it.
+  numbers mean, why the leftmost column shows what it shows, and any dangling `dependsOn` targets.
+  The status bar has room for one word, and a word a reader cannot expand is jargon — `partial` in
+  particular meant nothing without it.
+- **`H` lists the keys.** Kept separate from `?` on purpose: *why does it say that* and *what can I
+  press* are different questions, and merging them buries the contextual half under a key table the
+  reader has usually already learned. **`H` and not `h`** — `h` is Left, and this tool's premise is
+  that `ls`/`tree` muscle memory carries over; `J`/`K` are already the shifted forms of `j`/`k`.
 - **XML input**, spec **1.0–1.7** — two versions below anything CycloneDX JSON can express. Format is
   detected from **content**, not the file extension, and a UTF-8 byte order mark is tolerated.
 - **BDD with Gherkin** (godog): 14 scenarios across `user-ls`, `user-tree` and `api-json`, driving
