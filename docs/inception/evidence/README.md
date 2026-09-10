@@ -88,6 +88,12 @@ and the output is a personal inventory. The **shape it exposed** is a committed 
 | `poc10-empty-documents-2026-09-11.md` | **40 of 137** public corpus documents carry no `components` — 25 standalone VEX, 14 metadata-only, 1 services-only. All were identified as "SBOM" and drawn as an empty pane. The VEX discrimination rule, and why it keys on the absence of components rather than the presence of vulnerabilities |
 | `poc10-documents-without-components.py` | Runnable over any corpus directory. Counts documents, not identifiers |
 
+## POC-11 — can a standalone VEX be navigated?
+
+| File | What it is |
+|---|---|
+| `poc11-vex-navigability.py` | Whether the 25 corpus VEX documents have the shape the column view needs — something to group by, something to descend into — and whether their `affects[].ref` references resolve: **76 of 76** local refs, **79 of 80** BOM-Links into another corpus document. The evidence behind [ADR-0009](../../adr/0009-browse-a-standalone-vex.md) |
+
 ## Re-running
 
 ```bash
@@ -100,6 +106,7 @@ python3 poc7-bom-type-discriminator.py <bom.json>  # POC-7, classify a BOM
 python3 poc7-bom-type-discriminator.py --corpus <dir>   # POC-7, anonymised summary
 python3 poc9-root-outside-components.py <corpus>   # POC-9, how far the root bug reached
 python3 poc10-documents-without-components.py <corpus>  # POC-10, BOMs with no inventory
+python3 poc11-vex-navigability.py <corpus>        # POC-11, VEX shape and link resolution
 ```
 
 The `.go.txt` sources are kept as text so they are not compiled as part of the module. The cgo ones
