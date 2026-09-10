@@ -1,0 +1,42 @@
+# Build output
+/lsxbom
+/dist/
+/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test and coverage artifacts
+*.test
+*.out
+coverage.*
+
+# Go workspace
+go.work
+go.work.sum
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# BOM scan artifacts (generated; commit only a deliberate release BOM)
+*.cdx.json
+*.spdx.json
+!testdata/**/*.cdx.json
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+.envrc
+.envrc.local
+*.pem
+*.key
+credentials.json
+secrets.yaml
+
+# Claude Code local files
+CLAUDE.local.md

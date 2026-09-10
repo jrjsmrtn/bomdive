@@ -1,0 +1,78 @@
+package main
+
+// Does LadybugDB answer the BOM questions that are painful in Go/jq —
+// transitive reachability over a DAG with a diamond and a cycle?
+import (
+	"fmt"
+	"os"
+
+	lbug "github.com/LadybugDB/go-ladybug"
+)
+
+func main() {
+	db, err := lbug.OpenInMemoryDatabase(lbug.DefaultSystemConfig())
+	if err != nil {
+		fmt.Println("open:", err); os.Exit(1)
+	}
+	defer db.Close()
+	conn, err := lbug.OpenConnection(db)
+	if err != nil {
+		fmt.Println("conn:", err); os.Exit(1)
+	}
+	defer conn.Close()
+
+	must := func(q string) {
+		if _, err := conn.Query(q); err != nil {
+			fmt.Println("query failed:", q, "->", err); os.Exit(1)
+		}
+	}
+	must(`CREATE NODE TABLE Component(purl STRING, name STRING, btype STRING, PRIMARY KEY(purl))`)
+	must(`CREATE REL TABLE DEPENDS_ON(FROM Component TO Component)`)
+	must(`CREATE NODE TABLE Host(name STRING, PRIMARY KEY(name))`)
+	must(`CREATE REL TABLE RUNS(FROM Host TO Component)`)
+
+	// a diamond (app -> a,b -> shared) plus a cycle (x <-> y): both measured in real BOMs
+	for _, c := range []string{"app", "a", "b", "shared", "log4j", "x", "y"} {
+		must(fmt.Sprintf(`CREATE (:Component {purl:'pkg:generic/%s', name:'%s', btype:'library'})`, c, c))
+	}
+	edges := [][2]string{{"app", "a"}, {"app", "b"}, {"a", "shared"}, {"b", "shared"},
+		{"shared", "log4j"}, {"x", "y"}, {"y", "x"}, {"b", "x"}}
+	for _, e := range edges {
+		must(fmt.Sprintf(`MATCH (u:Component {name:'%s'}), (v:Component {name:'%s'}) CREATE (u)-[:DEPENDS_ON]->(v)`, e[0], e[1]))
+	}
+	for _, h := range []string{"host1", "host2"} {
+		must(fmt.Sprintf(`CREATE (:Host {name:'%s'})`, h))
+	}
+	must(`MATCH (h:Host {name:'host1'}), (c:Component {name:'app'}) CREATE (h)-[:RUNS]->(c)`)
+	must(`MATCH (h:Host {name:'host2'}), (c:Component {name:'x'}) CREATE (h)-[:RUNS]->(c)`)
+
+	show := func(label, q string) {
+		res, err := conn.Query(q)
+		if err != nil {
+			fmt.Printf("  %-38s ERROR %v\n", label, err); return
+		}
+		defer res.Close()
+		out := ""
+		for res.HasNext() {
+			t, err := res.Next()
+			if err != nil { break }
+			s := t.GetAsString()
+			out += s + " "
+		}
+		fmt.Printf("  %-38s %s\n", label, out)
+	}
+
+	fmt.Println("LadybugDB answering BOM questions:")
+	// THE query: transitive reachability. The one that is painful in jq and hand-rolled in Go.
+	show("what transitively pulls in log4j?",
+		`MATCH (c:Component)-[:DEPENDS_ON*1..10]->(t:Component {name:'log4j'}) RETURN DISTINCT c.name ORDER BY c.name`)
+	// THE cross-BOM join: host -> image -> transitive dep. No single BOM answers this.
+	show("which hosts reach log4j?",
+		`MATCH (h:Host)-[:RUNS]->(:Component)-[:DEPENDS_ON*0..10]->(t:Component {name:'log4j'}) RETURN DISTINCT h.name ORDER BY h.name`)
+	// does a cycle hang the engine, as it hangs a naive walk?
+	show("cycle x<->y survived (reachable from x)",
+		`MATCH (:Component {name:'x'})-[:DEPENDS_ON*1..10]->(d:Component) RETURN DISTINCT d.name ORDER BY d.name`)
+	show("shortest path app -> log4j",
+		`MATCH p = (a:Component {name:'app'})-[:DEPENDS_ON* SHORTEST 1..10]->(t:Component {name:'log4j'}) RETURN length(p)`)
+	fmt.Println("OK")
+}

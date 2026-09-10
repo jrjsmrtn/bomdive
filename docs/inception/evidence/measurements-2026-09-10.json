@@ -1,0 +1,59 @@
+{
+  "file": "ansible-bom.cdx.json",
+  "specVersion": "1.6",
+  "components": 153,
+  "component_types": {
+    "library": 147,
+    "file": 6
+  },
+  "dependency_entries": 70,
+  "entries_with_dependsOn": 70,
+  "root_declared": true,
+  "root_in_graph": false,
+  "edges_total": 245,
+  "shared_nodes_(>1 parent)": 48,
+  "is_tree": false,
+  "cycles_found": 3,
+  "max_depth_from_root": 12,
+  "components_reachable_from_root": 0,
+  "components_orphaned": 153
+}
+{
+  "file": "cdxgen.cdx.json",
+  "specVersion": "1.6",
+  "components": 9314,
+  "component_types": {
+    "library": 9161,
+    "file": 153
+  },
+  "dependency_entries": 488,
+  "entries_with_dependsOn": 488,
+  "root_declared": true,
+  "root_in_graph": false,
+  "edges_total": 1651,
+  "shared_nodes_(>1 parent)": 288,
+  "is_tree": false,
+  "cycles_found": 31,
+  "max_depth_from_root": 17,
+  "components_reachable_from_root": 0,
+  "components_orphaned": 9314
+}
+{
+  "file": "ansible-bom.cdxgen2.json",
+  "specVersion": "1.7",
+  "components": 40,
+  "component_types": {
+    "library": 40
+  },
+  "dependency_entries": 41,
+  "entries_with_dependsOn": 11,
+  "root_declared": true,
+  "root_in_graph": true,
+  "edges_total": 76,
+  "shared_nodes_(>1 parent)": 23,
+  "is_tree": false,
+  "cycles_found": 0,
+  "max_depth_from_root": 1,
+  "components_reachable_from_root": 1,
+  "components_orphaned": 39
+}
