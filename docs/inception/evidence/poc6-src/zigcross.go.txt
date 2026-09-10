@@ -1,0 +1,8 @@
+package main
+/*
+#include <stdlib.h>
+static int add(int a, int b) { return a + b; }
+*/
+import "C"
+import "fmt"
+func main() { fmt.Println("cgo says:", C.add(20, 22)) }

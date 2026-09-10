@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the traversal core must handle — diamonds, four kinds of cycle, an absent root, a
   graphless OBOM, and `dependencies` empty versus absent. Generated, not hand-written, and
   entirely synthetic, so no fixture derives from a real estate.
+- POC-6 backend survey (`docs/inception/evidence/`): DuckDB embedding and zero-ingest reading,
+  `zig cc` cross-compilation of cgo, build-tag verification, the Cypher-for-SQLite and DuckPGQ
+  survey, and the Ladybug↔DuckDB bridge — with every program preserved and the cycle-semantics
+  result made runnable and self-asserting.
+- `scripts/check-evidence-refs.py`, asserting in both directions that documents and evidence files
+  agree. Written because ADR-0005 had quoted numbers with no evidence behind them.
 - `testdata/verify.py`, which asserts each fixture *contains* what its manifest claims, and
   `testdata/validate-schema.py`, which validates each against its own official CycloneDX
   schema across 1.4–1.7.

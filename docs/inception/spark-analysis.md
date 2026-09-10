@@ -422,5 +422,6 @@ document in the corpus.
 
 ---
 
-*SPARK conducted with AI assistance (Claude Opus 5). All quantitative claims are reproducible via
-`docs/inception/evidence/bom-graph-shape.py`; raw output in `evidence/measurements-2026-09-10.json`.*
+*SPARK conducted with AI assistance (Claude Opus 5). All quantitative claims are reproducible —
+see the indexed corpus in [`evidence/README.md`](evidence/README.md), which lists every POC, what it
+established, and how to re-run it.*

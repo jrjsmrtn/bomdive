@@ -1,0 +1,9 @@
+//go:build !ladybug
+
+package main
+
+// Default build: pure Go, no engine linked. Cross-compiles freely.
+func BackendName() string { return "none (pure Go build)" }
+func Query(_ string) string {
+	return "  corpus queries need a build with -tags ladybug"
+}

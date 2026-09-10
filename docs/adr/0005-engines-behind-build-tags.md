@@ -74,5 +74,11 @@ self-testing checker in `docs/roadmap/watched-pglite-age.md`; review by 2027-03-
 
 ## References
 
-- `docs/inception/evidence/poc5-cgo-linking-2026-09-10.md` — the linking recipe and measurements
+- `docs/inception/evidence/poc5-cgo-linking-2026-09-10.md` — the Ladybug linking recipe
+- **`docs/inception/evidence/poc6-backend-survey-2026-09-10.md`** — the rest of this record's
+  evidence: the DuckDB embed and its zero-ingest reading, the `zig cc` cross-compilation result,
+  the build-tag verification, the Cypher-for-SQLite and DuckPGQ survey, and the Ladybug↔DuckDB
+  bridge. Written after POC-5, which is why this record briefly cited numbers with nothing behind
+  them
+- `docs/inception/evidence/poc6-src/` — every program run, preserved
 - `docs/roadmap/watched-pglite-age.md` — the cgo-free alternative, watched

@@ -83,4 +83,8 @@ predicate. The coverage guarantee is not intended to be reversible.
 ## References
 
 - `docs/inception/evidence/` — the measurements, re-runnable
+- **`docs/inception/evidence/poc6-cycle-semantics.sh`** — runs the edge-uniqueness vs
+  node-uniqueness experiment this record's traversal decision rests on, and asserts both answers
+- `docs/inception/evidence/poc6-backend-survey-2026-09-10.md` — where that split was found, and why
+  it is a property of the question rather than a bug in either engine
 - `docs/inception/spark-analysis.md` — R1, R2, R7 and POC-2

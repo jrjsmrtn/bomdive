@@ -29,6 +29,9 @@ pre-commit:
     doc-links:
       glob: "*.md"
       run: python3 ../../workspace/scripts/check-doc-links.py .
+    evidence-refs:
+      glob: "{docs/**,*.md}"
+      run: python3 scripts/check-evidence-refs.py
     # Only fires when fixtures actually change — which is exactly when a claim can
     # go stale. validate-schema.py needs the network on a cold cache and fails
     # rather than skipping; that is the right trade when you are editing fixtures.

@@ -1,0 +1,38 @@
+package main
+// Hypothesis: Cypher uses RELATIONSHIP-uniqueness (a node may repeat),
+// my CTE used NODE-uniqueness. Track edges instead and the answers should match.
+import ("database/sql";"fmt";_ "modernc.org/sqlite")
+func main(){
+	db,_ := sql.Open("sqlite",":memory:")
+	defer db.Close()
+	db.Exec(`CREATE TABLE depends_on(id INTEGER PRIMARY KEY, src TEXT, dst TEXT)`)
+	for _,e := range [][2]string{{"app","a"},{"app","b"},{"a","shared"},{"b","shared"},
+		{"shared","log4j"},{"x","y"},{"y","x"},{"b","x"}} {
+		db.Exec(`INSERT INTO depends_on(src,dst) VALUES(?,?)`, e[0], e[1])
+	}
+	q := func(label,sql_ string){
+		rows,err := db.Query(sql_)
+		if err!=nil{fmt.Println(label,"ERR",err);return}
+		defer rows.Close(); out:=""
+		for rows.Next(){var s string;rows.Scan(&s);out+=s+" "}
+		fmt.Printf("  %-34s %s\n",label,out)
+	}
+	// EDGE-uniqueness (Cypher-like relationship isomorphism)
+	q("edge-uniqueness from x:",`
+	  WITH RECURSIVE reach(dst,edges) AS (
+	    SELECT dst,'/'||id||'/' FROM depends_on WHERE src='x'
+	    UNION ALL
+	    SELECT d.dst, r.edges||d.id||'/'
+	      FROM reach r JOIN depends_on d ON d.src=r.dst
+	      WHERE r.edges NOT LIKE '%/'||d.id||'/%'
+	  ) SELECT DISTINCT dst FROM reach ORDER BY dst`)
+	// NODE-uniqueness (what I wrote first)
+	q("node-uniqueness from x:",`
+	  WITH RECURSIVE reach(dst,path) AS (
+	    SELECT dst,'/x/'||dst||'/' FROM depends_on WHERE src='x'
+	    UNION ALL
+	    SELECT d.dst, r.path||d.dst||'/'
+	      FROM reach r JOIN depends_on d ON d.src=r.dst
+	      WHERE r.path NOT LIKE '%/'||d.dst||'/%'
+	  ) SELECT DISTINCT dst FROM reach ORDER BY dst`)
+}

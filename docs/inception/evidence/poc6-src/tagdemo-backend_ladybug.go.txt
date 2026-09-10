@@ -1,0 +1,24 @@
+//go:build ladybug
+
+package main
+
+// Opt-in build: LadybugDB statically linked in.
+import (
+	"fmt"
+	lbug "github.com/LadybugDB/go-ladybug"
+)
+
+func BackendName() string { return "LadybugDB (embedded, cgo)" }
+
+func Query(cypher string) string {
+	db, err := lbug.OpenInMemoryDatabase(lbug.DefaultSystemConfig())
+	if err != nil { return "  open failed: " + err.Error() }
+	defer db.Close()
+	conn, err := lbug.OpenConnection(db)
+	if err != nil { return "  conn failed: " + err.Error() }
+	defer conn.Close()
+	if _, err := conn.Query(`CREATE NODE TABLE C(id STRING, PRIMARY KEY(id))`); err != nil {
+		return "  ddl failed: " + err.Error()
+	}
+	return fmt.Sprintf("  engine live; would run: %s", cypher)
+}

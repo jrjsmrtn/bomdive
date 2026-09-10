@@ -25,8 +25,8 @@ Tier-specific artifacts:
 - `docs/reference/audience-registry.md` — A1–A4 and the artifacts each is owed
 - `docs/roadmap/watched-pglite-age.md` — a watched trigger, with a checker
 - `docs/reference/quality-configuration.md` — the gates, and what is deliberately absent
-- `scripts/` — `check-pglite-trigger.py` (**not** a hook; it needs a schedule — see the
-  quality-configuration reference)
+- `scripts/` — `check-evidence-refs.py` (a gate), and `check-pglite-trigger.py` (**not** a
+  hook; it needs a schedule — see the quality-configuration reference)
 - `.editorconfig`, `.lefthook.yml`, `.lefthook/pre-push/gates.sh`
 - git on `main` + `develop`, conventional commits
 
@@ -113,8 +113,10 @@ python3 docs/inception/evidence/bom-graph-shape.py <bom.json>   # re-measure gra
 
 ## Engines are opt-in build tags; the default binary links none
 
-Proven 2026-09-10 — see [ADR-0005](docs/adr/) and
-`docs/inception/evidence/poc5-cgo-linking-2026-09-10.md`:
+Proven 2026-09-10 — see [ADR-0005](docs/adr/0005-engines-behind-build-tags.md),
+`docs/inception/evidence/poc5-cgo-linking-2026-09-10.md` (Ladybug linking) and
+`docs/inception/evidence/poc6-backend-survey-2026-09-10.md` (DuckDB, zig, build tags, the
+backend survey):
 
 | Build | Size | Non-system dylibs |
 |---|---|---|

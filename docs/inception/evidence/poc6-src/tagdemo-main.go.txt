@@ -1,0 +1,8 @@
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Printf("lsxbom  corpus backend: %s\n", BackendName())
+	fmt.Println(Query("MATCH (a)-[:DEPENDS_ON*1..5]->(b) RETURN count(*)"))
+}

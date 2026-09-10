@@ -1,0 +1,81 @@
+package main
+
+// Same BOM graph as the LadybugDB POC: diamond + cycle + host->component.
+// Question: can pure-Go SQLite answer the same questions with recursive CTEs?
+import (
+	"database/sql"
+	"fmt"
+	"os"
+	_ "modernc.org/sqlite"
+)
+
+func main() {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil { fmt.Println(err); os.Exit(1) }
+	defer db.Close()
+	ex := func(q string, args ...any) {
+		if _, err := db.Exec(q, args...); err != nil { fmt.Println("exec:", q, err); os.Exit(1) }
+	}
+	ex(`CREATE TABLE component(purl TEXT PRIMARY KEY, name TEXT, btype TEXT)`)
+	ex(`CREATE TABLE depends_on(src TEXT, dst TEXT)`)
+	ex(`CREATE TABLE host(name TEXT PRIMARY KEY)`)
+	ex(`CREATE TABLE runs(host TEXT, comp TEXT)`)
+	for _, c := range []string{"app","a","b","shared","log4j","x","y"} {
+		ex(`INSERT INTO component VALUES(?,?,?)`, "pkg:generic/"+c, c, "library")
+	}
+	for _, e := range [][2]string{{"app","a"},{"app","b"},{"a","shared"},{"b","shared"},
+		{"shared","log4j"},{"x","y"},{"y","x"},{"b","x"}} {
+		ex(`INSERT INTO depends_on VALUES(?,?)`, e[0], e[1])
+	}
+	ex(`INSERT INTO host VALUES('host1'),('host2')`)
+	ex(`INSERT INTO runs VALUES('host1','app'),('host2','x')`)
+
+	show := func(label, q string) {
+		rows, err := db.Query(q)
+		if err != nil { fmt.Printf("  %-38s ERROR %v\n", label, err); return }
+		defer rows.Close()
+		out := ""
+		for rows.Next() { var s string; rows.Scan(&s); out += s + " " }
+		fmt.Printf("  %-38s %s\n", label, out)
+	}
+
+	fmt.Println("Pure-Go SQLite (modernc) answering the same BOM questions:")
+	// transitive reachability, cycle-safe via the visited path string
+	show("what transitively pulls in log4j?", `
+	  WITH RECURSIVE reach(src,dst,path) AS (
+	    SELECT src,dst,'/'||src||'/'||dst||'/' FROM depends_on
+	    UNION ALL
+	    SELECT r.src,d.dst,r.path||d.dst||'/'
+	      FROM reach r JOIN depends_on d ON d.src=r.dst
+	      WHERE r.path NOT LIKE '%/'||d.dst||'/%'
+	  ) SELECT DISTINCT src FROM reach WHERE dst='log4j' ORDER BY src`)
+	show("which hosts reach log4j?", `
+	  WITH RECURSIVE reach(src,dst,path) AS (
+	    SELECT src,dst,'/'||src||'/'||dst||'/' FROM depends_on
+	    UNION ALL
+	    SELECT r.src,d.dst,r.path||d.dst||'/'
+	      FROM reach r JOIN depends_on d ON d.src=r.dst
+	      WHERE r.path NOT LIKE '%/'||d.dst||'/%'
+	  )
+	  SELECT DISTINCT h.name FROM host h JOIN runs ru ON ru.host=h.name
+	   WHERE ru.comp='log4j'
+	      OR EXISTS (SELECT 1 FROM reach WHERE src=ru.comp AND dst='log4j')
+	   ORDER BY h.name`)
+	show("cycle x<->y survived (reachable from x)", `
+	  WITH RECURSIVE reach(src,dst,path) AS (
+	    SELECT src,dst,'/'||src||'/'||dst||'/' FROM depends_on WHERE src='x'
+	    UNION ALL
+	    SELECT r.src,d.dst,r.path||d.dst||'/'
+	      FROM reach r JOIN depends_on d ON d.src=r.dst
+	      WHERE r.path NOT LIKE '%/'||d.dst||'/%'
+	  ) SELECT DISTINCT dst FROM reach ORDER BY dst`)
+	show("shortest path app -> log4j", `
+	  WITH RECURSIVE reach(dst,depth,path) AS (
+	    SELECT dst,1,'/app/'||dst||'/' FROM depends_on WHERE src='app'
+	    UNION ALL
+	    SELECT d.dst,r.depth+1,r.path||d.dst||'/'
+	      FROM reach r JOIN depends_on d ON d.src=r.dst
+	      WHERE r.path NOT LIKE '%/'||d.dst||'/%'
+	  ) SELECT MIN(depth) FROM reach WHERE dst='log4j'`)
+	fmt.Println("OK")
+}
