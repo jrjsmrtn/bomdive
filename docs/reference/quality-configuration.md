@@ -84,6 +84,24 @@ python3 scripts/check-pglite-trigger.py               # 0 watched, 10 look
 python3 scripts/check-pglite-trigger.py --require-forge   # 2 if the forge is unreachable
 ```
 
+## Two checking traps hit in this project, both silent
+
+Recorded because each produced a **passing-looking result that was wrong**, and both recurred
+within a single session.
+
+**`$?` after a pipeline is the last command's status.** `cdx-validate ... | tail` reported `EXIT=0`
+when the tool's own exit code was **3**; `cdx-convert ... | tail` said 0 where the real code was 1.
+Capture the command's status directly, or the check silently reports on `tail`.
+
+**jq's `//` treats `false` as empty.** A schema check reading `.schemaValid // "?"` printed `?` for
+every fixture where `schemaValid` was genuinely `false` — so a real failure rendered as "unknown",
+and would have been read as a tooling quirk rather than a defect. Use `if has("x") then .x else …`,
+or test the value explicitly.
+
+Both are instances of the same rule: **state the success criterion in terms of the result** — how
+many came back, does this exact string appear, did the file change — rather than checking that a
+command "ran".
+
 ## Validation
 
 ```bash
