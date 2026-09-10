@@ -20,6 +20,10 @@ import (
 // the chain left; the path line keeps the part that scrolled off visible.
 const visibleColumns = 3
 
+// detailPageSize is how far PgDn moves the detail pane. Deliberately not a full
+// screen: overlapping by a few rows keeps a long property list readable.
+const detailPageSize = 10
+
 type ui struct {
 	app    *tview.Application
 	model  *columns.Model
@@ -36,6 +40,20 @@ type ui struct {
 	// width is the screen width, captured by the before-draw hook. tview exposes no
 	// GetScreen, so this is the only honest way to know how wide a pane may be.
 	width int
+
+	// height is the screen height, captured alongside width.
+	//
+	// The detail pane's inner height is DERIVED from it rather than read from the
+	// widget. GetInnerRect in a before-draw hook reports the PREVIOUS frame's
+	// layout, so the same run yielded 8 or 20 depending on draw timing, and the
+	// overflow indicator appeared or vanished accordingly. Deriving it from a
+	// layout this file controls is deterministic; querying it was not.
+	height int
+
+	// detailScroll is the detail pane's first visible row. Reset whenever the
+	// selection changes, since an offset carried across components would show the
+	// middle of one record while its header says another.
+	detailScroll int
 }
 
 // Run opens the column view over a loaded BOM and blocks until the user quits.
@@ -53,8 +71,9 @@ func run(g *bom.Graph, source string, screen tcell.Screen) error {
 	// Rebuild the panes whenever the terminal width changes, including the FIRST
 	// draw — before which tview reports no geometry at all.
 	u.app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
-		if w, _ := screen.Size(); w != u.width {
-			u.width = w
+		w, h := screen.Size()
+		if w != u.width || h != u.height {
+			u.width, u.height = w, h
 			u.redraw()
 		}
 		return false
@@ -109,14 +128,31 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 	switch ev.Key() {
 	case tcell.KeyUp:
 		u.model.Up()
+		u.detailScroll = 0
 	case tcell.KeyDown:
 		u.model.Down()
+		u.detailScroll = 0
 	case tcell.KeyRight, tcell.KeyEnter:
 		u.model.Right()
+		u.detailScroll = 0
 	case tcell.KeyLeft:
 		u.model.Left()
+		u.detailScroll = 0
 	case tcell.KeyTab:
 		u.model.ToggleDirection()
+		u.detailScroll = 0
+	// The detail pane needs its own keys: the arrows drive the columns, and a real
+	// HBOM device carries enough cdx:hbom:* properties to run off the bottom. A
+	// pane cut off with no way down — and no sign there IS a down — looks complete,
+	// which is the failure the coverage line exists to prevent.
+	case tcell.KeyPgDn, tcell.KeyCtrlD:
+		u.scrollDetail(+detailPageSize)
+	case tcell.KeyPgUp, tcell.KeyCtrlU:
+		u.scrollDetail(-detailPageSize)
+	case tcell.KeyHome:
+		u.detailScroll = 0
+	case tcell.KeyEnd:
+		u.scrollDetail(u.detailLines())
 	case tcell.KeyEsc:
 		u.model.Filter("")
 	case tcell.KeyCtrlC:
@@ -129,12 +165,20 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 'k':
 			u.model.Up()
+			u.detailScroll = 0
 		case 'j':
 			u.model.Down()
+			u.detailScroll = 0
 		case 'l':
 			u.model.Right()
+			u.detailScroll = 0
 		case 'h':
 			u.model.Left()
+			u.detailScroll = 0
+		case 'J':
+			u.scrollDetail(+1)
+		case 'K':
+			u.scrollDetail(-1)
 		case '/':
 			u.filtering = true
 			u.filter.SetText(u.model.Active().Filter)
@@ -149,6 +193,26 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 	}
 	u.redraw()
 	return nil
+}
+
+// detailLines is how many rows the detail pane holds.
+func (u *ui) detailLines() int { return len(u.model.Detail()) * 2 }
+
+// scrollDetail moves the pane and CLAMPS, so the end of a list cannot be scrolled
+// past into blankness that reads as "nothing here".
+func (u *ui) scrollDetail(by int) {
+	h := u.visibleDetailRows()
+	max := u.detailLines() - h
+	if max < 0 {
+		max = 0
+	}
+	u.detailScroll += by
+	if u.detailScroll > max {
+		u.detailScroll = max
+	}
+	if u.detailScroll < 0 {
+		u.detailScroll = 0
+	}
 }
 
 func (u *ui) redraw() {
@@ -187,7 +251,14 @@ func (u *ui) redraw() {
 		list := tview.NewList().ShowSecondaryText(false)
 		list.SetBorder(true).SetTitle(" " + truncTitle(c.Title, paneW-4) + " ")
 		for _, n := range c.Visible() {
-			list.AddItem(columns.Label(n.Name, n.Version, paneW-6), "", 0, nil)
+			// A component may carry no name — seen in a real HBOM — and a blank row
+			// is unselectable-looking and unsearchable. Fall back to the ref, which
+			// is the only field guaranteed to be there.
+			label := n.Name
+			if label == "" {
+				label = n.Ref
+			}
+			list.AddItem(columns.Label(label, n.Version, paneW-6), "", 0, nil)
 		}
 		if i == len(cols)-1 {
 			list.SetCurrentItem(c.Cursor)
@@ -202,6 +273,8 @@ func (u *ui) redraw() {
 
 	u.header.SetText(u.headerText())
 	u.detail.SetText(u.detailText())
+	u.detail.ScrollTo(u.detailScroll, 0)
+	u.detail.SetTitle(u.detailTitle())
 	u.status.SetText(u.statusText())
 }
 
@@ -215,6 +288,43 @@ func (u *ui) headerText() string {
 		path = "[darkgray](nothing selected)[-]"
 	}
 	return fmt.Sprintf("[white]%s[-]   showing: %s\n[darkgray]path:[-] %s", id.Describe(), dir, path)
+}
+
+// detailTitle says whether the pane is showing everything. Without it a truncated
+// record is indistinguishable from a complete one.
+// visibleDetailRows derives the detail pane's inner height from the screen and the
+// fixed chrome this file lays out: a 2-row header, a 1-row status bar, and the
+// pane's own top and bottom border.
+const chromeRows = 2 + 1 + 2
+
+func (u *ui) visibleDetailRows() int {
+	if u.height <= 0 {
+		return 20 // before the first frame; only affects the opening paint
+	}
+	if h := u.height - chromeRows; h > 0 {
+		return h
+	}
+	return 1
+}
+
+func (u *ui) detailTitle() string {
+	h := u.visibleDetailRows()
+	total := u.detailLines()
+	if total <= h {
+		return " detail "
+	}
+	shown := u.detailScroll + h
+	if shown > total {
+		shown = total
+	}
+	more := ""
+	if u.detailScroll > 0 {
+		more += "↑"
+	}
+	if shown < total {
+		more += "↓"
+	}
+	return fmt.Sprintf(" detail %d-%d of %d %s ", u.detailScroll+1, shown, total, more)
 }
 
 func (u *ui) detailText() string {
@@ -248,7 +358,7 @@ func (u *ui) statusText() string {
 	// Kept short on purpose: at 120 columns the longer form ran off the right edge
 	// and silently lost "q quit", which is the one hint a user cannot do without.
 	return fmt.Sprintf("[darkgray]coverage[-] %d/%d (%d%%)%s  [darkgray]"+
-		"↑↓ →descend ←back ⇥flip /filter q quit[-]",
+		"↑↓ →← nav  ⇞⇟ detail  ⇥flip /filter q quit[-]",
 		c.InGraph, c.Components, pct, warn)
 }
 

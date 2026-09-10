@@ -309,6 +309,34 @@ fixture(
     ),
 )
 
+fixture(
+    "many-properties",
+    "One component carrying 37 properties, the widest osquery category measured "
+    "(POC-7: processes and launchd_services). The detail pane cannot show this in "
+    "one screen, so it is the fixture that proves the pane scrolls AND says it has "
+    "more — a pane cut off with no indicator looks complete.",
+    {"max_properties": 37, "unnamed_components": 1},
+    bom(
+        spec="1.7",
+        root=lib("host-os", ref=r("host-os"), ctype="operating-system"),
+        components=[
+            lib("wide", ref="osquery:processes:data:wide", purl=False, ctype="data",
+                props=[{"name": OSQ, "value": "processes"}]
+                      + [{"name": f"field_{i:02d}", "value": f"value-{i:02d}"}
+                         for i in range(1, 37)]),
+            lib("narrow", ref="osquery:alf:data:narrow", purl=False, ctype="data",
+                props=[{"name": OSQ, "value": "alf"}]),
+            # A component with NO name. Observed in a real HBOM device list, where
+            # it rendered as an unselectable-looking blank row; bom-ref is the only
+            # field guaranteed to be present.
+            lib("", ref="osquery:alf:data:unnamed", purl=False, ctype="data",
+                props=[{"name": OSQ, "value": "alf"}]),
+        ],
+        dependencies=[],
+        metadata_extra={"lifecycles": [{"phase": "pre-build"}, {"phase": "operations"}]},
+    ),
+)
+
 # ---------------------------------------------------------------- error path
 fixture(
     "dangling-ref",

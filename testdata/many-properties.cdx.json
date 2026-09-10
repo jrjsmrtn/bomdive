@@ -1,0 +1,205 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "osquery:processes:data:wide",
+      "name": "wide",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "processes"
+        },
+        {
+          "name": "field_01",
+          "value": "value-01"
+        },
+        {
+          "name": "field_02",
+          "value": "value-02"
+        },
+        {
+          "name": "field_03",
+          "value": "value-03"
+        },
+        {
+          "name": "field_04",
+          "value": "value-04"
+        },
+        {
+          "name": "field_05",
+          "value": "value-05"
+        },
+        {
+          "name": "field_06",
+          "value": "value-06"
+        },
+        {
+          "name": "field_07",
+          "value": "value-07"
+        },
+        {
+          "name": "field_08",
+          "value": "value-08"
+        },
+        {
+          "name": "field_09",
+          "value": "value-09"
+        },
+        {
+          "name": "field_10",
+          "value": "value-10"
+        },
+        {
+          "name": "field_11",
+          "value": "value-11"
+        },
+        {
+          "name": "field_12",
+          "value": "value-12"
+        },
+        {
+          "name": "field_13",
+          "value": "value-13"
+        },
+        {
+          "name": "field_14",
+          "value": "value-14"
+        },
+        {
+          "name": "field_15",
+          "value": "value-15"
+        },
+        {
+          "name": "field_16",
+          "value": "value-16"
+        },
+        {
+          "name": "field_17",
+          "value": "value-17"
+        },
+        {
+          "name": "field_18",
+          "value": "value-18"
+        },
+        {
+          "name": "field_19",
+          "value": "value-19"
+        },
+        {
+          "name": "field_20",
+          "value": "value-20"
+        },
+        {
+          "name": "field_21",
+          "value": "value-21"
+        },
+        {
+          "name": "field_22",
+          "value": "value-22"
+        },
+        {
+          "name": "field_23",
+          "value": "value-23"
+        },
+        {
+          "name": "field_24",
+          "value": "value-24"
+        },
+        {
+          "name": "field_25",
+          "value": "value-25"
+        },
+        {
+          "name": "field_26",
+          "value": "value-26"
+        },
+        {
+          "name": "field_27",
+          "value": "value-27"
+        },
+        {
+          "name": "field_28",
+          "value": "value-28"
+        },
+        {
+          "name": "field_29",
+          "value": "value-29"
+        },
+        {
+          "name": "field_30",
+          "value": "value-30"
+        },
+        {
+          "name": "field_31",
+          "value": "value-31"
+        },
+        {
+          "name": "field_32",
+          "value": "value-32"
+        },
+        {
+          "name": "field_33",
+          "value": "value-33"
+        },
+        {
+          "name": "field_34",
+          "value": "value-34"
+        },
+        {
+          "name": "field_35",
+          "value": "value-35"
+        },
+        {
+          "name": "field_36",
+          "value": "value-36"
+        }
+      ],
+      "type": "data",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:alf:data:narrow",
+      "name": "narrow",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "alf"
+        }
+      ],
+      "type": "data",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:alf:data:unnamed",
+      "name": "",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "alf"
+        }
+      ],
+      "type": "data",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/host-os@1.0.0",
+      "name": "host-os",
+      "purl": "pkg:generic/host-os@1.0.0",
+      "type": "operating-system",
+      "version": "1.0.0"
+    },
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      },
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "specVersion": "1.7",
+  "version": 1
+}

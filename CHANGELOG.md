@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pulled in transitively by the TUI library. Not reachable from this code, but a supply-chain tool
   shipping a known-vulnerable dependency is a poor look and the fix was free.
 
+### Fixed
+
+- **The detail pane could not be scrolled**, so a component with more properties than fit the screen
+  was silently cut off — a real HBOM device carries up to 37. `PgDn`/`PgUp`, `Ctrl-D`/`Ctrl-U`,
+  `J`/`K`, `Home`/`End`, and the pane title now reports `n-m of total` with `↑`/`↓`, because a pane
+  truncated without an indicator looks complete.
+- A component with **no name** rendered as a blank, unselectable-looking row; it now falls back to
+  its `bom-ref`.
+
 ### Added
 
 - **XML input**, spec **1.0–1.7** — two versions below anything CycloneDX JSON can express. Format is

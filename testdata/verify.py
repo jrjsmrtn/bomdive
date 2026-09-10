@@ -84,6 +84,8 @@ def properties(doc: dict) -> dict:
         "purl_less_components": sum(1 for c in comps if not c.get("purl")),
         "dangling_targets": len(all_targets - comp_refs),
         "unique_names_lt_components": len({c.get("name") for c in comps}) < len(comps),
+        "max_properties": max((len(c.get("properties") or []) for c in comps), default=0),
+        "unnamed_components": sum(1 for c in comps if not c.get("name")),
         # True when some component's properties are NOT in alphabetical order, so a
         # test can tell "document order preserved" from "sorted" at all.
         "has_unsorted_properties": any(

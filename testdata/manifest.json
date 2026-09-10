@@ -60,6 +60,14 @@
     "file": "hbom-depth1.cdx.json",
     "why": "The HBOM shape: one dependency entry, rooted, depth 1 \u2014 a host with devices hanging off it. An `ls` shape, not a `tree` shape."
   },
+  "many-properties": {
+    "asserts": {
+      "max_properties": 37,
+      "unnamed_components": 1
+    },
+    "file": "many-properties.cdx.json",
+    "why": "One component carrying 37 properties, the widest osquery category measured (POC-7: processes and launchd_services). The detail pane cannot show this in one screen, so it is the fixture that proves the pane scrolls AND says it has more \u2014 a pane cut off with no indicator looks complete."
+  },
   "multi-root": {
     "asserts": {
       "indegree_zero": 3,

@@ -71,11 +71,12 @@ func driveKeys(t *testing.T, fixture string, presses ...key) string {
 	go func() { done <- run(g, fixture, sim) }()
 
 	waitFor(t, sim, "coverage") // the app has painted at least once
+	waitSettled(t, sim)         // ...and has stopped repainting
 	for _, pr := range presses {
 		sim.InjectKey(pr.k, pr.r, tcell.ModNone)
 		time.Sleep(25 * time.Millisecond)
 	}
-	time.Sleep(60 * time.Millisecond)
+	waitSettled(t, sim)
 	out := screenText(sim)
 
 	// Escape first: while the filter field has focus, 'q' is TEXT and not a command.
@@ -94,6 +95,27 @@ func driveKeys(t *testing.T, fixture string, presses ...key) string {
 		t.Fatal("app did not stop on q")
 	}
 	return out
+}
+
+// waitSettled blocks until two consecutive reads of the screen agree.
+//
+// The view repaints itself once geometry becomes known — pane width and detail
+// height are only real after the first layout — so a capture taken too early
+// differs from one taken after an unrelated keypress. Comparing those two made an
+// UNBOUND key look as though it changed the view. Waiting for the screen to stop
+// moving removes a whole class of false failure.
+func waitSettled(t *testing.T, sim tcell.SimulationScreen) {
+	t.Helper()
+	prev := ""
+	for i := 0; i < 60; i++ {
+		time.Sleep(20 * time.Millisecond)
+		cur := screenText(sim)
+		if cur == prev && cur != "" {
+			return
+		}
+		prev = cur
+	}
+	t.Fatal("screen never settled")
 }
 
 func waitFor(t *testing.T, sim tcell.SimulationScreen, want string) {
@@ -136,11 +158,13 @@ func TestCoverageIsOnScreen(t *testing.T) {
 // passes even when the header says nothing — which is exactly how two planted
 // defects escaped an earlier version of this test.
 func header(screen string) string {
-	lines := strings.SplitN(screen, "\n", 3)
-	if len(lines) < 2 {
+	lines := strings.SplitN(screen, "\n", 4)
+	if len(lines) < 3 {
 		return screen
 	}
-	return lines[0] + "\n" + lines[1]
+	// Three lines: the identity, the path, and the pane title row that carries the
+	// detail pane's scroll indicator.
+	return lines[0] + "\n" + lines[1] + "\n" + lines[2]
 }
 
 func TestDirectionIsStatedAndFlips(t *testing.T) {
@@ -178,7 +202,7 @@ func TestGraphlessBOMOpensOnCategoriesAndSaysSo(t *testing.T) {
 
 func TestKeyHintsAreVisible(t *testing.T) {
 	out := drive(t, "diamond")
-	for _, want := range []string{"quit", "filter", "descend"} {
+	for _, want := range []string{"quit", "filter", "detail", "nav"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("key hint %q missing; the view is undiscoverable:\n%s", want, out)
 		}
@@ -274,5 +298,92 @@ func TestUnhandledRuneIsPassedThroughNotSwallowed(t *testing.T) {
 	after := driveKeys(t, "diamond", ru('z'))
 	if plain != after {
 		t.Error("an unbound key changed the view")
+	}
+}
+
+// A pane cut off with no way down, and no sign there IS a down, looks complete.
+// That is the same failure the coverage line exists to prevent, one pane over.
+func TestDetailPaneShowsAnOverflowIndicator(t *testing.T) {
+	out := drive(t, "many-properties", tcell.KeyDown, tcell.KeyRight)
+	if !strings.Contains(out, "detail") {
+		t.Fatalf("no detail pane:\n%s", out)
+	}
+	if !strings.Contains(out, "of") || !strings.Contains(out, "↓") {
+		t.Errorf("detail pane does not say more content exists:\n%s", header(out))
+	}
+}
+
+func TestDetailPaneScrolls(t *testing.T) {
+	top := drive(t, "many-properties", tcell.KeyDown, tcell.KeyRight)
+	down := drive(t, "many-properties", tcell.KeyDown, tcell.KeyRight, tcell.KeyPgDn)
+	if top == down {
+		t.Error("PgDn did not scroll the detail pane")
+	}
+	if !strings.Contains(down, "↑") {
+		t.Errorf("scrolled pane does not indicate content above:\n%s", header(down))
+	}
+	back := drive(t, "many-properties", tcell.KeyDown, tcell.KeyRight, tcell.KeyPgDn, tcell.KeyPgUp)
+	if back != top {
+		t.Error("PgUp did not return to the top")
+	}
+}
+
+func TestDetailScrollResetsWhenTheSelectionChanges(t *testing.T) {
+	// Scroll, then move: an offset carried across components would show the middle
+	// of one record under another's header.
+	moved := drive(t, "many-properties", tcell.KeyDown, tcell.KeyRight, tcell.KeyPgDn, tcell.KeyDown)
+	fresh := drive(t, "many-properties", tcell.KeyDown, tcell.KeyRight, tcell.KeyDown)
+	if moved != fresh {
+		t.Error("detail scroll survived a selection change")
+	}
+}
+
+func TestDetailScrollIsClamped(t *testing.T) {
+	// Scrolling far past the end must not leave a blank pane that reads as "nothing here".
+	keys := []tcell.Key{tcell.KeyDown, tcell.KeyRight}
+	for i := 0; i < 20; i++ {
+		keys = append(keys, tcell.KeyPgDn)
+	}
+	out := drive(t, "many-properties", keys...)
+	// Clamping means the LAST page is shown, so the header fields have scrolled off
+	// — asserting on those tested the wrong thing. What matters is that content is
+	// still visible and the pane says it is at the end.
+	if !strings.Contains(out, "field_3") {
+		t.Errorf("scrolled past the end into blankness:\n%s", out)
+	}
+	if strings.Contains(header(out), "↓") {
+		t.Errorf("pane still claims more content below after clamping:\n%s", header(out))
+	}
+	if !strings.Contains(header(out), "↑") {
+		t.Errorf("pane does not indicate content above:\n%s", header(out))
+	}
+}
+
+// A component with no name rendered as an unselectable-looking blank row. Seen in
+// a real HBOM; bom-ref is the only field guaranteed to be present.
+func TestUnnamedComponentFallsBackToItsRef(t *testing.T) {
+	// The "alf" category holds a named and an unnamed component. The unnamed one
+	// must show SOMETHING selectable rather than an empty row.
+	out := drive(t, "many-properties", tcell.KeyRight)
+	if !strings.Contains(out, "unnamed") {
+		t.Errorf("a component with no name rendered as a blank row:\n%s", out)
+	}
+}
+
+// Without clamping, over-scrolling leaves the offset far past the end, so PgUp has
+// to undo all of it before anything moves. That is observable, which is why the
+// clamp is not merely defensive.
+func TestOverScrollingThenPagingUpMovesImmediately(t *testing.T) {
+	keys := []tcell.Key{tcell.KeyDown, tcell.KeyRight}
+	for i := 0; i < 20; i++ {
+		keys = append(keys, tcell.KeyPgDn)
+	}
+	atEnd := drive(t, "many-properties", keys...)
+	up := drive(t, "many-properties", append(append([]tcell.Key{}, keys...), tcell.KeyPgUp)...)
+	if atEnd == up {
+		t.Error("PgUp after over-scrolling did nothing; the offset was not clamped")
+	}
+	if !strings.Contains(header(up), "↓") {
+		t.Errorf("paging up from the end does not show content below:\n%s", header(up))
 	}
 }
