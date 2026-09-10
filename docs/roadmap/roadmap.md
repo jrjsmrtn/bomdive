@@ -9,19 +9,19 @@ schema, and without ever presenting a partial answer as a complete one.
 ## Phases
 
 ### Phase 1 — Read and navigate one BOM
-**Target**: v0.1.x · **Status**: not started
+**Target**: v0.1.x · **Status**: traversal core done (`internal/bom`, 84.9% covered, mutation-tested); renderers next
 
 The traversal core, and the two non-interactive renderers. Everything here is constrained by
 decisions already recorded, so this phase is implementation rather than design.
 
-- [ ] Parse via `cyclonedx-go` — JSON, spec 1.4–1.7 ([ADR-0003](../adr/0003-go-with-cyclonedx-go.md))
-- [ ] **BOM-type discrimination** from `metadata.lifecycles` + root component type, including the
+- [x] Parse via `cyclonedx-go` — JSON, spec 1.4–1.7 ([ADR-0003](../adr/0003-go-with-cyclonedx-go.md))
+- [x] **BOM-type discrimination** from `metadata.lifecycles` + root component type, including the
       custom-lifecycle form and the undeclared-root branch (POC-7 has a working classifier)
-- [ ] **Traversal model with lazy, one-level expansion from an arbitrary node** — the constraint
+- [x] **Traversal model with lazy, one-level expansion from an arbitrary node** — the constraint
       [ADR-0006](../adr/0006-column-view-as-a-first-class-renderer.md) puts on this phase, so the
       column view is a second renderer rather than a rewrite
-- [ ] Derived roots from in-degree-0 nodes, labelled synthetic
-- [ ] Cycle-safe traversal, node-uniqueness ([ADR-0004](../adr/0004-the-dependency-graph-is-a-dag.md))
+- [x] Derived roots from in-degree-0 nodes, labelled synthetic
+- [x] Cycle-safe traversal, node-uniqueness ([ADR-0004](../adr/0004-the-dependency-graph-is-a-dag.md))
 - [ ] `ls` — components, and `cdx:osquery:category` for a graphless BOM, with `--type` filtering
 - [ ] `tree` — full walk of the same model, refusing informatively on a BOM that declares no graph
 - [ ] **Coverage as a correctness guarantee**, in both the human and `--output json` surfaces

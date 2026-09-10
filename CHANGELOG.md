@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Traversal core** (`internal/bom`): CycloneDX loading across spec 1.4–1.7, BOM-type
+  discrimination from `metadata.lifecycles` + root component type, a graph exposing **one level at
+  a time in both directions**, roots derived from in-degree-0 nodes and flagged synthetic,
+  cycle-safe depth-first walk under node-uniqueness, and coverage accounting. 84.9% covered.
+
 - Project bootstrapped at tier t1.
 - SPARK analysis, with re-runnable evidence for every quantitative claim
   (`docs/inception/`).
