@@ -213,7 +213,7 @@ fixture(
     "The real OBOM navigation axis: no graph, and every component carrying "
     "cdx:osquery:category. This is what `ls` groups by when there is nothing to walk. "
     "Categories are platform-dependent in the wild, so the fixture mixes two.",
-    {"dependency_entries": 0, "osquery_categories": 4},
+    {"dependency_entries": 0, "osquery_categories": 4, "has_unsorted_properties": True},
     bom(
         spec="1.7",
         root=lib("host-os", ref=r("host-os"), ctype="operating-system"),
@@ -222,9 +222,14 @@ fixture(
                 ctype="application", props=[{"name": OSQ, "value": "launchd_services"}]),
             lib("svc-beta", ref="osquery:launchd_services:data:svc-beta", purl=False,
                 ctype="application", props=[{"name": OSQ, "value": "launchd_services"}]),
+            # Property order here is DELIBERATELY NOT ALPHABETICAL: "ca" sorts before
+            # "cdx:osquery:category" but appears last. Without that, a renderer that
+            # sorts properties is indistinguishable from one preserving document
+            # order, and mutation testing showed exactly that blind spot.
             lib("cert-one", ref="osquery:certificates:data:cert-one", purl=False,
                 ctype="data", props=[{"name": OSQ, "value": "certificates"},
-                                     {"name": "not_valid_after", "value": "2027-01-01"}]),
+                                     {"name": "not_valid_after", "value": "2027-01-01"},
+                                     {"name": "ca", "value": "true"}]),
             lib("port-8080", ref="osquery:listening_ports:data:port-8080", purl=False,
                 ctype="data", props=[{"name": OSQ, "value": "listening_ports"}]),
             lib("unit-gamma", ref="osquery:systemd_units:data:unit-gamma", purl=False,

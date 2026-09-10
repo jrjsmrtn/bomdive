@@ -36,6 +36,10 @@
         {
           "name": "not_valid_after",
           "value": "2027-01-01"
+        },
+        {
+          "name": "ca",
+          "value": "true"
         }
       ],
       "type": "data",

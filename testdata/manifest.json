@@ -86,6 +86,7 @@
   "obom-categories": {
     "asserts": {
       "dependency_entries": 0,
+      "has_unsorted_properties": true,
       "osquery_categories": 4
     },
     "file": "obom-categories.cdx.json",

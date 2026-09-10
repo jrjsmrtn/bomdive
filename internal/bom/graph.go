@@ -53,6 +53,8 @@ type Graph struct {
 	hasDepsKey bool
 	edges      int
 	dangling   []string
+
+	props map[string][]Property
 }
 
 // Load reads a CycloneDX JSON document.
@@ -88,6 +90,7 @@ func build(doc *cdx.BOM) *Graph {
 		nodes: map[string]Node{},
 		out:   map[string][]string{},
 		in:    map[string][]string{},
+		props: map[string][]Property{},
 	}
 
 	if doc.Components != nil {
@@ -100,6 +103,9 @@ func build(doc *cdx.BOM) *Graph {
 				for _, p := range *c.Properties {
 					if p.Name == OSQueryCategory {
 						n.Category = p.Value
+					}
+					if c.BOMRef != "" {
+						g.props[c.BOMRef] = append(g.props[c.BOMRef], Property{p.Name, p.Value})
 					}
 				}
 			}
@@ -256,3 +262,12 @@ func dedupe(s []string) []string {
 	}
 	return out
 }
+
+// Property is one component property, in document order.
+type Property struct{ Name, Value string }
+
+// Properties returns every property of a component, in DOCUMENT ORDER.
+//
+// Order is preserved rather than sorted: for an OBOM these are osquery fields, and
+// the generator's ordering carries meaning that sorting destroys (ADR-0007).
+func (g *Graph) Properties(ref string) []Property { return g.props[ref] }
