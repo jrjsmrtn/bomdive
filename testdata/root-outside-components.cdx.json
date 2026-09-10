@@ -1,0 +1,50 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/nic-0@1.0.0",
+      "name": "nic-0",
+      "purl": "pkg:generic/nic-0@1.0.0",
+      "type": "device",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/disk-0@1.0.0",
+      "name": "disk-0",
+      "purl": "pkg:generic/disk-0@1.0.0",
+      "type": "device",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/svc-a@1.0.0",
+      "name": "svc-a",
+      "purl": "pkg:generic/svc-a@1.0.0",
+      "type": "application",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:generic/nic-0@1.0.0",
+        "pkg:generic/disk-0@1.0.0"
+      ],
+      "ref": "host:machine-1"
+    },
+    {
+      "dependsOn": [
+        "pkg:generic/svc-a@1.0.0"
+      ],
+      "ref": "pkg:generic/nic-0@1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "host:machine-1",
+      "name": "the-host",
+      "type": "device"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

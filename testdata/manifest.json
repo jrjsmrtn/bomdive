@@ -107,6 +107,15 @@
     "file": "purl-less.cdx.json",
     "why": "Components with no purl at all \u2014 28-40% of a real OBOM. bom-ref is the only key that works; a purl-keyed index silently drops these."
   },
+  "root-outside-components": {
+    "asserts": {
+      "components": 3,
+      "root_declared": true,
+      "root_in_graph": true
+    },
+    "file": "root-outside-components.cdx.json",
+    "why": "The declared root DRIVES the dependency graph but is not listed in `components` \u2014 legitimate, because metadata.component is the SUBJECT of the document rather than a member of its inventory. Measured in a real merged host view (POC-8), where it left the tree with no roots at all on a document carrying 33 edges."
+  },
   "rootless": {
     "asserts": {
       "components_reachable_from_root": 0,

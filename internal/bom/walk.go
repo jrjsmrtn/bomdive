@@ -43,7 +43,7 @@ func (g *Graph) Walk(ref string, maxDepth int, fn func(Visit) bool) {
 
 	var rec func(cur, parent string, depth int) bool
 	rec = func(cur, parent string, depth int) bool {
-		n, known := g.nodes[cur]
+		n, known := g.Node(cur)
 		if !known {
 			return true // dangling: reported via Coverage, never invented here
 		}

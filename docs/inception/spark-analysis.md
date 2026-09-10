@@ -380,7 +380,7 @@ behaviour is detectable rather than assumed stable.
 | **POC-5** *(done)* | What relaxing "no cgo" costs | **Done.** Self-contained binary survives cgo; cross-compilation is the real cost | `evidence/poc5-*` |
 | **POC-6** *(done)* | Backend survey | **Done.** DuckDB embed and zero-ingest, `zig cc` cross-compilation, build tags, the Cypher survey, the Ladybug↔DuckDB bridge | `evidence/poc6-*` |
 | **POC-7** *(done)* | BOM identity and OBOM navigation | **Done.** Discrimination rule, the custom-lifecycle trap, 40-category vocabulary | `evidence/poc7-*` |
-| **POC-8** *(open)* | Measure a **merged host view** | Would qualify ADR-0004: it is the one HBOM/OBOM shape where a host-level `tree` is meaningful. Documented, never run | ~1 h |
+| **POC-8** *(done)* | Measure a **merged host view** | **Done.** It has a graph — 33 edges, real hardware→runtime links — reaching **0.6%** of 4,952 components. Found a root-resolution bug | `evidence/poc8-*` |
 
 ⚠ **POC-3 and POC-4 remain genuinely pending** — they need code that does not exist yet. They are
 Phase 1 acceptance criteria in the roadmap, not stale entries.

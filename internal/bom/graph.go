@@ -217,7 +217,22 @@ func (g *Graph) DeclaresNoGraph() bool { return g.hasDepsKey && g.edges == 0 }
 func (g *Graph) HasDependenciesKey() bool { return g.hasDepsKey }
 
 // Node returns one component by ref.
-func (g *Graph) Node(ref string) (Node, bool) { n, ok := g.nodes[ref]; return n, ok }
+//
+// A declared root that drives the graph but is absent from `components` resolves
+// to a synthesised node. Doing it HERE rather than in Roots is what makes Walk,
+// Children and the detail pane agree — fixing only Roots left the tree rooted and
+// empty, which is a worse failure than having no root at all.
+func (g *Graph) Node(ref string) (Node, bool) {
+	if n, ok := g.nodes[ref]; ok {
+		return n, true
+	}
+	if ref != "" && ref == g.id.RootRef {
+		if _, drives := g.out[ref]; drives {
+			return g.metadataRoot(), true
+		}
+	}
+	return Node{}, false
+}
 
 // Components returns every component in document order.
 func (g *Graph) Components() []Node {
@@ -269,6 +284,14 @@ func (g *Graph) Roots() (roots []Node, synthetic bool) {
 		if n, known := g.nodes[g.id.RootRef]; known {
 			return []Node{n}, false
 		}
+		// The declared root drives the graph but is NOT listed in `components`.
+		// That is legitimate and common in a merged host view: metadata.component
+		// is the SUBJECT of the document, not a member of its inventory. Dropping
+		// it left such a BOM with no roots at all — "no roots found to walk from"
+		// on a document carrying 33 edges. Found by POC-8, on the one shape ADR-0004
+		// had never measured.
+		n, _ := g.Node(g.id.RootRef)
+		return []Node{n}, false
 	}
 	var refs []string
 	for ref := range g.out {
@@ -277,6 +300,12 @@ func (g *Graph) Roots() (roots []Node, synthetic bool) {
 		}
 	}
 	return g.resolve(refs), true
+}
+
+// metadataRoot synthesises a Node for a declared root that the components list
+// does not contain, so a renderer has something to anchor on.
+func (g *Graph) metadataRoot() Node {
+	return Node{Ref: g.id.RootRef, Name: g.id.RootName, Type: g.id.RootType}
 }
 
 // Coverage reports how much of the document the graph reaches.

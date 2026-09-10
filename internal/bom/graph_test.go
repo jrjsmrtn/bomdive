@@ -359,3 +359,33 @@ func TestXMLInAForeignNamespaceIsRejected(t *testing.T) {
 		t.Errorf("error does not name the cause: %v", err)
 	}
 }
+
+// A declared root that drives the graph but is absent from `components`.
+//
+// Legitimate: metadata.component is the SUBJECT of the document, not a member of
+// its inventory. Found by POC-8 on a real merged host view, where it left a
+// document carrying 33 edges with no roots at all — and fixing only Roots() left
+// the tree rooted and EMPTY, which is worse, because it looks like an answer.
+func TestDeclaredRootOutsideComponentsStillRoots(t *testing.T) {
+	g := fixture(t, "root-outside-components")
+	if _, listed := g.Node("host:machine-1"); !listed {
+		t.Fatal("the declared root does not resolve to a node")
+	}
+	roots, synthetic := g.Roots()
+	if len(roots) != 1 {
+		t.Fatalf("roots = %d, want 1", len(roots))
+	}
+	if synthetic {
+		t.Error("synthetic = true: this root is DECLARED, not derived")
+	}
+	if roots[0].Name != "the-host" {
+		t.Errorf("root name = %q, want the-host", roots[0].Name)
+	}
+
+	// The half that fixing Roots() alone would have missed.
+	var visits int
+	g.Walk(roots[0].Ref, 0, func(Visit) bool { visits++; return true })
+	if visits < 4 {
+		t.Errorf("walk emitted %d visits from a root with 2 children and a grandchild", visits)
+	}
+}

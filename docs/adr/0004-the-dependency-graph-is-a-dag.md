@@ -75,11 +75,18 @@ Reading only `.phase` silently misclassifies a BOM using the custom form. A BOM 
 `metadata.component` at all, which is schema-valid, so "undeclared" is a branch the classifier must
 have rather than an error.
 
-⚠ **This record's OBOM finding carries one unmeasured exception.** cdxgen's
-`hbom --include-runtime` is documented to emit a merged host view *with* synthetic `bom-ref`s and
-host→hardware→runtime edges. That would make a host-level `tree` meaningful. It has been read, not
-run — see POC-7. Until it is measured, treat `tree`-on-a-host-view as unvalidated, and do not read
-"an OBOM has no graph" as covering it.
+⚠ **The exception is now MEASURED** — see
+`docs/inception/evidence/poc8-merged-host-view-2026-09-10.md`. A merged host view
+(`hbom --include-runtime`) does carry a real graph: 33 edges, root in the graph, the documented
+`cdx:hostview:*` topology links present, and genuine hardware→runtime linkage.
+
+**And it reaches 31 of 4,952 components — 0.6%**, the sparsest coverage measured anywhere in this
+project. So the exception is real but narrow: a host-level `tree` is meaningful, and rendering it
+without saying what it omits would be the most misleading output this tool could produce. It is the
+strongest case for coverage being a guarantee rather than a flag.
+
+⚠ It classifies as an **HBOM**, not a distinct type, so nothing can tell a merged view from a plain
+one except the presence of runtime components.
 
 ### Therefore ls and tree are not symmetric
 

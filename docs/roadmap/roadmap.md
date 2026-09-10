@@ -79,7 +79,7 @@ phase is complete as documentation and no engine is ever linked.
 | | Why it is not scheduled |
 |---|---|
 | **PGlite + Apache AGE** | A *watched trigger*, not a plan — see [watched-pglite-age.md](watched-pglite-age.md). Reviewed 2027-03-10; `scripts/check-pglite-trigger.py` watches it mechanically |
-| **Merged host view** (`hbom --include-runtime`) | **Documented, never run.** It is the one HBOM/OBOM shape where a host-level `tree` would be meaningful, so it qualifies ADR-0004 — but nothing is scheduled on an unmeasured claim. Measure it first (POC-7) |
+| ~~**Merged host view**~~ | **Measured 2026-09-10 (POC-8).** It has a real graph reaching 0.6% of the document, and found a root-resolution bug. Nothing further is scheduled: the shape is handled and its fixture is committed |
 | SPDX input | Would need normalisation, not a second parser. No demand yet |
 | BOM generation, editing, signing, scanning | Out of scope by decision — other tools own these. See the README |
 

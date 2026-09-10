@@ -40,6 +40,8 @@ type Identity struct {
 
 	// RootType is metadata.component.type, empty when there is no root component.
 	RootType string
+	// RootName is metadata.component.name.
+	RootName string
 	// RootRef is metadata.component.bom-ref. Frequently NOT a node in the
 	// dependency graph — see ADR-0004; do not use it as a traversal entry point.
 	RootRef string
@@ -92,6 +94,7 @@ func identify(doc *cdx.BOM) Identity {
 		id.RootDeclared = true
 		id.RootType = string(c.Type)
 		id.RootRef = c.BOMRef
+		id.RootName = c.Name
 	}
 
 	ops := false

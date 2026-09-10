@@ -292,6 +292,23 @@ fixture(
     ),
 )
 
+fixture(
+    "root-outside-components",
+    "The declared root DRIVES the dependency graph but is not listed in "
+    "`components` — legitimate, because metadata.component is the SUBJECT of the "
+    "document rather than a member of its inventory. Measured in a real merged "
+    "host view (POC-8), where it left the tree with no roots at all on a document "
+    "carrying 33 edges.",
+    {"root_declared": True, "root_in_graph": True, "components": 3},
+    bom(
+        root={"bom-ref": "host:machine-1", "type": "device", "name": "the-host"},
+        components=[lib("nic-0", ctype="device"), lib("disk-0", ctype="device"),
+                    lib("svc-a", ctype="application")],
+        dependencies=[dep("host:machine-1", r("nic-0"), r("disk-0")),
+                      dep(r("nic-0"), r("svc-a"))],
+    ),
+)
+
 # ---------------------------------------------------------------- error path
 fixture(
     "dangling-ref",

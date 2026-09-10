@@ -64,6 +64,16 @@ Established that a self-contained binary **does** survive cgo, correcting an ear
 | `poc7-bom-identity-2026-09-10.md` | The discrimination rule (`lifecycles` + root component type), the custom-lifecycle trap, the 40-category OBOM vocabulary and its platform split, and the merged host view as an **unmeasured** exception |
 | `poc7-bom-type-discriminator.py` | Runnable classifier. Emits shape only, so its output is safe over a private corpus |
 
+## POC-8 — the merged host view
+
+| File | What it is |
+|---|---|
+| `poc8-merged-host-view-2026-09-10.md` | The one shape ADR-0004 carried as an unmeasured exception. It *does* have a graph — 33 edges with real hardware→runtime links — reaching **0.6%** of the document. Found a root-resolution bug on the way |
+
+Not re-runnable from a committed file by design: it needs `hbom --include-runtime` on a live host,
+and the output is a personal inventory. The **shape it exposed** is a committed fixture instead —
+`testdata/root-outside-components.cdx.json`.
+
 ## Re-running
 
 ```bash
