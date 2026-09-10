@@ -25,6 +25,10 @@ actually bring to a BOM: **what pulled this in?**
 - Not a corpus database. Cross-BOM questions are answered today by the `duckdb` and `lbug` CLIs
   against the files on disk.
 
+A Finder-style **column view** is planned as a second renderer over the same model
+([ADR-0006](docs/adr/0006-column-view-as-a-first-class-renderer.md)); `ls` and `tree` stay, because
+pipelines need non-interactive output.
+
 ## Design in one paragraph
 
 A CycloneDX `dependencies` array is a **DAG with cycles**, the declared root is often absent from

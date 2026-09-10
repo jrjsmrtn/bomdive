@@ -37,3 +37,9 @@ project:
     purpose: HOW TO BUILD
     status: Accepted
     date: 2026-09-10
+  - id: 6
+    file: 0006-column-view-as-a-first-class-renderer.md
+    title: The column view is a first-class renderer, and tree is not the design centre
+    purpose: HOW TO RENDER
+    status: Accepted
+    date: 2026-09-10

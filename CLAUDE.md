@@ -73,6 +73,12 @@ All measured 2026-09-10 against real BOMs; reproduce with `docs/inception/eviden
 **Therefore `ls` and `tree` are not symmetric.** `ls` is the universal command; `tree` is the one
 that pays off where a graph exists — container-image SBOMs and directory scans.
 
+**And `tree` is not the design centre** ([ADR-0006](docs/adr/0006-column-view-as-a-first-class-renderer.md)).
+Its difficulty comes from rendering the whole graph at once; a Miller-column view (Finder-style)
+shows one path at a time, which avoids the shared-subtree and cycle-rendering decisions and *also*
+works on the graphless BOMs. **The traversal model must expand lazily, one level from an arbitrary
+node** — a recursive full-graph walk would have to be rewritten.
+
 ## Correctness obligations
 
 These are guarantees, not niceties, and they are why this tool beats `jq`:

@@ -4,7 +4,10 @@ Date: 2026-09-10
 
 ## Status
 
-Accepted
+Accepted. **Amended by [ADR-0006](0006-column-view-as-a-first-class-renderer.md)**, which
+repositions `tree` as one renderer of this model rather than the design centre, and adds a lazy
+one-level-at-a-time expansion requirement so a column view is a second renderer over the same
+traversal. Every decision below still holds — they are properties of the model, not of `tree`.
 
 ## Context
 
@@ -83,6 +86,12 @@ run — see POC-7. Until it is measured, treat `tree`-on-a-host-view as unvalida
 `ls` is the universal command and works on every BOM type — over components, or over the
 `cdx:osquery:category` property for an OBOM, which nearly every component in one carries.
 `tree` is conditional, and pays off on container-image SBOMs and directory scans.
+
+⚠ **ADR-0006 gives the fuller statement**: the difficulty above comes from `tree` rendering the
+whole graph at once. A Miller-column view renders one path at a time and so avoids the shared-subtree
+and cycle-rendering decisions entirely, while also working on the graphless BOMs where `tree` is
+meaningless. The model must therefore expand **lazily, one level from an arbitrary node**, with
+`tree` as a complete walk of that same model.
 
 ## Consequences
 
