@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **BDD with Gherkin** (godog): 14 scenarios across `user-ls`, `user-tree` and `api-json`, driving
+  the CLI in-process. `Strict: true`, so an undefined step fails rather than passing quietly.
+- Audience registry **aligned with `ansible-bom`** — A1–A7 IDs unchanged, so an ID names the same
+  person in both repositories. A4 moves from Integration to Primary, because a viewer's security
+  engineer reads BOMs rather than consuming output.
+- `scripts/check-audience-tags.py` enforcing traceability in both directions.
 - `scripts/check-conformance.sh` — runs lsxbom against the CycloneDX specification's own
   conformance corpus (359 valid / 141 invalid documents). Found an upstream `cyclonedx-go` defect on
   its first run: a document the spec calls valid fails to decode.

@@ -67,6 +67,7 @@ if need python3; then
     run "doc links" python3 ../../workspace/scripts/check-doc-links.py .
     run "fixtures"  python3 testdata/verify.py
     run "evidence"  python3 scripts/check-evidence-refs.py
+    run "audiences" python3 scripts/check-audience-tags.py
 fi
 
 exit $fail

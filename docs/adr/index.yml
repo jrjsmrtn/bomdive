@@ -49,3 +49,9 @@ project:
     purpose: HOW TO RENDER
     status: Accepted
     date: 2026-09-10
+  - id: 8
+    file: 0008-adopt-bdd-and-align-audiences.md
+    title: Adopt BDD with Gherkin, and align audiences with ansible-bom
+    purpose: HOW TO SPECIFY
+    status: Accepted
+    date: 2026-09-10

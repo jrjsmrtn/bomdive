@@ -119,7 +119,10 @@ Follows the [AI-Assisted Project Orchestration patterns](https://github.com/jrjs
 - **Commits**: Conventional Commits. A commit message MUST NOT claim more than the commit contains
   — re-read it against `git diff --cached`, not against intent
 - **Git workflow**: gitflow (`main`/`develop`), matching the `ansible-bom` sibling
-- **Testing**: table-driven Go tests over committed BOM fixtures, including the **cyclic** ones
+- **Testing**: table-driven Go tests over committed BOM fixtures, including the **cyclic** ones,
+  plus **BDD with Gherkin** (godog) for the user-facing contract ([ADR-0008](docs/adr/0008-adopt-bdd-and-align-audiences.md)).
+  ⚠ BDD describes the contract; **correctness is proven by mutation testing over the unit tests** —
+  reading the features as the test suite overestimates what they guarantee.
 
 ## Quick Commands
 
@@ -129,6 +132,9 @@ go test ./...
 python3 scripts/check-pglite-trigger.py --self-test   # prove the watcher can fail
 python3 docs/inception/evidence/bom-graph-shape.py <bom.json>   # re-measure graph shape
 
+go test ./features/... -v                                      # BDD scenarios
+./scripts/check-conformance.sh                                # the spec's own corpus
+./scripts/check-coverage.sh                                   # the 80% floor
 go test ./internal/bom/ -bench . -benchtime 200x -run XXX     # benchmarks
 lsxbom tree --cpuprofile cpu.prof <bom.json>                  # profile a real BOM
 go tool pprof -top -nodecount=15 cpu.prof

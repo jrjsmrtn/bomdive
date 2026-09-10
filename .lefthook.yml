@@ -35,6 +35,9 @@ pre-commit:
     # Only fires when fixtures actually change — which is exactly when a claim can
     # go stale. validate-schema.py needs the network on a cold cache and fails
     # rather than skipping; that is the right trade when you are editing fixtures.
+    audiences:
+      glob: "{features/**,docs/reference/audience-registry.md}"
+      run: python3 scripts/check-audience-tags.py
     fixtures:
       glob: "testdata/*"
       run: |
