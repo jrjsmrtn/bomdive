@@ -203,7 +203,7 @@ func (m *Model) Up() {
 // empty pane the user then has to back out of.
 func (m *Model) Right() bool {
 	sel, ok := m.active().Selected()
-	if !ok {
+	if !ok || !m.Descendable(sel) {
 		return false
 	}
 	next := m.childrenOf(sel)
@@ -222,6 +222,25 @@ func (m *Model) Left() bool {
 	}
 	m.cols = m.cols[:len(m.cols)-1]
 	return true
+}
+
+// Descendable reports whether an entry has anything below it, in the direction the
+// view currently faces. It is what Right guards on AND what the view marks with an
+// arrow, so the indicator cannot promise a descent that Right then refuses.
+//
+// It answers without BUILDING the level, because the view asks once per visible row
+// on every repaint. TestDescendableAgreesWithChildrenOf ties it to childrenOf, which
+// is the honest way to keep a fast path from drifting from the slow one it mirrors.
+func (m *Model) Descendable(n bom.Node) bool {
+	// A category entry exists only because entryColumn found members for it, so it
+	// always has some. Counting them would rebuild the whole category map per row.
+	if n.Type == "category" && n.Ref == "" {
+		return true
+	}
+	if m.dir == Reverse {
+		return m.g.HasParents(n.Ref)
+	}
+	return m.g.HasChildren(n.Ref)
 }
 
 func (m *Model) childrenOf(n bom.Node) []bom.Node {

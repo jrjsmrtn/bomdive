@@ -8,6 +8,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/lsxbom/internal/columns"
 )
 
 // screenText reads back every cell the app actually painted. This is the only way
@@ -556,4 +557,85 @@ func flatten(s string) string {
 		return r
 	}, s)
 	return strings.Join(strings.Fields(s), " ")
+}
+
+// A row you can descend into must SAY so, and a leaf must not.
+//
+// Without it a leaf and a component with fifty dependencies look identical until
+// you press → and nothing happens — the same class of failure as a detail pane
+// truncated with no indicator.
+//
+// It descends one level first, because tree-simple's entry column is a single root:
+// asserting on a column where every row is descendable would pass with the leaf
+// branch never exercised. The counters below make that vacuity a failure.
+func TestDescendableRowsAreMarkedAndLeavesAreNot(t *testing.T) {
+	out := driveKeys(t, "tree-simple", ru('l'))
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "tree-simple.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := columns.New(g)
+	if !m.Right() {
+		t.Fatal("could not descend in the model; the screen and the model disagree")
+	}
+
+	var marked, bare int
+	for _, n := range m.Columns()[1].Visible() {
+		row := columnRow(out, n.Label())
+		if row == "" {
+			t.Fatalf("%q is on no column row:\n%s", n.Label(), out)
+		}
+		if m.Descendable(n) {
+			marked++
+			if !strings.Contains(row, columns.Descend) {
+				t.Errorf("%q has children but carries no %s: %q", n.Label(), columns.Descend, row)
+			}
+		} else {
+			bare++
+			if strings.Contains(row, columns.Descend) {
+				t.Errorf("%q is a leaf but is marked descendable: %q", n.Label(), row)
+			}
+		}
+	}
+	if marked == 0 || bare == 0 {
+		t.Fatalf("only one branch was exercised (marked=%d bare=%d); the assertion is vacuous",
+			marked, bare)
+	}
+}
+
+// The arrow goes in the last cell of a row, so an off-by-one in the width puts it
+// outside the border and tview clips it away silently.
+//
+// Scoped to lines that ARE column rows: the status bar's "→←" hint is the same
+// glyph, and an unscoped search matched it — the arrow there has no border to its
+// right and never should have.
+func TestTheArrowIsInsideTheColumnBorder(t *testing.T) {
+	out := driveKeys(t, "tree-simple", ru('l'))
+	rows := 0
+	for _, line := range strings.Split(out, "\n") {
+		i := strings.Index(line, columns.Descend)
+		if i < 0 || !strings.Contains(line[:i], "│") {
+			continue // not a column row
+		}
+		rows++
+		if !strings.Contains(line[i+len(columns.Descend):], "│") {
+			t.Errorf("an arrow is drawn with no column border to its right: %q", line)
+		}
+	}
+	if rows == 0 {
+		t.Fatalf("no column row carried an arrow, so nothing was checked:\n%s", out)
+	}
+}
+
+// columnRow returns the screen line where label starts a column cell — that is,
+// immediately after a pane border. Matching the label anywhere would also match the
+// header path line and the detail pane, which is how the first version of this
+// test failed for a reason unrelated to the arrow.
+func columnRow(screen, label string) string {
+	for _, line := range strings.Split(screen, "\n") {
+		if strings.Contains(line, "│"+label) {
+			return line
+		}
+	}
+	return ""
 }

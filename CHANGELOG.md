@@ -46,6 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A row you can descend into is marked with `→`** at the right of its column, the way macOS
+  Finder chevrons a folder. Without it a leaf and a component with fifty dependencies look
+  identical until you press `→` and nothing happens. It follows the view's direction, so in
+  `dependents` mode it marks what something is *pulled in by*, and it is driven by the same
+  predicate `Right` guards on — an indicator cannot promise a descent that `Right` then refuses.
+  A dangling `dependsOn` resolves to no component and is correctly **not** marked.
 - **`?` in `browse` explains the status bar**, for the document in front of you: what the coverage
   numbers mean, why the leftmost column shows what it shows, and any dangling `dependsOn` targets.
   The status bar has room for one word, and a word a reader cannot expand is jargon — `partial` in

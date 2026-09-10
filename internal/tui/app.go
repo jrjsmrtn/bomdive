@@ -411,8 +411,15 @@ func (u *ui) redraw() {
 		c := cols[i]
 		list := tview.NewList().ShowSecondaryText(false)
 		list.SetBorder(true).SetTitle(" " + truncTitle(c.Title, paneW-4) + " ")
+		// rowW is paneW-3, one cell narrower than the box's inner width, because the
+		// Flex distributes any rounding remainder and a pane can come out a cell
+		// narrower than paneW. Overshooting would CLIP the arrow rather than wrap
+		// it, silently removing the indicator at exactly the widths where the
+		// columns are tightest.
+		rowW := paneW - 3
 		for _, n := range c.Visible() {
-			list.AddItem(columns.Label(n.Label(), n.Version, paneW-6), "", 0, nil)
+			label := columns.Label(n.Label(), n.Version, paneW-6)
+			list.AddItem(columns.Row(label, u.model.Descendable(n), rowW), "", 0, nil)
 		}
 		if i == len(cols)-1 {
 			list.SetCurrentItem(c.Cursor)

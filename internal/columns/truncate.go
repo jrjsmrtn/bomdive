@@ -1,6 +1,9 @@
 package columns
 
-import "unicode/utf8"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // Ellipsis marks a truncated label. Deliberately the single-rune form: a column is
 // tight, and three dots cost three of the characters being fought over.
@@ -45,4 +48,27 @@ func Label(name, version string, width int) string {
 		}
 	}
 	return Truncate(name, width)
+}
+
+// Descend marks an entry you can descend into — the column view's equivalent of
+// the chevron macOS Finder puts on a folder. Without it, a leaf and a component
+// with fifty dependencies look identical until you press → and nothing happens.
+const Descend = "→"
+
+// Row lays out one column row: the label, and Descend in the LAST cell when the
+// entry can be descended into.
+//
+// width is the row's available cells. The label is truncated to leave room rather
+// than allowed to push the arrow off the edge, because an indicator that silently
+// disappears at narrow widths is worse than one that was never there.
+func Row(label string, descendable bool, width int) string {
+	if !descendable || width < 2 {
+		return Truncate(label, width)
+	}
+	label = Truncate(label, width-2)
+	pad := width - 1 - utf8.RuneCountInString(label)
+	if pad < 1 {
+		pad = 1
+	}
+	return label + strings.Repeat(" ", pad) + Descend
 }

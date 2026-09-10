@@ -368,6 +368,27 @@ func (g *Graph) Children(ref string) []Node { return g.resolve(g.out[ref]) }
 // faces as an open question; the model answers both.
 func (g *Graph) Parents(ref string) []Node { return g.resolve(g.in[ref]) }
 
+// HasChildren and HasParents answer "is there anything to descend into" without
+// resolving and SORTING a whole level, which the column view would otherwise do
+// once per visible row — 4,889 of them on a measured OBOM, every repaint.
+//
+// They filter exactly as resolve does. A ref whose every target is dangling
+// resolves to nothing, so testing len(g.out[ref]) instead would mark a row
+// descendable that Right refuses to descend — an indicator that lies.
+func (g *Graph) HasChildren(ref string) bool { return g.anyResolves(g.out[ref]) }
+
+// HasParents is the same question facing the other way.
+func (g *Graph) HasParents(ref string) bool { return g.anyResolves(g.in[ref]) }
+
+func (g *Graph) anyResolves(refs []string) bool {
+	for _, r := range refs {
+		if _, ok := g.nodes[r]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (g *Graph) resolve(refs []string) []Node {
 	out := make([]Node, 0, len(refs))
 	for _, r := range refs {

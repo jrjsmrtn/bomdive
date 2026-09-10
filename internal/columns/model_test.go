@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/jrjsmrtn/lsxbom/internal/bom"
 )
@@ -387,5 +388,73 @@ func TestNoEdgesIsNotAColumnOfDerivedRoots(t *testing.T) {
 	}
 	if len(c.Entries) == 0 {
 		t.Error("the fallback column is empty; the components have gone missing")
+	}
+}
+
+// Descendable is a fast path around childrenOf, so it must agree with it for every
+// node, in BOTH directions. A fast path that drifts from the slow one it mirrors
+// puts an arrow on a row that Right refuses to descend.
+func TestDescendableAgreesWithChildrenOf(t *testing.T) {
+	for _, fx := range []string{
+		"tree-simple", "diamond", "cycle-direct", "multi-root", "rootless",
+		"dangling-ref", "partial-coverage", "obom-categories", "no-dependencies-empty",
+		"root-outside-components",
+	} {
+		g := load(t, fx)
+		for _, dir := range []Direction{Forward, Reverse} {
+			m := New(g)
+			if m.Direction() != dir {
+				m.ToggleDirection()
+			}
+			for _, n := range g.Components() {
+				want := len(m.childrenOf(n)) > 0
+				if got := m.Descendable(n); got != want {
+					t.Errorf("%s %v: Descendable(%s) = %v, childrenOf says %v",
+						fx, dir, n.Label(), got, want)
+				}
+			}
+		}
+	}
+}
+
+// A dangling dependsOn resolves to nothing, so the row must NOT be marked
+// descendable — testing the raw edge list instead would mark it and Right would
+// then refuse, which is an indicator that lies.
+func TestADanglingEdgeIsNotDescendable(t *testing.T) {
+	g := load(t, "dangling-ref")
+	if len(g.Coverage().Dangling) == 0 {
+		t.Fatal("fixture carries no dangling ref; this test proves nothing")
+	}
+	m := New(g)
+	for _, n := range g.Components() {
+		if m.Descendable(n) && len(m.childrenOf(n)) == 0 {
+			t.Errorf("%s is marked descendable but has nothing to descend into", n.Label())
+		}
+	}
+}
+
+// The arrow goes in the LAST cell, and never pushes itself off the edge.
+func TestRowPutsTheArrowInTheLastCell(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		label       string
+		descendable bool
+		width       int
+		want        string
+	}{
+		{"leaf is untouched", "abc", false, 10, "abc"},
+		{"arrow right-aligned", "abc", true, 10, "abc" + "      " + Descend},
+		{"exactly fits", "abcdefgh", true, 10, "abcdefgh " + Descend},
+		{"label truncated to make room", "abcdefghijkl", true, 10, Truncate("abcdefghijkl", 8) + " " + Descend},
+		{"too narrow for both", "abc", true, 1, Truncate("abc", 1)},
+	} {
+		got := Row(tc.label, tc.descendable, tc.width)
+		if got != tc.want {
+			t.Errorf("%s: Row(%q, %v, %d) = %q, want %q",
+				tc.name, tc.label, tc.descendable, tc.width, got, tc.want)
+		}
+		if n := utf8.RuneCountInString(got); n > tc.width {
+			t.Errorf("%s: row is %d wide, exceeding the %d available", tc.name, n, tc.width)
+		}
 	}
 }
