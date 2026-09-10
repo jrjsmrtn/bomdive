@@ -251,14 +251,7 @@ func (u *ui) redraw() {
 		list := tview.NewList().ShowSecondaryText(false)
 		list.SetBorder(true).SetTitle(" " + truncTitle(c.Title, paneW-4) + " ")
 		for _, n := range c.Visible() {
-			// A component may carry no name — seen in a real HBOM — and a blank row
-			// is unselectable-looking and unsearchable. Fall back to the ref, which
-			// is the only field guaranteed to be there.
-			label := n.Name
-			if label == "" {
-				label = n.Ref
-			}
-			list.AddItem(columns.Label(label, n.Version, paneW-6), "", 0, nil)
+			list.AddItem(columns.Label(n.Label(), n.Version, paneW-6), "", 0, nil)
 		}
 		if i == len(cols)-1 {
 			list.SetCurrentItem(c.Cursor)

@@ -29,6 +29,18 @@ type Entry struct {
 	Children int `json:"children"`
 }
 
+// Label is the entry's display name, falling back to its ref. Mirrors
+// bom.Node.Label so the two surfaces cannot diverge.
+func (e Entry) Label() string {
+	if e.Name != "" {
+		return e.Name
+	}
+	if e.Ref != "" {
+		return e.Ref
+	}
+	return "(unnamed)"
+}
+
 // Coverage mirrors bom.Coverage for serialisation, plus the derived percentage a
 // human reader actually wants.
 type Coverage struct {

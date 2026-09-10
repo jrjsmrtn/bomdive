@@ -31,6 +31,22 @@ type Node struct {
 	Category string // cdx:osquery:category, empty when absent
 }
 
+// Label is the human-facing name for a node, falling back to its bom-ref.
+//
+// A component may carry NO name — seen in a real HBOM device list — and every
+// surface that rendered Name raw showed a blank: an empty row in the column view,
+// "@1.0.0" from ls, a bare "├──" from tree, and an empty segment in the path.
+// Patching one of those was not a fix; this is the single place that decides.
+func (n Node) Label() string {
+	if n.Name != "" {
+		return n.Name
+	}
+	if n.Ref != "" {
+		return n.Ref
+	}
+	return "(unnamed)"
+}
+
 // Coverage is how much of the document the dependency graph actually reaches.
 //
 // It is reported on every traversal rather than offered as a flag: rendering 3 of

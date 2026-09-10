@@ -19,8 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   was silently cut off — a real HBOM device carries up to 37. `PgDn`/`PgUp`, `Ctrl-D`/`Ctrl-U`,
   `J`/`K`, `Home`/`End`, and the pane title now reports `n-m of total` with `↑`/`↓`, because a pane
   truncated without an indicator looks complete.
-- A component with **no name** rendered as a blank, unselectable-looking row; it now falls back to
-  its `bom-ref`.
+- A component with **no name** rendered as nothing — a blank row in the column view, an empty
+  segment in the header path, `@1.0.0` from `ls`, and a bare `├──` from `tree`. `bom.Node.Label()`
+  is now the single place that decides, falling back to `bom-ref`, and filtering matches it too so
+  such a component can be found at all.
 
 ### Added
 

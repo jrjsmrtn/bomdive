@@ -110,7 +110,7 @@ func marker(e Entry) string {
 }
 
 func label(e Entry, long bool) string {
-	name := e.Name
+	name := e.Label()
 	if e.Version != "" {
 		name += "@" + e.Version
 	}

@@ -64,7 +64,8 @@ func (c *Column) visible() []bom.Node {
 	needle := strings.ToLower(c.Filter)
 	out := make([]bom.Node, 0, len(c.Entries))
 	for _, n := range c.Entries {
-		if strings.Contains(strings.ToLower(n.Name), needle) {
+		// Filter on the LABEL, so an unnamed component can be found by its ref.
+		if strings.Contains(strings.ToLower(n.Label()), needle) {
 			out = append(out, n)
 		}
 	}
@@ -175,7 +176,7 @@ func (m *Model) Right() bool {
 	if len(next) == 0 {
 		return false
 	}
-	m.cols = append(m.cols, Column{Title: sel.Name, Entries: next})
+	m.cols = append(m.cols, Column{Title: sel.Label(), Entries: next})
 	return true
 }
 
@@ -214,7 +215,7 @@ func (m *Model) ToggleDirection() {
 		m.cols = []Column{m.entryColumn()}
 		return
 	}
-	m.cols = []Column{{Title: sel.Name, Entries: []bom.Node{sel}}}
+	m.cols = []Column{{Title: sel.Label(), Entries: []bom.Node{sel}}}
 	m.Right()
 }
 
@@ -232,7 +233,7 @@ func (m *Model) Path() []string {
 	out := make([]string, 0, len(m.cols))
 	for i := range m.cols {
 		if sel, ok := m.cols[i].Selected(); ok {
-			out = append(out, sel.Name)
+			out = append(out, sel.Label())
 		}
 	}
 	return out

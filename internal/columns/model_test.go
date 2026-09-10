@@ -322,3 +322,32 @@ func TestEveryFixtureOpensWithoutPanicking(t *testing.T) {
 		})
 	}
 }
+
+// The reported symptom: the column list showed the ref but the header path did not.
+func TestPathShowsARefForAnUnnamedComponent(t *testing.T) {
+	m := New(load(t, "many-properties"))
+	selectByName(t, m, "alf")
+	m.Right()
+	// the "alf" category holds a named and an unnamed component
+	c := m.Active()
+	for i, n := range c.Visible() {
+		if n.Name == "" {
+			c.Cursor = i
+		}
+	}
+	for _, seg := range m.Path() {
+		if strings.TrimSpace(seg) == "" {
+			t.Errorf("path contains an empty segment: %q", m.Path())
+		}
+	}
+}
+
+func TestFilterMatchesAnUnnamedComponentByItsRef(t *testing.T) {
+	m := New(load(t, "many-properties"))
+	selectByName(t, m, "alf")
+	m.Right()
+	m.Filter("unnamed") // part of the ref, not of any name
+	if len(m.Active().Visible()) == 0 {
+		t.Error("an unnamed component cannot be found by its ref")
+	}
+}

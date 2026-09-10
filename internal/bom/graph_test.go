@@ -389,3 +389,42 @@ func TestDeclaredRootOutsideComponentsStillRoots(t *testing.T) {
 		t.Errorf("walk emitted %d visits from a root with 2 children and a grandchild", visits)
 	}
 }
+
+// A component with no name must never render as nothing.
+//
+// Fixed once in the view and still broken in four other places: the column title,
+// the path, ls output ("@1.0.0") and tree output (a bare "├──"). Label() is the
+// single place that decides, and this asserts it rather than any one caller.
+func TestLabelFallsBackToRef(t *testing.T) {
+	for _, tc := range []struct {
+		n    Node
+		want string
+	}{
+		{Node{Name: "a", Ref: "r"}, "a"},
+		{Node{Name: "", Ref: "r"}, "r"},
+		{Node{Name: "", Ref: ""}, "(unnamed)"},
+	} {
+		if got := tc.n.Label(); got != tc.want {
+			t.Errorf("Label(%q,%q) = %q, want %q", tc.n.Name, tc.n.Ref, got, tc.want)
+		}
+	}
+}
+
+func TestUnnamedComponentInAFixtureHasALabel(t *testing.T) {
+	g := fixture(t, "many-properties")
+	found := false
+	for _, n := range g.Components() {
+		if n.Name == "" {
+			found = true
+			if n.Label() == "" {
+				t.Error("an unnamed component labels as empty")
+			}
+			if n.Label() != n.Ref {
+				t.Errorf("Label = %q, want the ref %q", n.Label(), n.Ref)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("fixture has no unnamed component; this test would pass vacuously")
+	}
+}
