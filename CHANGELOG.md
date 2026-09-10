@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Bumped `golang.org/x/text` 0.21.0 → 0.39.0 for **GO-2026-5970** (infinite loop on invalid input),
+  pulled in transitively by the TUI library. Not reachable from this code, but a supply-chain tool
+  shipping a known-vulnerable dependency is a poor look and the fix was free.
+
 ### Added
+
+- **`lsxbom browse`** — the Finder-style column view. Each column lists the children of the
+  selection to its left, so the chain of columns *is* the dependency path. Tab flips the whole view
+  between dependencies and dependents; `/` filters a column; a BOM with no dependency graph opens on
+  its osquery categories. Coverage is on screen, because a TUI is a third surface and the guarantee
+  is not per-surface.
 
 - CLI smoke tests (`internal/cli`, 97.0%): every flag verified to reach the renderer, error paths
   to exit non-zero with stderr-only diagnostics, and stdout kept clean on failure so a `--json`

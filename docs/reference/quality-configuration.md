@@ -57,6 +57,19 @@ summary**. This repository has one remote today and the convention adds `github`
 so the shape is chosen before the silent failure can happen. Whole-repo checks never needed a file
 set anyway.
 
+**`govulncheck` distinguishes "found something" from "could not run".** A govulncheck built
+against an older Go cannot parse a newer stdlib and exits non-zero with a *package loading* error —
+which reads exactly like a CVE at a glance. That happened on 2026-09-10 and cost a real
+investigation. The gate now names the case and says how to fix it:
+
+```
+✗ govulncheck COULD NOT RUN — toolchain mismatch, not a vulnerability.
+  Rebuild it: go install golang.org/x/vuln/cmd/govulncheck@latest
+```
+
+Both branches still fail the push. A tool that cannot run must not look like a pass *or* like a
+finding.
+
 **A missing tool fails the gate.** `.lefthook/pre-push/gates.sh` checks for each binary and sets a
 failure rather than skipping. A gate that silently skips is worse than no gate, because it reports
 success — the failure mode that let a sibling's scheduled check print OK for months without running.
@@ -119,6 +132,23 @@ It has paid for itself three times, and none of the three would have been found 
   cobra flags would leak between invocations. Planting them showed they would not — cobra
   re-registers each flag with its default on every run. The comment and the test name were corrected
   to what is actually true.
+
+### The failure that keeps recurring: an unscoped `Contains`
+
+Four escaped mutations across this project share one shape — asserting that a word appears
+*somewhere* in a whole output, when the word also appears somewhere else:
+
+| Assertion | Why it passed anyway |
+|---|---|
+| dangling ref appears in output | a missing map key yields a **zero value**, so the ref never appeared at all |
+| `schemaValid // "?"` in jq | `//` treats **`false`** as empty, so a real failure read as "unknown" |
+| two property keys in document order | those two keys were **already alphabetical**, so sorting was undetectable |
+| "dependencies" on the TUI screen | it is also a **detail-pane key**, so the header could say nothing |
+
+**State the success criterion against the region that is supposed to carry it** — the header, that
+column, this field — not against the whole buffer. And when a fixture cannot distinguish two
+behaviours, fix the FIXTURE: the corpus now contains a component whose properties are deliberately
+not in alphabetical order, for exactly that reason.
 
 ⚠ **A mutation that fails to COMPILE proves nothing.** Two did, and were redone as valid code; one
 of those was the false claim above. A build error is not a caught defect.

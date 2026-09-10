@@ -27,9 +27,26 @@ if need go; then
     fi
 fi
 
+# govulncheck needs its own handling, because "found a vulnerability" and "could
+# not run" are different facts that its plain exit code conflates. A govulncheck
+# built against an older Go cannot parse a newer stdlib and fails with a package
+# error — which reads exactly like a CVE to anyone glancing at the output. That
+# happened here, and cost a real "is this a vulnerability?" investigation.
 if need govulncheck; then
     if [ -n "$(find . -name '*.go' -not -path './.git/*' -print -quit)" ]; then
-        run "govulncheck" govulncheck ./...
+        echo "→ govulncheck"
+        gv_out="$(govulncheck ./... 2>&1)"; gv_code=$?
+        if grep -q 'Loading packages failed\|mismatch between the Go version' <<<"$gv_out"; then
+            echo "✗ govulncheck COULD NOT RUN — toolchain mismatch, not a vulnerability." >&2
+            echo "  Rebuild it: go install golang.org/x/vuln/cmd/govulncheck@latest" >&2
+            fail=1
+        elif [ $gv_code -ne 0 ]; then
+            echo "$gv_out" | tail -20 >&2
+            echo "✗ govulncheck found something" >&2
+            fail=1
+        else
+            echo "  ok"
+        fi
     else
         echo "→ govulncheck (no .go files yet)"
     fi

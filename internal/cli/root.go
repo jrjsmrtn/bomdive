@@ -50,7 +50,7 @@ func Run(version string, args []string, stdout, stderr io.Writer) int {
 	root.SetErr(stderr)
 	root.PersistentFlags().BoolVar(&a.json, "json", false, "emit JSON instead of text")
 	root.PersistentFlags().BoolVarP(&a.long, "long", "l", false, "long format: type, purl and category")
-	root.AddCommand(a.lsCmd(), a.treeCmd())
+	root.AddCommand(a.lsCmd(), a.treeCmd(), a.browseCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(stderr, "lsxbom:", err)
