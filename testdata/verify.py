@@ -69,6 +69,11 @@ def properties(doc: dict) -> dict:
     return {
         "specVersion": doc.get("specVersion"),
         "components": len(comps),
+        # A document can carry these INSTEAD of components — a standalone VEX, a
+        # services-only document. All of them list zero components, and telling them
+        # apart is what stops the tool drawing an unexplained blank.
+        "vulnerabilities": len(doc.get("vulnerabilities") or []),
+        "services": len(doc.get("services") or []),
         "dependency_entries": len(deps),
         "has_dependencies_key": has_deps_key,
         "root_declared": root is not None,

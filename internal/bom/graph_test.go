@@ -2,6 +2,7 @@ package bom
 
 import (
 	"encoding/json"
+	cdx "github.com/CycloneDX/cyclonedx-go"
 	"os"
 	"path/filepath"
 	"strings"
@@ -557,5 +558,112 @@ func TestDanglingIsSampledNotDumped(t *testing.T) {
 	shown, omitted = Coverage{Dangling: short}.SampleDangling()
 	if len(shown) != 2 || omitted != 0 {
 		t.Errorf("a short list was sampled: shown=%d omitted=%d", len(shown), omitted)
+	}
+}
+
+// A document with vulnerabilities and no components is a VEX, not an SBOM.
+//
+// It was called an SBOM and drawn as an empty component list — "0 of 0 (0%)" over a
+// blank pane, which reads as the tool having failed. 25 of 137 public corpus
+// documents are this shape (POC-10).
+func TestAStandaloneVEXIsNotCalledAnSBOM(t *testing.T) {
+	for name, want := range map[string]Kind{
+		"vex-standalone":  KindVEX,
+		"sbom-with-vex":   KindSBOM, // components present: embedded, not standalone
+		"services-only":   KindSBOM,
+		"metadata-only":   KindSBOM,
+		"tree-simple":     KindSBOM,
+		"obom-categories": KindOBOM,
+	} {
+		if got := fixture(t, name).Identity().Kind; got != want {
+			t.Errorf("%s: Kind = %q, want %q", name, got, want)
+		}
+	}
+}
+
+// A root type is stronger evidence than the ABSENCE of components, so a document
+// that declares itself an operating-system inventory stays an OBOM even when it
+// carries vulnerability records and lists nothing. The VEX rule is deliberately
+// last in the switch; this pins that order.
+func TestRootTypeOutranksTheVEXRule(t *testing.T) {
+	os := cdx.ComponentTypeOS
+	doc := &cdx.BOM{
+		BOMFormat: "CycloneDX",
+		Metadata: &cdx.Metadata{
+			Component:  &cdx.Component{BOMRef: "host", Type: os, Name: "a-host"},
+			Lifecycles: &[]cdx.Lifecycle{{Phase: cdx.LifecyclePhaseOperations}},
+		},
+		Vulnerabilities: &[]cdx.Vulnerability{{ID: "CVE-2020-0000"}},
+	}
+	if got := identify(doc).Kind; got != KindOBOM {
+		t.Errorf("Kind = %q, want OBOM — the root type must outrank the VEX rule", got)
+	}
+	// Remove the OBOM evidence and the same document IS a VEX.
+	doc.Metadata.Lifecycles = nil
+	doc.Metadata.Component.Type = cdx.ComponentTypeApplication
+	if got := identify(doc).Kind; got != KindVEX {
+		t.Errorf("Kind = %q, want VEX once the OBOM evidence is gone", got)
+	}
+}
+
+// Every document with no components must say WHY, and the three empty shapes must
+// read differently — a VEX, a services-only document and a metadata-only one all
+// list nothing, and only one of them means "wrong tool for this file".
+func TestEveryEmptyDocumentExplainsItselfDistinctly(t *testing.T) {
+	seen := map[string]string{}
+	for _, name := range []string{"vex-standalone", "services-only", "metadata-only"} {
+		g := fixture(t, name)
+		msg, empty := g.Contents().ExplainEmpty()
+		if !empty {
+			t.Errorf("%s: reports components when it has none", name)
+			continue
+		}
+		if other, dup := seen[msg]; dup {
+			t.Errorf("%s and %s explain themselves identically: %s", name, other, msg)
+		}
+		seen[msg] = name
+	}
+	// And a document WITH components must not claim to be empty.
+	if _, empty := fixture(t, "tree-simple").Contents().ExplainEmpty(); empty {
+		t.Error("a populated document reports itself empty")
+	}
+}
+
+// Contents counts what it says it counts.
+func TestContentsCountsVulnerabilitiesAndServices(t *testing.T) {
+	for name, want := range map[string]Contents{
+		"vex-standalone": {Components: 0, Vulnerabilities: 1, Services: 0},
+		"services-only":  {Components: 0, Vulnerabilities: 0, Services: 2},
+		"metadata-only":  {Components: 0, Vulnerabilities: 0, Services: 0},
+		"sbom-with-vex":  {Components: 2, Vulnerabilities: 1, Services: 0},
+	} {
+		if got := fixture(t, name).Contents(); got != want {
+			t.Errorf("%s: Contents = %+v, want %+v", name, got, want)
+		}
+	}
+}
+
+// The first line of every surface must say a VEX is not a bill of materials — it is
+// the fact that explains the empty listing, the 0-of-0 coverage and the blank
+// column below it. Unsaid, all three read as the tool having failed.
+func TestDescribeSaysWhenADocumentIsNotABOM(t *testing.T) {
+	vex := fixture(t, "vex-standalone").Identity()
+	if vex.Kind.IsBOM() {
+		t.Fatal("VEX reports itself as a bill of materials")
+	}
+	got := vex.Describe()
+	if !strings.Contains(got, "not a bill of materials") {
+		t.Errorf("Describe = %q, does not say it is not a BOM", got)
+	}
+
+	// And a real BOM must NOT carry the disclaimer.
+	for _, name := range []string{"tree-simple", "obom-categories", "sbom-with-vex", "metadata-only"} {
+		id := fixture(t, name).Identity()
+		if !id.Kind.IsBOM() {
+			t.Errorf("%s: reports itself as not a BOM", name)
+		}
+		if strings.Contains(id.Describe(), "not a bill of materials") {
+			t.Errorf("%s: Describe carries the VEX disclaimer: %q", name, id.Describe())
+		}
 	}
 }

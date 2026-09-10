@@ -1,0 +1,28 @@
+{
+  "bomFormat": "CycloneDX",
+  "metadata": {
+    "component": {
+      "bom-ref": "svc-root",
+      "name": "the-platform",
+      "type": "application"
+    }
+  },
+  "services": [
+    {
+      "bom-ref": "svc-a",
+      "endpoints": [
+        "https://auth.example.com/v1"
+      ],
+      "name": "auth"
+    },
+    {
+      "bom-ref": "svc-b",
+      "endpoints": [
+        "https://billing.example.com/v1"
+      ],
+      "name": "billing"
+    }
+  ],
+  "specVersion": "1.6",
+  "version": 1
+}

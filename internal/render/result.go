@@ -138,7 +138,13 @@ func New(command, source string, g *bom.Graph) Result {
 		GraphState:      stateName(cov.State()),
 		Coverage:        coverageOf(cov),
 	}
-	if cov.State() != bom.GraphComplete {
+	// An empty component list is explained INSTEAD of the graph state. With nothing
+	// to inventory there is nothing for a graph to cover, so "0 of 0 because
+	// `dependencies` is absent" answers a question nobody asked while leaving the
+	// one they did ask — why is this empty — unanswered.
+	if empty, isEmpty := g.Contents().ExplainEmpty(); isEmpty {
+		r.Notes = append(r.Notes, empty)
+	} else if cov.State() != bom.GraphComplete {
 		r.Notes = append(r.Notes, cov.Explain())
 	}
 	return r

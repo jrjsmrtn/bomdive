@@ -1,0 +1,12 @@
+{
+  "bomFormat": "CycloneDX",
+  "metadata": {
+    "component": {
+      "bom-ref": "product-only",
+      "name": "just-a-name",
+      "type": "application"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

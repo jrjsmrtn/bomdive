@@ -1,0 +1,27 @@
+{
+  "bomFormat": "CycloneDX",
+  "metadata": {
+    "component": {
+      "bom-ref": "product-XYZ",
+      "name": "XYZ",
+      "type": "application"
+    }
+  },
+  "specVersion": "1.4",
+  "version": 1,
+  "vulnerabilities": [
+    {
+      "affects": [
+        {
+          "ref": "product-XYZ"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2020-25649",
+      "id": "CVE-2020-25649"
+    }
+  ]
+}

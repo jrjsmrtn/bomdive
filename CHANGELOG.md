@@ -15,6 +15,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A CycloneDX document that is not a bill of materials was called an SBOM and drawn as a blank
+  pane.** `bomFormat: "CycloneDX"` is a format marker, not a claim of BOM-ness — CycloneDX also
+  carries VEX, and a standalone VEX inventories nothing. `identify()` defaulted to `SBOM` and had
+  no rule for it, so `browse` on a CISA VEX use case showed `SBOM (root application; …)` over an
+  empty column and `coverage 0/0 (0%)`, which reads as the tool having failed. It is now identified
+  as `VEX (a CycloneDX document, not a bill of materials: it inventories nothing)`. The rule keys
+  on the **absence of components**, not the presence of vulnerabilities, so an SBOM with embedded
+  VEX stays an SBOM; and it is applied *after* the root-type rules, so an OBOM carrying
+  vulnerability records stays an OBOM.
+- **An empty component list now says why, on every surface.** A standalone VEX, a services-only
+  document and one carrying nothing but metadata all list zero components and all rendered
+  identically. Measured across the public corpora: **40 of 137 documents** carry no components —
+  25 VEX, 14 metadata-only, 1 services-only. Each explains itself differently, and the `browse`
+  status bar reads `no components` rather than reporting a graph state for a document with nothing
+  to relate. Evidence: `docs/inception/evidence/poc10-empty-documents-2026-09-11.md`.
 - **A document's declared root was invisible to every reverse edge.** `metadata.component` is the
   *subject* of a BOM, not a member of its inventory, so it is routinely absent from `components`
   while still driving `dependencies`. `bom.Node` synthesised such a root (POC-8) but `resolve` —

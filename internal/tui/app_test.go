@@ -713,3 +713,33 @@ func TestScrollingDoesNotCloseTheOverlay(t *testing.T) {
 		t.Errorf("PgDn closed the overlay:\n%s", out)
 	}
 }
+
+// A document with nothing to inventory says THAT, not what its dependency graph
+// looks like: "relations undeclared" on a standalone VEX is true and answers a
+// question nobody asked.
+func TestAnEmptyDocumentSaysSoRatherThanReportingGraphState(t *testing.T) {
+	for _, name := range []string{"vex-standalone", "services-only", "metadata-only"} {
+		g, err := bom.Load(filepath.Join("..", "..", "testdata", name+".cdx.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := newUI(g, name).statusText()
+		if !strings.Contains(got, "no components") {
+			t.Errorf("%s: status %q does not say the document has no components", name, got)
+		}
+		for _, wrong := range []string{"relations undeclared", "no dependency graph", "partial"} {
+			if strings.Contains(got, wrong) {
+				t.Errorf("%s: status reports graph state %q for a document with nothing to "+
+					"inventory: %s", name, wrong, got)
+			}
+		}
+	}
+	// A populated document keeps its graph-state label.
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "partial-coverage.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := newUI(g, "partial-coverage").statusText(); !strings.Contains(got, "partial") {
+		t.Errorf("a populated document lost its graph-state label: %s", got)
+	}
+}

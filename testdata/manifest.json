@@ -75,6 +75,15 @@
     "file": "many-properties.cdx.json",
     "why": "One component carrying 37 properties, the widest osquery category measured (POC-7: processes and launchd_services). The detail pane cannot show this in one screen, so it is the fixture that proves the pane scrolls AND says it has more \u2014 a pane cut off with no indicator looks complete."
   },
+  "metadata-only": {
+    "asserts": {
+      "components": 0,
+      "services": 0,
+      "vulnerabilities": 0
+    },
+    "file": "metadata-only.cdx.json",
+    "why": "Nothing but metadata: no components, no vulnerabilities, no services. Schema-valid \u2014 the document names a product without inventorying it \u2014 and 14 of 137 public corpus documents are exactly this (POC-10), being the product half of a CISA VEX use case."
+  },
   "multi-root": {
     "asserts": {
       "indegree_zero": 3,
@@ -140,6 +149,23 @@
     "file": "rootless.cdx.json",
     "why": "The syft shape, and the one that makes a naive tool print nothing: the declared metadata.component.bom-ref is a content hash while the graph is keyed by purl, so walking from the declared root reaches ZERO components."
   },
+  "sbom-with-vex": {
+    "asserts": {
+      "components": 2,
+      "vulnerabilities": 1
+    },
+    "file": "sbom-with-vex.cdx.json",
+    "why": "Components AND vulnerabilities in one document \u2014 VEX embedded in an SBOM. It must stay an SBOM: the absence of components is what makes a VEX standalone, so a rule keying on `vulnerabilities` alone would misclassify this."
+  },
+  "services-only": {
+    "asserts": {
+      "components": 0,
+      "services": 2,
+      "vulnerabilities": 0
+    },
+    "file": "services-only.cdx.json",
+    "why": "A document carrying services and no components \u2014 the SaaSBOM shape. lsxbom navigates components, so it has nothing to list here and must SAY so rather than drawing an empty pane."
+  },
   "spec-14": {
     "asserts": {
       "specVersion": "1.4"
@@ -169,6 +195,15 @@
     },
     "file": "tree-simple.cdx.json",
     "why": "A plain tree. The only fixture where the naive implementation is correct \u2014 so it proves the renderer works, not that it is careful."
+  },
+  "vex-standalone": {
+    "asserts": {
+      "components": 0,
+      "services": 0,
+      "vulnerabilities": 1
+    },
+    "file": "vex-standalone.cdx.json",
+    "why": "A standalone VEX: vulnerability records and NO components. CycloneDX carries VEX either embedded in a BOM or standalone, where the document asserts which vulnerabilities affect a product described ELSEWHERE. 25 of 137 public corpus documents are this shape (POC-10), and every one of them was identified as an SBOM and drawn as an empty component list."
   },
   "xml-no-metadata": {
     "asserts": {

@@ -81,6 +81,13 @@ and the output is a personal inventory. The **shape it exposed** is a committed 
 | `poc9-reverse-edges-2026-09-11.md` | The second half of POC-8's root-resolution bug, found by dogfooding: `Node()` knew about a root outside `components` and `resolve()` did not, so **1,658** components across **58 of 137** public corpus documents reported no dependent while `dependencies` declared one |
 | `poc9-root-outside-components.py` | Runnable over any corpus directory. Counts documents, not identifiers, so it is safe over a private corpus too |
 
+## POC-10 — documents with no inventory
+
+| File | What it is |
+|---|---|
+| `poc10-empty-documents-2026-09-11.md` | **40 of 137** public corpus documents carry no `components` — 25 standalone VEX, 14 metadata-only, 1 services-only. All were identified as "SBOM" and drawn as an empty pane. The VEX discrimination rule, and why it keys on the absence of components rather than the presence of vulnerabilities |
+| `poc10-documents-without-components.py` | Runnable over any corpus directory. Counts documents, not identifiers |
+
 ## Re-running
 
 ```bash
@@ -92,6 +99,7 @@ duckdb -c ".read poc6-duckdb-corpus.sql"           # POC-6, zero-ingest queries
 python3 poc7-bom-type-discriminator.py <bom.json>  # POC-7, classify a BOM
 python3 poc7-bom-type-discriminator.py --corpus <dir>   # POC-7, anonymised summary
 python3 poc9-root-outside-components.py <corpus>   # POC-9, how far the root bug reached
+python3 poc10-documents-without-components.py <corpus>  # POC-10, BOMs with no inventory
 ```
 
 The `.go.txt` sources are kept as text so they are not compiled as part of the module. The cgo ones

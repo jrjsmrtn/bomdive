@@ -393,3 +393,43 @@ func TestByCategoryIsSuggestedOnlyWhereItHelps(t *testing.T) {
 		t.Errorf("a document with NO categories is sent to --by-category anyway: %q", without)
 	}
 }
+
+// An empty document must explain itself on EVERY surface, and must not be handed
+// the graph-state note instead — with nothing to inventory there is nothing for a
+// graph to cover, so "0 of 0 because `dependencies` is absent" answers a question
+// nobody asked.
+func TestAnEmptyDocumentExplainsItselfOnBothSurfaces(t *testing.T) {
+	for _, fx := range []string{"vex-standalone", "services-only", "metadata-only"} {
+		g := load(t, fx)
+		want, _ := g.Contents().ExplainEmpty()
+		for _, r := range []Result{
+			List(g, fx, ListOptions{}),
+			Tree(g, fx, TreeOptions{}),
+		} {
+			var out bytes.Buffer
+			if err := Text(&out, r, false); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out.String(), want) {
+				t.Errorf("%s %s: does not explain the empty listing.\nwant: %s\ngot:\n%s",
+					r.Command, fx, want, out.String())
+			}
+			if strings.Contains(out.String(), "because `dependencies`") {
+				t.Errorf("%s %s: reports graph state for a document with no components",
+					r.Command, fx)
+			}
+		}
+	}
+}
+
+// The identity line must not call a VEX an SBOM — it is the first thing printed.
+func TestTheIdentityLineNamesAVEX(t *testing.T) {
+	var out bytes.Buffer
+	if err := Text(&out, List(load(t, "vex-standalone"), "v", ListOptions{}), false); err != nil {
+		t.Fatal(err)
+	}
+	first := strings.SplitN(out.String(), "\n", 2)[0]
+	if !strings.HasPrefix(first, "VEX") {
+		t.Errorf("identity line = %q, want it to start with VEX", first)
+	}
+}

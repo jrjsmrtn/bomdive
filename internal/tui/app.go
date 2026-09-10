@@ -610,6 +610,12 @@ func (u *ui) statusText() string {
 	case bom.GraphDeclaredEmpty, bom.GraphUndeclared:
 		warn = "  [yellow]" + st.Label() + "[-]"
 	}
+	// With nothing to inventory there is nothing for a graph to cover, so the graph
+	// state is beside the point — "relations undeclared" on a standalone VEX is true
+	// and answers a question nobody asked. Same precedence the notes use.
+	if c.Components == 0 {
+		warn = "  [yellow]no components[-]"
+	}
 	// Kept short on purpose: at 120 columns the longer form ran off the right edge
 	// and silently lost "q quit", which is the one hint a user cannot do without.
 	// That is also why the label is terse and `?` carries the explanation — the
@@ -638,7 +644,11 @@ func (u *ui) explainText() string {
 	}
 	fmt.Fprintf(&b, "[darkgray]the status bar says[-]  coverage %d/%d (%d%%)  [white]%s[-]\n\n",
 		c.InGraph, c.Components, c.Percent(), label)
-	fmt.Fprintf(&b, "%s\n\n", c.Explain())
+	if empty, isEmpty := g.Contents().ExplainEmpty(); isEmpty {
+		fmt.Fprintf(&b, "%s\n\n", empty)
+	} else {
+		fmt.Fprintf(&b, "%s\n\n", c.Explain())
+	}
 	fmt.Fprintf(&b, "[darkgray]this view[-]  %s\n", u.axisText())
 
 	// A SAMPLE, not the list. A public 837-component SBOM carries 278 dangling

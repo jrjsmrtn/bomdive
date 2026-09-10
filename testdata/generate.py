@@ -18,19 +18,33 @@ SPEC = "1.6"
 
 
 def bom(spec=SPEC, root=None, components=None, dependencies=None, omit_deps=False,
-        metadata_extra=None):
+        metadata_extra=None, omit_components=False, top_level=None):
     doc = {
         "bomFormat": "CycloneDX",
         "specVersion": spec,
         "version": 1,
         "metadata": {"component": root} if root else {},
-        "components": components or [],
     }
+    if not omit_components:
+        doc["components"] = components or []
     if metadata_extra:
         doc["metadata"].update(metadata_extra)
     if not omit_deps:
         doc["dependencies"] = dependencies or []
+    # `vulnerabilities` and `services` are siblings of `components`, not children of
+    # it: a document may carry them INSTEAD of an inventory.
+    if top_level:
+        doc.update(top_level)
     return doc
+
+
+def vuln(cve, ref):
+    return {
+        "bom-ref": f"vuln-{cve}",
+        "id": cve,
+        "affects": [{"ref": ref}],
+        "analysis": {"state": "not_affected", "justification": "code_not_reachable"},
+    }
 
 
 def lib(name, ref=None, version="1.0.0", purl=True, ctype="library", props=None):
@@ -306,6 +320,72 @@ fixture(
                     lib("svc-a", ctype="application")],
         dependencies=[dep("host:machine-1", r("nic-0"), r("disk-0")),
                       dep(r("nic-0"), r("svc-a"))],
+    ),
+)
+
+# ------------------------------------------------- documents with no inventory
+fixture(
+    "vex-standalone",
+    "A standalone VEX: vulnerability records and NO components. CycloneDX carries "
+    "VEX either embedded in a BOM or standalone, where the document asserts which "
+    "vulnerabilities affect a product described ELSEWHERE. 25 of 137 public corpus "
+    "documents are this shape (POC-10), and every one of them was identified as an "
+    "SBOM and drawn as an empty component list.",
+    {"components": 0, "vulnerabilities": 1, "services": 0},
+    bom(
+        spec="1.4",
+        root={"bom-ref": "product-XYZ", "type": "application", "name": "XYZ"},
+        omit_components=True,
+        omit_deps=True,
+        top_level={"vulnerabilities": [vuln("CVE-2020-25649", "product-XYZ")]},
+    ),
+)
+
+fixture(
+    "sbom-with-vex",
+    "Components AND vulnerabilities in one document — VEX embedded in an SBOM. It "
+    "must stay an SBOM: the absence of components is what makes a VEX standalone, "
+    "so a rule keying on `vulnerabilities` alone would misclassify this.",
+    {"components": 2, "vulnerabilities": 1},
+    bom(
+        spec="1.6",
+        root=lib("app", ref=r("app")),
+        components=[lib("app"), lib("a")],
+        dependencies=[dep(r("app"), r("a"))],
+        top_level={"vulnerabilities": [vuln("CVE-2021-44228", r("a"))]},
+    ),
+)
+
+fixture(
+    "services-only",
+    "A document carrying services and no components — the SaaSBOM shape. lsxbom "
+    "navigates components, so it has nothing to list here and must SAY so rather "
+    "than drawing an empty pane.",
+    {"components": 0, "services": 2, "vulnerabilities": 0},
+    bom(
+        spec="1.6",
+        root={"bom-ref": "svc-root", "type": "application", "name": "the-platform"},
+        omit_components=True,
+        omit_deps=True,
+        top_level={"services": [
+            {"bom-ref": "svc-a", "name": "auth", "endpoints": ["https://auth.example.com/v1"]},
+            {"bom-ref": "svc-b", "name": "billing", "endpoints": ["https://billing.example.com/v1"]},
+        ]},
+    ),
+)
+
+fixture(
+    "metadata-only",
+    "Nothing but metadata: no components, no vulnerabilities, no services. "
+    "Schema-valid — the document names a product without inventorying it — and 14 "
+    "of 137 public corpus documents are exactly this (POC-10), being the product "
+    "half of a CISA VEX use case.",
+    {"components": 0, "vulnerabilities": 0, "services": 0},
+    bom(
+        spec="1.6",
+        root={"bom-ref": "product-only", "type": "application", "name": "just-a-name"},
+        omit_components=True,
+        omit_deps=True,
     ),
 )
 

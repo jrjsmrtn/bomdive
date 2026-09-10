@@ -188,6 +188,10 @@ type Graph struct {
 	edges      int
 	dangling   []string
 
+	// Counted at load, so a surface can say what an empty component list MEANS.
+	vulnerabilities int
+	services        int
+
 	props map[string][]Property
 }
 
@@ -310,6 +314,13 @@ func build(doc *cdx.BOM) *Graph {
 		}
 	}
 
+	if doc.Vulnerabilities != nil {
+		g.vulnerabilities = len(*doc.Vulnerabilities)
+	}
+	if doc.Services != nil {
+		g.services = len(*doc.Services)
+	}
+
 	// `dependencies` present-and-empty is the document asserting it has no
 	// relations; absent means the generator said nothing. Callers must be able to
 	// tell those apart, so record which it was before reading any entries.
@@ -342,6 +353,59 @@ func build(doc *cdx.BOM) *Graph {
 	sort.Strings(g.dangling)
 	g.dangling = dedupe(g.dangling)
 	return g
+}
+
+// Contents is what the document carries at top level.
+//
+// It exists so a surface can explain an empty component list rather than drawing a
+// blank pane. A standalone VEX, a services-only document and a document holding
+// nothing but metadata all list zero components, and all three rendered
+// identically: "0 of 0 (0%)" over an empty column, which reads as the tool having
+// failed.
+type Contents struct {
+	Components      int
+	Vulnerabilities int
+	Services        int
+}
+
+// Contents reports what the document carries.
+func (g *Graph) Contents() Contents {
+	return Contents{
+		Components:      len(g.nodes),
+		Vulnerabilities: g.vulnerabilities,
+		Services:        g.services,
+	}
+}
+
+// ExplainEmpty says why there is nothing to list, and false when there IS.
+//
+// lsxbom navigates COMPONENTS. Saying so, and naming what the document holds
+// instead, is the difference between "this tool does not cover that" and "this tool
+// is broken" — which is what an unexplained empty pane looks like.
+func (c Contents) ExplainEmpty() (string, bool) {
+	if c.Components > 0 {
+		return "", false
+	}
+	switch {
+	case c.Vulnerabilities > 0 && c.Services > 0:
+		return fmt.Sprintf("this document declares NO components: it carries %d vulnerability "+
+			"record(s) and %d service(s). lsxbom navigates components, so there is nothing "+
+			"here to list.", c.Vulnerabilities, c.Services), true
+	case c.Vulnerabilities > 0:
+		return fmt.Sprintf("this is a CycloneDX document but NOT a bill of materials: it "+
+			"inventories nothing and carries %d vulnerability record(s). A standalone VEX "+
+			"asserts which vulnerabilities affect a product described in ANOTHER document. "+
+			"Nothing is missing here — lsxbom navigates components, and this document has "+
+			"none to navigate.", c.Vulnerabilities), true
+	case c.Services > 0:
+		return fmt.Sprintf("this document declares NO components: it carries %d service(s). "+
+			"lsxbom navigates components, not services, so there is nothing here to list.",
+			c.Services), true
+	default:
+		return "this document declares NO components, and no vulnerabilities or services " +
+			"either — it carries metadata and nothing else. That is schema-valid: it names a " +
+			"product without inventorying it.", true
+	}
 }
 
 // Identity reports what the document says it is.
