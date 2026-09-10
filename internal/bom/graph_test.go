@@ -481,3 +481,81 @@ func TestHasCategoriesIsFalseWithoutAny(t *testing.T) {
 		t.Error("HasCategories = false on the OBOM fixture")
 	}
 }
+
+// The declared root must be visible to REVERSE edges, not only to Node.
+//
+// metadata.component is the SUBJECT of a document, not a member of its inventory,
+// so it is routinely absent from `components`. Node synthesised it (POC-8) but
+// resolve read g.nodes directly, so every direct dependency of such a root reported
+// NO dependents while `dependencies` plainly declared one. Measured on a public
+// 837-component npm SBOM: 71 components affected, every one of them.
+func TestTheDeclaredRootIsVisibleToReverseEdges(t *testing.T) {
+	g := fixture(t, "root-outside-components")
+	root := g.Identity().RootRef
+	if _, inComponents := g.nodes[root]; inComponents {
+		t.Fatal("fixture's root IS in components; this test proves nothing")
+	}
+
+	child := "pkg:generic/nic-0@1.0.0"
+	parents := g.Parents(child)
+	if len(parents) != 1 || parents[0].Ref != root {
+		t.Errorf("Parents(%s) = %v, want the declared root %s", child, parents, root)
+	}
+	if !g.HasParents(child) {
+		t.Error("HasParents = false where Parents returned the root")
+	}
+	// A component the root does NOT depend on must be unaffected.
+	if ps := g.Parents("pkg:generic/svc-a@1.0.0"); len(ps) != 1 || ps[0].Ref == root {
+		t.Errorf("Parents(svc-a) = %v, want only its real parent", ps)
+	}
+}
+
+// The root is not inventory, so it must not be counted as covered — that would put
+// InGraph above Components and make a fully covered document report incomplete.
+func TestTheDeclaredRootIsNotCountedAsAComponent(t *testing.T) {
+	g := fixture(t, "root-outside-components")
+	c := g.Coverage()
+	if c.Components != 3 {
+		t.Errorf("Components = %d, want 3 — the root is not inventory", c.Components)
+	}
+	if c.InGraph > c.Components {
+		t.Errorf("InGraph %d exceeds Components %d", c.InGraph, c.Components)
+	}
+	if !c.Complete() {
+		t.Errorf("coverage %d/%d is not complete; every component IS in the graph",
+			c.InGraph, c.Components)
+	}
+}
+
+// A declared root that does not drive the graph must NOT be resolvable — otherwise
+// any ref equal to it would resolve to a node the document never placed anywhere.
+func TestARootThatDrivesNothingDoesNotResolve(t *testing.T) {
+	g := fixture(t, "rootless")
+	root := g.Identity().RootRef
+	if root == "" {
+		t.Skip("fixture declares no root")
+	}
+	if _, drives := g.out[root]; drives {
+		t.Fatal("fixture's root DOES drive the graph; this test proves nothing")
+	}
+	if _, ok := g.Node(root); ok {
+		t.Errorf("a root driving nothing resolved to %q", root)
+	}
+}
+
+// The human-readable surfaces name a few dangling refs, not all of them.
+func TestDanglingIsSampledNotDumped(t *testing.T) {
+	long := make([]string, DanglingSample+7)
+	for i := range long {
+		long[i] = "ref"
+	}
+	shown, omitted := Coverage{Dangling: long}.SampleDangling()
+	if len(shown) != DanglingSample || omitted != 7 {
+		t.Errorf("shown=%d omitted=%d, want %d and 7", len(shown), omitted, DanglingSample)
+	}
+	short := []string{"a", "b"}
+	shown, omitted = Coverage{Dangling: short}.SampleDangling()
+	if len(shown) != 2 || omitted != 0 {
+		t.Errorf("a short list was sampled: shown=%d omitted=%d", len(shown), omitted)
+	}
+}

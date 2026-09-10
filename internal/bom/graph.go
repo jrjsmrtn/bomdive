@@ -64,6 +64,24 @@ type Coverage struct {
 	HasDepsKey bool
 }
 
+// DanglingSample is how many dangling refs a human-readable surface names before
+// it stops.
+//
+// Measured: a public 837-component npm SBOM carries 278 of them. Printing all of
+// them filled the browse overlay to the full screen and pushed the explanation it
+// annotates off the top — the list drowned its own point. The COUNT is what a
+// reader acts on; the list is data, and data belongs in --json, which carries
+// Dangling uncapped.
+const DanglingSample = 5
+
+// SampleDangling returns at most DanglingSample refs and how many were left out.
+func (c Coverage) SampleDangling() (shown []string, omitted int) {
+	if len(c.Dangling) <= DanglingSample {
+		return c.Dangling, 0
+	}
+	return c.Dangling[:DanglingSample], len(c.Dangling) - DanglingSample
+}
+
 // Complete reports whether every component appears in the dependency graph.
 func (c Coverage) Complete() bool { return c.Components > 0 && c.InGraph == c.Components }
 
@@ -306,9 +324,18 @@ func build(doc *cdx.BOM) *Graph {
 				g.out[d.Ref] = append(g.out[d.Ref], dst)
 				g.in[dst] = append(g.in[dst], d.Ref)
 				g.edges++
-				if _, ok := g.nodes[dst]; !ok {
-					g.dangling = append(g.dangling, dst)
-				}
+			}
+		}
+	}
+
+	// Dangling is decided AFTER every edge is read, not during. Whether a ref
+	// resolves can depend on an edge seen later — the declared root resolves only
+	// once it is known to drive the graph — so deciding mid-loop made the answer
+	// depend on the order `dependencies` happened to be written in.
+	for _, targets := range g.out {
+		for _, dst := range targets {
+			if _, ok := g.Node(dst); !ok {
+				g.dangling = append(g.dangling, dst)
 			}
 		}
 	}
@@ -382,17 +409,26 @@ func (g *Graph) HasParents(ref string) bool { return g.anyResolves(g.in[ref]) }
 
 func (g *Graph) anyResolves(refs []string) bool {
 	for _, r := range refs {
-		if _, ok := g.nodes[r]; ok {
+		if _, ok := g.Node(r); ok {
 			return true
 		}
 	}
 	return false
 }
 
+// resolve turns refs into nodes, dropping any that name nothing.
+//
+// It asks Node rather than reading g.nodes, so ONE rule decides what a ref names:
+// a component, or the declared root when that root drives the graph. Reading the
+// map directly made the root invisible to every reverse edge — a document's direct
+// dependencies reported NO dependents while `dependencies` plainly declared one,
+// because metadata.component is the SUBJECT of a document rather than a member of
+// its inventory and so is absent from `components`. Same root cause as POC-8, one
+// layer down: Node knew about the root and the two functions built on it did not.
 func (g *Graph) resolve(refs []string) []Node {
 	out := make([]Node, 0, len(refs))
 	for _, r := range refs {
-		if n, ok := g.nodes[r]; ok {
+		if n, ok := g.Node(r); ok {
 			out = append(out, n)
 		}
 	}
@@ -442,6 +478,12 @@ func (g *Graph) metadataRoot() Node {
 }
 
 // Coverage reports how much of the document the graph reaches.
+//
+// It counts g.nodes and NOT the declared root, unlike resolve. The two answer
+// different questions: coverage asks how much of the document's INVENTORY the
+// graph reaches, and metadata.component is the subject of the document rather than
+// an item in it. Counting it would put InGraph above Components and make a fully
+// covered document report as incomplete.
 func (g *Graph) Coverage() Coverage {
 	seen := map[string]bool{}
 	for src, targets := range g.out {

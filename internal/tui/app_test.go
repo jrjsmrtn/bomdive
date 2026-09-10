@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -638,4 +639,77 @@ func columnRow(screen, label string) string {
 		}
 	}
 	return ""
+}
+
+// The dangling list is a SAMPLE. A public 837-component SBOM carries 278 of them,
+// and printing all of them filled the overlay and pushed the explanation off the
+// top — the annotation drowned in its own data.
+func TestTheOverlaySamplesDanglingRatherThanDumpingIt(t *testing.T) {
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "dangling-ref.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := newUI(g, "dangling-ref")
+	u.width, u.height = 120, 30
+	got := u.explainText()
+	if !strings.Contains(got, "match no component") {
+		t.Fatalf("the explanation does not mention dangling refs at all:\n%s", got)
+	}
+	// A synthetic long list must be capped, and must say how many were left out.
+	many := make([]string, bom.DanglingSample+42)
+	for i := range many {
+		many[i] = fmt.Sprintf("ref-%d", i)
+	}
+	shown, omitted := bom.Coverage{Dangling: many}.SampleDangling()
+	if len(shown) != bom.DanglingSample || omitted != 42 {
+		t.Fatalf("SampleDangling(%d) = %d shown, %d omitted", len(many), len(shown), omitted)
+	}
+}
+
+// An overlay that does not fit must SAY so and be scrollable, or a clipped key
+// table is indistinguishable from a complete one.
+func TestTheOverlayReportsAndScrollsWhenItDoesNotFit(t *testing.T) {
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "tree-simple.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := newUI(g, "tree-simple")
+	u.width, u.height = 100, 14 // deliberately short: the key table cannot fit
+	u.showOverlay(overlayHelp)
+
+	if u.overlayLines <= u.visibleOverlayRows() {
+		t.Fatalf("the key table fits at %d rows; this test proves nothing "+
+			"(lines=%d visible=%d)", u.height, u.overlayLines, u.visibleOverlayRows())
+	}
+	title := u.overlayTitle()
+	if !strings.Contains(title, "of") || !strings.Contains(title, "↓") {
+		t.Errorf("a clipped overlay does not report it: %q", title)
+	}
+	before := u.overlayScroll
+	u.scrollOverlay(+detailPageSize)
+	if u.overlayScroll == before {
+		t.Error("the overlay did not scroll")
+	}
+	// And it must clamp rather than run off the end.
+	u.scrollOverlay(+10000)
+	if want := u.overlayLines - u.visibleOverlayRows(); u.overlayScroll != want {
+		t.Errorf("scroll = %d, want it clamped to %d", u.overlayScroll, want)
+	}
+}
+
+// Scrolling must not dismiss the overlay: a panel that closes when you try to read
+// the rest of it is worse than one that never scrolled.
+func TestScrollingDoesNotCloseTheOverlay(t *testing.T) {
+	// Assert on a line only the key table has. "keys" alone matches the status
+	// bar's own "Hkeys" hint, so the overlay could close and the test still pass —
+	// the unscoped-Contains failure this project keeps rediscovering.
+	const onlyInTheOverlay = "flip between depends-on"
+	opened := driveKeys(t, "tree-simple", ru('H'))
+	if !strings.Contains(flatten(opened), onlyInTheOverlay) {
+		t.Fatalf("H did not open the key table, so this test proves nothing:\n%s", opened)
+	}
+	out := driveKeys(t, "tree-simple", ru('H'), sp(tcell.KeyPgDn))
+	if !strings.Contains(flatten(out), onlyInTheOverlay) {
+		t.Errorf("PgDn closed the overlay:\n%s", out)
+	}
 }

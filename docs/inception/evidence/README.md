@@ -74,6 +74,13 @@ Not re-runnable from a committed file by design: it needs `hbom --include-runtim
 and the output is a personal inventory. The **shape it exposed** is a committed fixture instead —
 `testdata/root-outside-components.cdx.json`.
 
+## POC-9 — the declared root was invisible to every reverse edge
+
+| File | What it is |
+|---|---|
+| `poc9-reverse-edges-2026-09-11.md` | The second half of POC-8's root-resolution bug, found by dogfooding: `Node()` knew about a root outside `components` and `resolve()` did not, so **1,658** components across **58 of 137** public corpus documents reported no dependent while `dependencies` declared one |
+| `poc9-root-outside-components.py` | Runnable over any corpus directory. Counts documents, not identifiers, so it is safe over a private corpus too |
+
 ## Re-running
 
 ```bash
@@ -84,6 +91,7 @@ python3 poc2-corpus-shape.py <out.json> <corpus>   # POC-2, any corpus directory
 duckdb -c ".read poc6-duckdb-corpus.sql"           # POC-6, zero-ingest queries
 python3 poc7-bom-type-discriminator.py <bom.json>  # POC-7, classify a BOM
 python3 poc7-bom-type-discriminator.py --corpus <dir>   # POC-7, anonymised summary
+python3 poc9-root-outside-components.py <corpus>   # POC-9, how far the root bug reached
 ```
 
 The `.go.txt` sources are kept as text so they are not compiled as part of the module. The cgo ones

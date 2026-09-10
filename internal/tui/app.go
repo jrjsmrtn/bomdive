@@ -51,6 +51,13 @@ type ui struct {
 	pages       *tview.Pages
 	overlay     overlayKind
 
+	// overlayName, overlayLines and overlayScroll let the overlay report and move
+	// when its text does not fit — the key table runs past a short terminal, and a
+	// pane cut off with no indicator looks complete. Same rule as the detail pane.
+	overlayName   string
+	overlayLines  int
+	overlayScroll int
+
 	// width is the screen width, captured by the before-draw hook. tview exposes no
 	// GetScreen, so this is the only honest way to know how wide a pane may be.
 	width int
@@ -170,13 +177,20 @@ func (u *ui) overlayWidth() int {
 // never taller than the screen. Same measurement the detail pane needs, for the
 // same reason: a pane sized by guesswork is either clipped or mostly empty.
 func (u *ui) overlayRows(text string) int {
-	w := u.overlayWidth()
-	rows := 2 // the border
-	for _, line := range strings.Split(text, "\n") {
-		rows += wrappedRows(stripTags(line), w)
-	}
+	rows := u.overlayContentRows(text) + 2 // the border
 	if u.height > 2 && rows > u.height-2 {
 		return u.height - 2
+	}
+	return rows
+}
+
+// overlayContentRows is how many rows the text occupies, wrapping included and
+// border excluded.
+func (u *ui) overlayContentRows(text string) int {
+	w := u.overlayWidth()
+	rows := 0
+	for _, line := range strings.Split(text, "\n") {
+		rows += wrappedRows(stripTags(line), w)
 	}
 	return rows
 }
@@ -208,16 +222,85 @@ func (u *ui) showOverlay(kind overlayKind) {
 		return
 	}
 	u.overlay = kind
+	u.overlayScroll = 0
 
-	title, text := " what this means — ? or Esc to close ", u.explainText()
+	name, text := "what this means", u.explainText()
 	if kind == overlayHelp {
-		title, text = " keys — H or Esc to close ", u.helpText()
+		name, text = "keys", u.helpText()
 	}
-	u.overlayView.SetText(text).ScrollToBeginning()
-	u.overlayView.SetTitle(title)
+	u.overlayName = name
+	u.overlayLines = u.overlayContentRows(text)
+	u.overlayView.SetText(text)
 	// Rebuilt rather than shown: the box is sized to the text it holds, and the
 	// screen may have been resized since the last time it was opened.
 	u.pages.AddPage("overlay", centred(u.overlayView, u.overlayRows(text)), true, true)
+	u.paintOverlay()
+}
+
+// scrollOverlay moves the overlay and CLAMPS, so its end cannot be scrolled past
+// into blankness that reads as "nothing here".
+func (u *ui) scrollOverlay(by int) {
+	max := u.overlayLines - u.visibleOverlayRows()
+	if max < 0 {
+		max = 0
+	}
+	u.overlayScroll += by
+	if u.overlayScroll > max {
+		u.overlayScroll = max
+	}
+	if u.overlayScroll < 0 {
+		u.overlayScroll = 0
+	}
+	u.paintOverlay()
+}
+
+func (u *ui) paintOverlay() {
+	u.overlayView.ScrollTo(u.overlayScroll, 0)
+	u.overlayView.SetTitle(u.overlayTitle())
+}
+
+// visibleOverlayRows is the box's inner height: what it was allotted, less border.
+func (u *ui) visibleOverlayRows() int {
+	if h := u.overlayBoxRows() - 2; h > 0 {
+		return h
+	}
+	return 1
+}
+
+// overlayBoxRows is what centred was given: the content plus border, capped by the
+// screen. Recomputed rather than stored, so a resize cannot leave it stale.
+func (u *ui) overlayBoxRows() int {
+	rows := u.overlayLines + 2
+	if u.height > 2 && rows > u.height-2 {
+		return u.height - 2
+	}
+	return rows
+}
+
+// overlayTitle names the overlay, and says where you are in it when it does not
+// fit. Without that a clipped key table is indistinguishable from a complete one.
+func (u *ui) overlayTitle() string {
+	closer := "?"
+	if u.overlay == overlayHelp {
+		closer = "H"
+	}
+	h := u.visibleOverlayRows()
+	if u.overlayLines <= h {
+		return fmt.Sprintf(" %s — %s or Esc to close ", u.overlayName, closer)
+	}
+	shown := u.overlayScroll + h
+	if shown > u.overlayLines {
+		shown = u.overlayLines
+	}
+	more := ""
+	if u.overlayScroll > 0 {
+		more += "↑"
+	}
+	if shown < u.overlayLines {
+		more += "↓"
+	}
+	return fmt.Sprintf(" %s %d-%d of %d %s — ⇞⇟ scroll, %s or Esc to close ",
+		u.overlayName, u.overlayScroll+1, shown, u.overlayLines, more, closer)
 }
 
 func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
@@ -235,6 +318,16 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 			u.showOverlay(overlayExplain)
 		case ev.Rune() == 'H':
 			u.showOverlay(overlayHelp)
+		// Scrolling must NOT close: an overlay that dismisses itself when you try to
+		// read the rest of it is worse than one that never scrolled.
+		case ev.Key() == tcell.KeyPgDn, ev.Key() == tcell.KeyCtrlD:
+			u.scrollOverlay(+detailPageSize)
+		case ev.Key() == tcell.KeyPgUp, ev.Key() == tcell.KeyCtrlU:
+			u.scrollOverlay(-detailPageSize)
+		case ev.Rune() == 'J':
+			u.scrollOverlay(+1)
+		case ev.Rune() == 'K':
+			u.scrollOverlay(-1)
 		default:
 			u.showOverlay(overlayNone)
 		}
@@ -548,10 +641,18 @@ func (u *ui) explainText() string {
 	fmt.Fprintf(&b, "%s\n\n", c.Explain())
 	fmt.Fprintf(&b, "[darkgray]this view[-]  %s\n", u.axisText())
 
+	// A SAMPLE, not the list. A public 837-component SBOM carries 278 dangling
+	// refs; printing them all filled this overlay to the full screen and pushed the
+	// explanation it exists for off the top.
 	if n := len(c.Dangling); n > 0 {
+		shown, omitted := c.SampleDangling()
+		more := ""
+		if omitted > 0 {
+			more = fmt.Sprintf(", and %d more", omitted)
+		}
 		fmt.Fprintf(&b, "\n[red]%d dependsOn target(s) match no component[-] — the graph "+
-			"references components this document does not contain: %s\n",
-			n, strings.Join(c.Dangling, ", "))
+			"references components this document does not contain, so a walk stops "+
+			"short of them: %s%s\n", n, strings.Join(shown, ", "), more)
 	}
 
 	b.WriteString("\n[darkgray]press H for the keys.[-]\n")

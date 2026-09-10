@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/jrjsmrtn/lsxbom/internal/bom"
 )
 
 // Text renders for a human.
@@ -30,9 +32,14 @@ func Text(w io.Writer, r Result, long bool) error {
 	// guarantee with an exception is a default.
 	fmt.Fprintf(w, "coverage: %d of %d components in the dependency graph (%d%%), %d edges\n",
 		r.Coverage.InGraph, r.Coverage.Components, r.Coverage.Percent, r.Coverage.Edges)
-	if len(r.Coverage.Dangling) > 0 {
-		fmt.Fprintf(w, "warning: %d dependsOn target(s) match no component: %s\n",
-			len(r.Coverage.Dangling), strings.Join(r.Coverage.Dangling, ", "))
+	if n := len(r.Coverage.Dangling); n > 0 {
+		shown, omitted := bom.Coverage{Dangling: r.Coverage.Dangling}.SampleDangling()
+		more := ""
+		if omitted > 0 {
+			more = fmt.Sprintf(", and %d more (--json lists them all)", omitted)
+		}
+		fmt.Fprintf(w, "warning: %d dependsOn target(s) match no component: %s%s\n",
+			n, strings.Join(shown, ", "), more)
 	}
 	return nil
 }

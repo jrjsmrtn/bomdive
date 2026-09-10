@@ -15,6 +15,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A document's declared root was invisible to every reverse edge.** `metadata.component` is the
+  *subject* of a BOM, not a member of its inventory, so it is routinely absent from `components`
+  while still driving `dependencies`. `bom.Node` synthesised such a root (POC-8) but `resolve` —
+  the single funnel behind `Children`, `Parents` and `Reachable` — read the component map directly,
+  so a component the root depends on reported **no dependents at all**. Measured across the public
+  corpora: **58 of 137 documents (42%)** carry that shape, and **1,658 components** were affected;
+  the worst single document hid the root from 71 of its own direct dependencies. `resolve` now asks
+  `Node`, so one rule decides what a ref names. `Coverage` deliberately still counts only the
+  inventory — counting the root would put `InGraph` above `Components`. Evidence:
+  `docs/inception/evidence/poc9-reverse-edges-2026-09-11.md`.
+- **A BOM with 278 dangling `dependsOn` targets printed all 278**, filling the `browse` overlay to
+  the full screen and pushing the explanation it annotates off the top. Both human-readable
+  surfaces now name five and count the rest; `--json` still carries the full list. The overlay also
+  scrolls (`⇞`/`⇟`, `J`/`K`) and reports `n-m of total` when it does not fit, so a clipped key
+  table is not mistaken for a complete one.
 - **A BOM with no relations was reported as a defective one.** The column view coloured any
   document whose coverage was under 100% red `partial`, which is right for a declared dependency
   graph that misses components and wrong for a document carrying no `dependencies` field at all —
