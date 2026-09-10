@@ -47,6 +47,8 @@ Established that a self-contained binary **does** survive cgo, correcting an ear
 |---|---|
 | `poc6-backend-survey-2026-09-10.md` | The full survey: DuckDB embed and zero-ingest, `zig cc` cross-compilation, build-tag verification, Cypher-for-SQLite and DuckPGQ, the Ladybug↔DuckDB bridge |
 | **`poc6-cycle-semantics.sh`** | **Runnable.** Proves edge-uniqueness and node-uniqueness give different answers over `x → y → x`, and asserts both. ADR-0004's traversal decision rests on it |
+| **`poc6-ladybug-duckdb-bridge.sh`** | **Runnable.** The combo: DuckDB reads CycloneDX with zero ingest, LadybugDB takes it by Parquet *and* by `ATTACH (dbtype duckdb)`, and variable-length Cypher traverses the result. Asserts both handoffs agree with DuckDB |
+| `poc6-duckdb-corpus.sql` | The zero-ingest DuckDB queries, runnable against a committed fixture |
 | `poc6-src/cycle-semantics.go.txt` | Source for the above — both CTE variants side by side |
 | `poc6-src/sqlite-cte.go.txt` | Pure-Go SQLite answering the BOM questions with recursive CTEs, `CGO_ENABLED=0` |
 | `poc6-src/duckdb-embed.go.txt` | DuckDB embedded in Go, reading CycloneDX in-process via `read_json_auto` |
@@ -61,6 +63,8 @@ Established that a self-contained binary **does** survive cgo, correcting an ear
 python3 bom-graph-shape.py <bom.json>              # POC-1, any BOM
 python3 poc2-corpus-shape.py <out.json> <corpus>   # POC-2, any corpus directory
 ./poc6-cycle-semantics.sh                          # POC-6, self-asserting
+./poc6-ladybug-duckdb-bridge.sh [bom.json]         # POC-6, the combo; needs duckdb + lbug
+duckdb -c ".read poc6-duckdb-corpus.sql"           # POC-6, zero-ingest queries
 ```
 
 The `.go.txt` sources are kept as text so they are not compiled as part of the module. The cgo ones

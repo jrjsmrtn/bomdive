@@ -90,6 +90,10 @@ reads a whole corpus in one statement — no schema, no import, no database file
 SELECT ... FROM read_json_auto('*/*.json', filename=true, union_by_name=true) GROUP BY kind;
 ```
 
+The queries are preserved in [`poc6-duckdb-corpus.sql`](poc6-duckdb-corpus.sql), which runs start to
+finish against a committed fixture. The corpus glob is left **commented out** there: a committed
+script must not carry a path into a private estate.
+
 Against a 24-file private corpus (host identifiers withheld; only shape recorded), this reproduced
 POC-2's entire finding as one query — 14 OBOMs with **0** dependency entries across 47,445
 components, 4 HBOMs, 6 image/dir SBOMs. Transitive closure straight off the JSON gave 70 roots and
@@ -127,6 +131,15 @@ WHERE b.name = 'golang.org/x/sys' RETURN count(DISTINCT a.name);   -- 28
 
 ⚠ `INSTALL duckdb` is a **runtime extension download** — inside a shipped binary that is a network
 fetch on first use, which is wrong for CI or an air-gapped host.
+
+**Re-run it: [`poc6-ladybug-duckdb-bridge.sh`](poc6-ladybug-duckdb-bridge.sh)** — builds the whole
+pipeline from a BOM, exercises *both* handoffs, and asserts they agree with what DuckDB read
+directly. Against `testdata/diamond.cdx.json` it gives 4 nodes both ways; against the syft SBOM
+measured here it reproduces **153 nodes / 245 edges** on both paths — the same counts POC-1 got with
+Python and `jq`, and the embedded DuckDB got in-process. Five independent paths, one answer.
+
+This combo is the survey's most useful result and was, until corrected, its least reproducible:
+it existed only as prose fragments while every lesser finding had a preserved program.
 
 ## Measured: the pure-Go path needs no graph engine
 

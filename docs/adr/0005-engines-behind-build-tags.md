@@ -59,6 +59,13 @@ corpus and aggregate work only.
 ⚠ **Ladybug's `INSTALL duckdb` is a runtime extension download.** Inside a shipped binary that
 is a network fetch on first use — wrong for CI or an air-gapped host.
 
+**The two engines compose without either being embedded.** DuckDB reads CycloneDX with zero ingest;
+Ladybug takes the result by Parquet or by `ATTACH (dbtype duckdb)` and runs variable-length Cypher
+over it. Proven and self-asserting in
+`docs/inception/evidence/poc6-ladybug-duckdb-bridge.sh`. That is the concrete reason this record
+defers embedding rather than choosing between them: the combination already works, as two CLIs,
+against the files on disk.
+
 ## Consequences
 
 **Positive**: the artifact people download stays small, pure and portable; the heavyweight build

@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   result made runnable and self-asserting.
 - `scripts/check-evidence-refs.py`, asserting in both directions that documents and evidence files
   agree. Written because ADR-0005 had quoted numbers with no evidence behind them.
+- `poc6-ladybug-duckdb-bridge.sh` — the LadybugDB↔DuckDB combination made runnable and
+  self-asserting, and `poc6-duckdb-corpus.sql` for the zero-ingest queries. Both existed only as
+  prose until a review found the survey's most useful result was also its least reproducible.
 - `testdata/verify.py`, which asserts each fixture *contains* what its manifest claims, and
   `testdata/validate-schema.py`, which validates each against its own official CycloneDX
   schema across 1.4–1.7.
