@@ -40,6 +40,7 @@ fi
 if need python3; then
     run "adr index" python3 ../../workspace/scripts/check-adr-index.py docs/adr
     run "doc links" python3 ../../workspace/scripts/check-doc-links.py .
+    run "fixtures"  python3 testdata/verify.py
 fi
 
 exit $fail

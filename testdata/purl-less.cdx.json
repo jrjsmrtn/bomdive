@@ -1,0 +1,49 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/has-purl@1.0.0",
+      "name": "has-purl",
+      "purl": "pkg:generic/has-purl@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:gatekeeper:data:no-purl-1",
+      "name": "no-purl-1",
+      "type": "data",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:certificates:data:no-purl-2",
+      "name": "no-purl-2",
+      "type": "data",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:alf:data:no-purl-3",
+      "name": "no-purl-3",
+      "type": "data",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:generic/has-purl@1.0.0"
+      ],
+      "ref": "pkg:generic/host-os@1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/host-os@1.0.0",
+      "name": "host-os",
+      "purl": "pkg:generic/host-os@1.0.0",
+      "type": "operating-system",
+      "version": "1.0.0"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

@@ -29,6 +29,13 @@ pre-commit:
     doc-links:
       glob: "*.md"
       run: python3 ../../workspace/scripts/check-doc-links.py .
+    # Only fires when fixtures actually change — which is exactly when a claim can
+    # go stale. validate-schema.py needs the network on a cold cache and fails
+    # rather than skipping; that is the right trade when you are editing fixtures.
+    fixtures:
+      glob: "testdata/*"
+      run: |
+        python3 testdata/verify.py && python3 testdata/validate-schema.py
 
 pre-push:
   parallel: false

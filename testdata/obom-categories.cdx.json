@@ -1,0 +1,89 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "osquery:launchd_services:data:svc-alpha",
+      "name": "svc-alpha",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "launchd_services"
+        }
+      ],
+      "type": "application",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:launchd_services:data:svc-beta",
+      "name": "svc-beta",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "launchd_services"
+        }
+      ],
+      "type": "application",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:certificates:data:cert-one",
+      "name": "cert-one",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "certificates"
+        },
+        {
+          "name": "not_valid_after",
+          "value": "2027-01-01"
+        }
+      ],
+      "type": "data",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:listening_ports:data:port-8080",
+      "name": "port-8080",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "listening_ports"
+        }
+      ],
+      "type": "data",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "osquery:systemd_units:data:unit-gamma",
+      "name": "unit-gamma",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "systemd_units"
+        }
+      ],
+      "type": "application",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/host-os@1.0.0",
+      "name": "host-os",
+      "purl": "pkg:generic/host-os@1.0.0",
+      "type": "operating-system",
+      "version": "1.0.0"
+    },
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      },
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "specVersion": "1.7",
+  "version": 1
+}

@@ -1,0 +1,60 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/pkg1@1.0.0",
+      "name": "pkg1",
+      "purl": "pkg:generic/pkg1@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/pkg2@1.0.0",
+      "name": "pkg2",
+      "purl": "pkg:generic/pkg2@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/pkg3@1.0.0",
+      "name": "pkg3",
+      "purl": "pkg:generic/pkg3@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/pkg4@1.0.0",
+      "name": "pkg4",
+      "purl": "pkg:generic/pkg4@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/pkg5@1.0.0",
+      "name": "pkg5",
+      "purl": "pkg:generic/pkg5@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/host-os@1.0.0",
+      "name": "host-os",
+      "purl": "pkg:generic/host-os@1.0.0",
+      "type": "operating-system",
+      "version": "1.0.0"
+    },
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      },
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

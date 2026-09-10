@@ -1,0 +1,53 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/a@1.0.0",
+      "name": "a",
+      "purl": "pkg:generic/a@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/b@1.0.0",
+      "name": "b",
+      "purl": "pkg:generic/b@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/c@1.0.0",
+      "name": "c",
+      "purl": "pkg:generic/c@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:generic/b@1.0.0"
+      ],
+      "ref": "pkg:generic/a@1.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:generic/c@1.0.0"
+      ],
+      "ref": "pkg:generic/b@1.0.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:generic/c@1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "38f5aa7af27a583d",
+      "name": "some-project",
+      "type": "file"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

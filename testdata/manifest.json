@@ -1,0 +1,148 @@
+{
+  "cycle-deep": {
+    "asserts": {
+      "cycles_found": 1,
+      "is_tree": false
+    },
+    "file": "cycle-deep.cdx.json",
+    "why": "A four-node cycle reached through two acyclic hops. The cycle is not adjacent to the root, so a check that only looks one level down misses it."
+  },
+  "cycle-direct": {
+    "asserts": {
+      "cycles_found": 1,
+      "is_tree": false
+    },
+    "file": "cycle-direct.cdx.json",
+    "why": "x <-> y. The smallest cycle. A naive recursive walk does not terminate here."
+  },
+  "cycle-self": {
+    "asserts": {
+      "cycles_found": 1
+    },
+    "file": "cycle-self.cdx.json",
+    "why": "A component depending on itself. Degenerate but legal, and it breaks a visited-set implementation that marks AFTER recursing rather than before."
+  },
+  "cycle-semantics": {
+    "asserts": {
+      "cycles_found": 1
+    },
+    "file": "cycle-semantics.cdx.json",
+    "why": "THE fixture ADR-0004 rests on. x -> y -> x, plus a host-like entry point. Cypher relationship-uniqueness reports x as reachable from x (x->y->x is two distinct edges); node-uniqueness does not. Both were reproduced against real engines. lsxbom picks node-uniqueness; this fixture pins that choice."
+  },
+  "dangling-ref": {
+    "asserts": {
+      "dangling_targets": 1
+    },
+    "file": "dangling-ref.cdx.json",
+    "why": "A dependsOn target that matches no component. Referential integrity was PERFECT in every real BOM measured, so this is the error path rather than an observed shape \u2014 included because 'never seen it' is not 'cannot happen', and the tool must report it rather than crash or invent a node."
+  },
+  "diamond": {
+    "asserts": {
+      "cycles_found": 0,
+      "is_tree": false,
+      "shared_nodes": 1
+    },
+    "file": "diamond.cdx.json",
+    "why": "app -> a,b -> shared. A shared node with two parents: the reason `tree` must decide between repeating a subtree and back-referencing it. Measured in every real SBOM examined."
+  },
+  "duplicate-names": {
+    "asserts": {
+      "unique_names_lt_components": true
+    },
+    "file": "duplicate-names.cdx.json",
+    "why": "Three components sharing a name at different versions, plus two sharing a name with no version overlap. Measured in a real OBOM: bom-refs were unique across 3,110 components while names were not. Anything keyed on name collides here."
+  },
+  "hbom-depth1": {
+    "asserts": {
+      "max_depth_from_root": 1,
+      "root_in_graph": true
+    },
+    "file": "hbom-depth1.cdx.json",
+    "why": "The HBOM shape: one dependency entry, rooted, depth 1 \u2014 a host with devices hanging off it. An `ls` shape, not a `tree` shape."
+  },
+  "multi-root": {
+    "asserts": {
+      "indegree_zero": 3,
+      "root_in_graph": false
+    },
+    "file": "multi-root.cdx.json",
+    "why": "Three in-degree-0 nodes and no usable declared root. Derived roots are therefore plural, and the renderer must show a forest rather than pick one arbitrarily."
+  },
+  "no-dependencies-absent": {
+    "asserts": {
+      "has_dependencies_key": false
+    },
+    "file": "no-dependencies-absent.cdx.json",
+    "why": "The `dependencies` key MISSING ENTIRELY. Distinct from the empty array above: absent means the generator said nothing, empty means the document asserts there are no relations. A tool conflating the two reports a claim the BOM never made."
+  },
+  "no-dependencies-empty": {
+    "asserts": {
+      "dependency_entries": 0,
+      "has_dependencies_key": true
+    },
+    "file": "no-dependencies-empty.cdx.json",
+    "why": "`dependencies: []` PRESENT AND EMPTY \u2014 the OBOM shape, in 14 of 14 real files. The document is stating it has no relations. `tree` must say so and point at `ls`, not print an empty result."
+  },
+  "obom-categories": {
+    "asserts": {
+      "dependency_entries": 0,
+      "osquery_categories": 4
+    },
+    "file": "obom-categories.cdx.json",
+    "why": "The real OBOM navigation axis: no graph, and every component carrying cdx:osquery:category. This is what `ls` groups by when there is nothing to walk. Categories are platform-dependent in the wild, so the fixture mixes two."
+  },
+  "partial-coverage": {
+    "asserts": {
+      "components": 10,
+      "in_graph_components": 3
+    },
+    "file": "partial-coverage.cdx.json",
+    "why": "Ten components, three in the dependency graph. Rendering the three as if they were the BOM is the confidently-wrong failure ADR-0004 forbids; coverage must be reported."
+  },
+  "purl-less": {
+    "asserts": {
+      "purl_less_components": 3
+    },
+    "file": "purl-less.cdx.json",
+    "why": "Components with no purl at all \u2014 28-40% of a real OBOM. bom-ref is the only key that works; a purl-keyed index silently drops these."
+  },
+  "rootless": {
+    "asserts": {
+      "components_reachable_from_root": 0,
+      "root_declared": true,
+      "root_in_graph": false
+    },
+    "file": "rootless.cdx.json",
+    "why": "The syft shape, and the one that makes a naive tool print nothing: the declared metadata.component.bom-ref is a content hash while the graph is keyed by purl, so walking from the declared root reaches ZERO components."
+  },
+  "spec-14": {
+    "asserts": {
+      "specVersion": "1.4"
+    },
+    "file": "spec-14.cdx.json",
+    "why": "The same trivial graph at spec 1.4. Proves version autodetection and that the parser is not pinned to one revision."
+  },
+  "spec-15": {
+    "asserts": {
+      "specVersion": "1.5"
+    },
+    "file": "spec-15.cdx.json",
+    "why": "The same trivial graph at spec 1.5. Proves version autodetection and that the parser is not pinned to one revision."
+  },
+  "spec-17": {
+    "asserts": {
+      "specVersion": "1.7"
+    },
+    "file": "spec-17.cdx.json",
+    "why": "The same trivial graph at spec 1.7. Proves version autodetection and that the parser is not pinned to one revision."
+  },
+  "tree-simple": {
+    "asserts": {
+      "cycles_found": 0,
+      "is_tree": true,
+      "root_in_graph": true
+    },
+    "file": "tree-simple.cdx.json",
+    "why": "A plain tree. The only fixture where the naive implementation is correct \u2014 so it proves the renderer works, not that it is careful."
+  }
+}

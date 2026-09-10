@@ -1,0 +1,60 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/r1@1.0.0",
+      "name": "r1",
+      "purl": "pkg:generic/r1@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/r2@1.0.0",
+      "name": "r2",
+      "purl": "pkg:generic/r2@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/r3@1.0.0",
+      "name": "r3",
+      "purl": "pkg:generic/r3@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/shared@1.0.0",
+      "name": "shared",
+      "purl": "pkg:generic/shared@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:generic/shared@1.0.0"
+      ],
+      "ref": "pkg:generic/r1@1.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:generic/shared@1.0.0"
+      ],
+      "ref": "pkg:generic/r2@1.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:generic/shared@1.0.0"
+      ],
+      "ref": "pkg:generic/r3@1.0.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:generic/shared@1.0.0"
+    }
+  ],
+  "metadata": {},
+  "specVersion": "1.6",
+  "version": 1
+}

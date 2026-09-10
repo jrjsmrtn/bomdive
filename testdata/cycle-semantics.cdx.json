@@ -1,0 +1,68 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/entry@1.0.0",
+      "name": "entry",
+      "purl": "pkg:generic/entry@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/x@1.0.0",
+      "name": "x",
+      "purl": "pkg:generic/x@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/y@1.0.0",
+      "name": "y",
+      "purl": "pkg:generic/y@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/unreachable@1.0.0",
+      "name": "unreachable",
+      "purl": "pkg:generic/unreachable@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "pkg:generic/x@1.0.0"
+      ],
+      "ref": "pkg:generic/entry@1.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:generic/y@1.0.0"
+      ],
+      "ref": "pkg:generic/x@1.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:generic/x@1.0.0"
+      ],
+      "ref": "pkg:generic/y@1.0.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:generic/unreachable@1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/entry@1.0.0",
+      "name": "entry",
+      "purl": "pkg:generic/entry@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

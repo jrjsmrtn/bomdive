@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Watched trigger for a cgo-free graph backend via PGlite + Apache AGE, with a self-testing
   checker (`docs/roadmap/watched-pglite-age.md`, `scripts/check-pglite-trigger.py`).
 - Foundation ADRs.
+- Fixture corpus (`testdata/`): 19 generated CycloneDX fixtures, each isolating one shape
+  the traversal core must handle — diamonds, four kinds of cycle, an absent root, a
+  graphless OBOM, and `dependencies` empty versus absent. Generated, not hand-written, and
+  entirely synthetic, so no fixture derives from a real estate.
+- `testdata/verify.py`, which asserts each fixture *contains* what its manifest claims, and
+  `testdata/validate-schema.py`, which validates each against its own official CycloneDX
+  schema across 1.4–1.7.
 
 ### Notes
 
