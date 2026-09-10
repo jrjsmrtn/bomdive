@@ -54,6 +54,14 @@ fi
 
 # ADR index and doc links are cheap and whole-repo; re-run them here because a
 # pre-commit glob only fires when those paths happen to be staged.
+# Coverage is checked here rather than pre-commit: it runs the whole suite, which
+# is a push-time cost and not a per-commit one.
+if need go; then
+    if [ -n "$(find ./internal -name '*_test.go' -print -quit 2>/dev/null)" ]; then
+        run "coverage" ./scripts/check-coverage.sh
+    fi
+fi
+
 if need python3; then
     run "adr index" python3 ../../workspace/scripts/check-adr-index.py docs/adr
     run "doc links" python3 ../../workspace/scripts/check-doc-links.py .

@@ -24,7 +24,15 @@ This project follows the
   contain **cycles**, a BOM whose declared root is absent from the dependency graph, and an OBOM
   with `dependencies: []`. Every one of those broke a naive implementation during analysis; a
   fixture set of well-formed trees would test nothing that matters.
-- **Coverage target**: >80% for the traversal and rendering packages. Not enforced elsewhere.
+- **Coverage floor**: **≥80% for every package under `internal/`**, enforced by
+  `scripts/check-coverage.sh` in the pre-push gate.
+
+  ⚠ **Amended 2026-09-10.** This read ">80% for the traversal and rendering packages, not enforced
+  elsewhere", written when there were two packages and no gate. There are now five, and the wording
+  had gone stale in the worst way: `internal/tui` sat at **78.5%** — below the stated floor, for as
+  long as it existed — and the only reason anyone noticed was a question about whether coverage was
+  gated at all. **A threshold nothing enforces is a wish.** Widened to every package because a
+  curated list is a second thing to keep in step, and all five clear it.
 
 ### 2. Semantic Versioning
 

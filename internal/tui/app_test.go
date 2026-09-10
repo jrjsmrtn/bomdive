@@ -48,6 +48,13 @@ func drive(t *testing.T, fixture string, keys ...tcell.Key) string {
 	return driveKeys(t, fixture, presses...)
 }
 
+// driveKeys runs the view THROUGH run(), the real entry point, and injects keys
+// through the simulation screen exactly as a terminal would deliver them.
+//
+// An earlier version hand-assembled the ui and wired the app itself, which tested
+// around the entry point rather than through it — run() sat at 0% coverage while
+// every behaviour appeared tested. Going through run() also exercises the
+// before-draw hook that computes pane width, which is where two real bugs lived.
 func driveKeys(t *testing.T, fixture string, presses ...key) string {
 	t.Helper()
 	g, err := bom.Load(filepath.Join("..", "..", "testdata", fixture+".cdx.json"))
@@ -60,26 +67,31 @@ func driveKeys(t *testing.T, fixture string, presses ...key) string {
 	}
 	sim.SetSize(120, 30)
 
-	u := newUI(g, fixture)
-	u.app.SetScreen(sim)
-	u.app.SetInputCapture(u.keys)
-	u.redraw()
-
 	done := make(chan error, 1)
-	go func() { done <- u.app.SetRoot(u.root, true).EnableMouse(false).Run() }()
+	go func() { done <- run(g, fixture, sim) }()
 
 	waitFor(t, sim, "coverage") // the app has painted at least once
 	for _, pr := range presses {
-		u.app.QueueEvent(tcell.NewEventKey(pr.k, pr.r, tcell.ModNone))
-		time.Sleep(20 * time.Millisecond)
+		sim.InjectKey(pr.k, pr.r, tcell.ModNone)
+		time.Sleep(25 * time.Millisecond)
 	}
 	time.Sleep(60 * time.Millisecond)
 	out := screenText(sim)
-	u.app.Stop()
+
+	// Escape first: while the filter field has focus, 'q' is TEXT and not a command.
+	// That is correct behaviour — discovered by this teardown failing — so the
+	// teardown leaves filter mode before quitting. The screen was captured above,
+	// so the assertion still sees the filtered state.
+	sim.InjectKey(tcell.KeyEscape, 0, tcell.ModNone)
+	time.Sleep(25 * time.Millisecond)
+	sim.InjectKey(tcell.KeyRune, 'q', tcell.ModNone) // the real quit path
 	select {
-	case <-done:
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("run returned %v", err)
+		}
 	case <-time.After(3 * time.Second):
-		t.Fatal("app did not stop")
+		t.Fatal("app did not stop on q")
 	}
 	return out
 }

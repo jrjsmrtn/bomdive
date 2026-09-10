@@ -115,6 +115,33 @@ Both are instances of the same rule: **state the success criterion in terms of t
 many came back, does this exact string appear, did the file change — rather than checking that a
 command "ran".
 
+## Coverage: a floor, and an honest account of what it does not do
+
+`scripts/check-coverage.sh` enforces **≥80% for every package under `internal/`**, in the pre-push
+gate. It exists because ADR-0002 promised a threshold that nothing checked, and `internal/tui` sat
+below it — at 78.5%, for as long as it had existed — until someone asked whether coverage was gated
+at all.
+
+```bash
+./scripts/check-coverage.sh                       # the gate
+./scripts/check-coverage.sh --self-test --threshold 100   # proves it reads the numbers
+```
+
+⚠ **80% is loose, and the number should not be trusted for more than it says.** Deleting an entire
+test file from `internal/columns` dropped it from 95.2% to 84.1% and **the gate still passed**. It
+catches a package going largely untested; it does not catch a package getting worse.
+
+⚠ **The gate's first version silently skipped an untested package**, which is the one case it
+existed to catch. `go test -cover` prints a package with no tests using a **leading tab and 0.0%**,
+not `ok`, so an anchor on `^ok` dropped it from the report entirely — and a package absent from a
+report is not a package that passed. It now reconciles against `go list ./internal/...` and fails
+on any package it did not measure. Found by planting the failure rather than by reading the script.
+
+⚠ **Coverage says which lines RAN, never whether anything asserted on them.** Every real defect
+found in this project was found by *mutation testing*, not by a coverage number — including three
+tests that executed the right lines and asserted the wrong thing. Treat the floor as a smoke alarm
+and the mutations as the actual test of the tests.
+
 ## Profiling
 
 Added because a benchmark said the walk was slow and a **guess about why was wrong**: the suspect
