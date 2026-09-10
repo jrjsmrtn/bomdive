@@ -57,6 +57,13 @@ Established that a self-contained binary **does** survive cgo, correcting an ear
 | `poc6-src/tagdemo-backend_ladybug.go.txt` | `//go:build ladybug` — the cgo opt-in |
 | `poc6-src/zigcross.go.txt` | Minimal cgo program used to prove `zig cc` cross-compiles cgo to a static Linux ELF |
 
+## POC-7 — BOM identity and OBOM navigation
+
+| File | What it is |
+|---|---|
+| `poc7-bom-identity-2026-09-10.md` | The discrimination rule (`lifecycles` + root component type), the custom-lifecycle trap, the 40-category OBOM vocabulary and its platform split, and the merged host view as an **unmeasured** exception |
+| `poc7-bom-type-discriminator.py` | Runnable classifier. Emits shape only, so its output is safe over a private corpus |
+
 ## Re-running
 
 ```bash
@@ -65,6 +72,8 @@ python3 poc2-corpus-shape.py <out.json> <corpus>   # POC-2, any corpus directory
 ./poc6-cycle-semantics.sh                          # POC-6, self-asserting
 ./poc6-ladybug-duckdb-bridge.sh [bom.json]         # POC-6, the combo; needs duckdb + lbug
 duckdb -c ".read poc6-duckdb-corpus.sql"           # POC-6, zero-ingest queries
+python3 poc7-bom-type-discriminator.py <bom.json>  # POC-7, classify a BOM
+python3 poc7-bom-type-discriminator.py --corpus <dir>   # POC-7, anonymised summary
 ```
 
 The `.go.txt` sources are kept as text so they are not compiled as part of the module. The cgo ones

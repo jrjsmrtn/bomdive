@@ -61,6 +61,23 @@ most of it is not in the graph, is worse than `jq` — it is confidently wrong. 
 having failed to compute them. `tree` must distinguish "this BOM declares no graph" from "this
 tool found no graph", and direct the user to `ls` rather than printing nothing.
 
+### How the tool knows which kind of BOM it has
+
+Not by sniffing content. `metadata.lifecycles[]` and `metadata.component.type` together
+discriminated every real BOM measured, and the classifier is
+`docs/inception/evidence/poc7-bom-type-discriminator.py`.
+
+⚠ A lifecycle entry is **either** `{"phase": ...}` **or** `{"name": ..., "description": ...}`.
+Reading only `.phase` silently misclassifies a BOM using the custom form. A BOM may also carry no
+`metadata.component` at all, which is schema-valid, so "undeclared" is a branch the classifier must
+have rather than an error.
+
+⚠ **This record's OBOM finding carries one unmeasured exception.** cdxgen's
+`hbom --include-runtime` is documented to emit a merged host view *with* synthetic `bom-ref`s and
+host→hardware→runtime edges. That would make a host-level `tree` meaningful. It has been read, not
+run — see POC-7. Until it is measured, treat `tree`-on-a-host-view as unvalidated, and do not read
+"an OBOM has no graph" as covering it.
+
 ### Therefore ls and tree are not symmetric
 
 `ls` is the universal command and works on every BOM type — over components, or over the

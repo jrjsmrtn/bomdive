@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   result made runnable and self-asserting.
 - `scripts/check-evidence-refs.py`, asserting in both directions that documents and evidence files
   agree. Written because ADR-0005 had quoted numbers with no evidence behind them.
+- POC-7: the BOM-type discrimination rule (`metadata.lifecycles` + root component type) with a
+  runnable classifier, the 40-category OBOM navigation vocabulary and its platform split, and the
+  merged host view recorded as a **documented-but-unmeasured** exception to ADR-0004.
 - `poc6-ladybug-duckdb-bridge.sh` — the LadybugDB↔DuckDB combination made runnable and
   self-asserting, and `poc6-duckdb-corpus.sql` for the zero-ingest queries. Both existed only as
   prose until a review found the survey's most useful result was also its least reproducible.
