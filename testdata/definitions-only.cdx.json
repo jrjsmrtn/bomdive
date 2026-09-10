@@ -1,0 +1,24 @@
+{
+  "bomFormat": "CycloneDX",
+  "definitions": {
+    "standards": [
+      {
+        "bom-ref": "standard-1",
+        "description": "A synthetic standard, for testing identification only.",
+        "name": "Example Baseline",
+        "owner": "Example Standards Body",
+        "requirements": [
+          {
+            "bom-ref": "req-1",
+            "identifier": "EB-1",
+            "text": "The product shall do the thing.",
+            "title": "First requirement"
+          }
+        ],
+        "version": "1.0"
+      }
+    ]
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

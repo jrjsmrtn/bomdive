@@ -718,7 +718,8 @@ func TestScrollingDoesNotCloseTheOverlay(t *testing.T) {
 // looks like: "relations undeclared" on a standalone VEX is true and answers a
 // question nobody asked.
 func TestAnEmptyDocumentSaysSoRatherThanReportingGraphState(t *testing.T) {
-	for _, name := range []string{"vex-standalone", "services-only", "metadata-only"} {
+	for _, name := range []string{"vex-standalone", "services-only", "metadata-only",
+		"attestation-only", "definitions-only"} {
 		g, err := bom.Load(filepath.Join("..", "..", "testdata", name+".cdx.json"))
 		if err != nil {
 			t.Fatal(err)

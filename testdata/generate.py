@@ -390,6 +390,72 @@ fixture(
 )
 
 fixture(
+    "attestation-only",
+    "A CycloneDX Attestations (CDXA) document: `declarations` and nothing else — no "
+    "components, and in the spec's own sample no metadata either. It attests "
+    "conformance to a standard; it inventories nothing, so it is not a bill of "
+    "materials. Shape taken from the specification's conformance corpus "
+    "(`valid-attestation-1.6.json`), contents synthetic.",
+    {"components": 0, "attestations": 1, "standards": 0},
+    {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "version": 1,
+        "declarations": {
+            "assessors": [
+                {"bom-ref": "assessor-1", "thirdParty": True,
+                 "organization": {"name": "Example Assessors"}},
+            ],
+            "attestations": [
+                {"summary": "Attestation for the example standard",
+                 "assessor": "assessor-1",
+                 "map": [{"requirement": "req-1",
+                          "claims": ["claim-1"],
+                          "conformance": {"score": 1.0}}]},
+            ],
+            "claims": [
+                {"bom-ref": "claim-1", "target": "product-only",
+                 "predicate": "The product meets requirement 1.",
+                 "evidence": ["evidence-1"]},
+            ],
+            "evidence": [
+                {"bom-ref": "evidence-1", "propertyName": "example:evidence",
+                 "description": "Synthetic evidence for a synthetic claim."},
+            ],
+        },
+    },
+)
+
+fixture(
+    "definitions-only",
+    "A document whose whole payload is `definitions.standards` — it DEFINES a "
+    "standard for others to attest against, rather than inventorying anything. "
+    "Unmeasured in every corpus available, including the specification's own "
+    "conformance suite, so this fixture is built from the schema rather than from "
+    "a sample; that is recorded here because it is a weaker provenance than every "
+    "other fixture in this corpus.",
+    {"components": 0, "attestations": 0, "standards": 1},
+    {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "version": 1,
+        "definitions": {
+            "standards": [
+                {"bom-ref": "standard-1",
+                 "name": "Example Baseline",
+                 "version": "1.0",
+                 "description": "A synthetic standard, for testing identification only.",
+                 "owner": "Example Standards Body",
+                 "requirements": [
+                     {"bom-ref": "req-1", "identifier": "EB-1", "title": "First requirement",
+                      "text": "The product shall do the thing."},
+                 ]},
+            ],
+        },
+    },
+)
+
+fixture(
     "many-properties",
     "One component carrying 37 properties, the widest osquery category measured "
     "(POC-7: processes and launchd_services). The detail pane cannot show this in "

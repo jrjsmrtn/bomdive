@@ -74,9 +74,37 @@ which is the difference between *"this tool does not cover that"* and *"this too
 The three empty shapes must read differently, and
 `TestEveryEmptyDocumentExplainsItselfDistinctly` fails if any two produce the same sentence.
 
+## Correction — the first fix reached 19 of 25
+
+The rule above was right and did not run for six documents. `identify()` returned early when a
+document had no `metadata` — which the schema does not require — before deciding a kind at all.
+Measured by running the built binary over every VEX-shaped document in the corpora:
+
+| build | labelled `VEX` | labelled `SBOM` |
+|---|---|---|
+| the commit that introduced the rule | 19 | **6** — every one without `metadata` |
+| after moving the kind decision ahead of the metadata check | **25** | 0 |
+
+It was found when two fixtures carrying no metadata came out labelled `SBOM` over a note saying
+they were not bills of materials — the label and the explanation disagreeing, which the code
+comment claimed could not happen. `--check-labels` below makes the count re-runnable and fails on
+any mismatch.
+
+## Two more shapes, on weaker evidence
+
+| kind | payload, with no components | evidence |
+|---|---|---|
+| **attestation** | `declarations` only — CycloneDX Attestations | **one** sample: the specification's own `valid-attestation-1.6.json`. lsxbom **cannot load it** — `cyclonedx-go` fails on `declarations.evidence[].data[].classification` (CycloneDX/cyclonedx-go#275) — so the committed fixture avoids that field |
+| **definitions** | `definitions` only — standards others attest against | **none** in any corpus, the specification's suite included. Recognised from the schema alone |
+
+Both say `not a bill of materials` on the first line. When a document carries more than one of
+these payloads, the best-evidenced reading wins: VEX, then attestation, then definitions.
+
 ## Re-run
 
 ```bash
 scripts/check-corpora.sh                                                   # populate the cache
 python3 docs/inception/evidence/poc10-documents-without-components.py      # the table above
+python3 docs/inception/evidence/poc10-documents-without-components.py .corpora-cache \
+    --check-labels ~/.local/bin/lsxbom                                   # 25 of 25, or exit 1
 ```

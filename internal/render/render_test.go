@@ -399,7 +399,8 @@ func TestByCategoryIsSuggestedOnlyWhereItHelps(t *testing.T) {
 // graph to cover, so "0 of 0 because `dependencies` is absent" answers a question
 // nobody asked.
 func TestAnEmptyDocumentExplainsItselfOnBothSurfaces(t *testing.T) {
-	for _, fx := range []string{"vex-standalone", "services-only", "metadata-only"} {
+	for _, fx := range []string{"vex-standalone", "services-only", "metadata-only",
+		"attestation-only", "definitions-only"} {
 		g := load(t, fx)
 		want, _ := g.Contents().ExplainEmpty()
 		for _, r := range []Result{

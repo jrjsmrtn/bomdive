@@ -29,14 +29,24 @@ const (
 	KindOBOM      Kind = "OBOM"
 	KindHBOM      Kind = "HBOM"
 	KindImageSBOM Kind = "image SBOM"
-	// KindVEX is the one value here that is NOT a bill of materials.
-	KindVEX  Kind = "VEX"
-	KindSBOM Kind = "SBOM"
+	KindSBOM      Kind = "SBOM"
+
+	// The kinds below are CycloneDX documents that are NOT bills of materials:
+	// they inventory nothing. See nonBOMKind for how each is recognised.
+	KindVEX         Kind = "VEX"
+	KindAttestation Kind = "attestation"
+	KindDefinitions Kind = "definitions"
 )
 
 // IsBOM reports whether this kind of document is a bill of materials — that is,
-// whether it inventories anything. Everything but VEX does.
-func (k Kind) IsBOM() bool { return k != KindVEX }
+// whether it inventories anything.
+func (k Kind) IsBOM() bool {
+	switch k {
+	case KindVEX, KindAttestation, KindDefinitions:
+		return false
+	}
+	return true
+}
 
 // Identity records the verdict AND the evidence for it, so a caller can explain
 // itself rather than asserting a classification the user cannot check.
@@ -102,6 +112,15 @@ func join(s []string) string {
 
 func identify(doc *cdx.BOM) Identity {
 	id := Identity{Kind: KindSBOM}
+	// The payload rule runs BEFORE the metadata check, not inside the switch below.
+	// metadata is optional, and a document without it returned early here, so its
+	// kind was never decided: 6 of the 25 standalone VEX documents in the public
+	// corpora carry no metadata and were still called "SBOM". The root-type rules
+	// below can override this, and can only fire when metadata exists — so a
+	// declared root type still outranks an absent component list.
+	if kind, ok := payloadOf(doc).nonBOMKind(); ok {
+		id.Kind = kind
+	}
 	if doc.Metadata == nil {
 		return id
 	}
@@ -134,35 +153,42 @@ func identify(doc *cdx.BOM) Identity {
 		id.Kind = KindHBOM
 	case id.RootType == "container":
 		id.Kind = KindImageSBOM
-	case isStandaloneVEX(doc):
-		id.Kind = KindVEX
 	}
 	return id
 }
 
-// isStandaloneVEX: vulnerability records and NOTHING to inventory.
+// nonBOMKind recognises a CycloneDX document that inventories nothing, from what
+// it carries INSTEAD of components. It is the one decision behind both the kind
+// on the first line and the sentence ExplainEmpty prints, so the label and the
+// explanation cannot disagree.
 //
-// CycloneDX carries VEX either embedded in a BOM — `vulnerabilities` alongside
-// `components` — or standalone, where the document describes a product held
-// elsewhere and asserts only which vulnerabilities affect it. Components present
-// therefore means SBOM-with-embedded-VEX and NOT this.
+// Components present means a bill of materials, whatever else rides along: VEX
+// embedded in an SBOM is still an SBOM, and so is an SBOM carrying attestations.
+// Keying on the ABSENCE of components, not on the presence of a payload, is the
+// whole rule.
 //
-// A standalone VEX is a valid CycloneDX document and NOT a bill of materials. It is
-// not a degenerate SBOM, an empty one, or a failure to inventory — it is a
-// different kind of statement that happens to share the envelope.
+// Provenance differs per kind, and the weakest is stated rather than hidden:
+//   - VEX: 25 of 137 public corpus documents (POC-10).
+//   - attestation: `declarations` only. One sample, from the specification's own
+//     conformance suite (valid-attestation-1.6.json), which names the shape.
+//   - definitions: `definitions` only. NO sample anywhere, the spec's suite
+//     included; recognised from the schema alone.
 //
-// Measured over the public corpora (POC-10): the split is clean. 25 of 137
-// documents carry vulnerabilities with no components, 97 carry components, and NO
-// document carries both. Before this, all 25 were called "SBOM" and drawn as an
-// empty component list — the confidently-wrong shape checkIsBOM exists to prevent,
-// arrived at one step later.
-//
-// It is placed LAST in the switch on purpose: a root type is a stronger signal than
-// the absence of components, so an OBOM that also carried vulnerabilities stays an
-// OBOM.
-func isStandaloneVEX(doc *cdx.BOM) bool {
-	if doc.Components != nil && len(*doc.Components) > 0 {
-		return false
+// ORDER matters when a document carries more than one payload and no components.
+// It follows provenance, strongest first, so the best-evidenced reading wins. The
+// root-type rules in identify are checked before any of this, because a declared
+// root type is stronger evidence than an absent component list.
+func (c Contents) nonBOMKind() (Kind, bool) {
+	if c.Components > 0 {
+		return "", false
 	}
-	return doc.Vulnerabilities != nil && len(*doc.Vulnerabilities) > 0
+	switch {
+	case c.Vulnerabilities > 0:
+		return KindVEX, true
+	case c.Declarations:
+		return KindAttestation, true
+	case c.Definitions:
+		return KindDefinitions, true
+	}
+	return "", false
 }

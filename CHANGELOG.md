@@ -20,10 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   carries VEX, and a standalone VEX inventories nothing. `identify()` defaulted to `SBOM` and had
   no rule for it, so `browse` on a CISA VEX use case showed `SBOM (root application; …)` over an
   empty column and `coverage 0/0 (0%)`, which reads as the tool having failed. It is now identified
-  as `VEX (a CycloneDX document, not a bill of materials: it inventories nothing)`. The rule keys
-  on the **absence of components**, not the presence of vulnerabilities, so an SBOM with embedded
-  VEX stays an SBOM; and it is applied *after* the root-type rules, so an OBOM carrying
-  vulnerability records stays an OBOM.
+  as `VEX (a CycloneDX document, not a bill of materials: it inventories nothing)` in **all 25**
+  corpus VEX documents. **The first version of this fix reached only 19 of 25**: `identify()`
+  returned early on a document with no `metadata` — which is optional — before deciding a kind at
+  all, so the six VEX documents without it were still called `SBOM`. Found when two new fixtures
+  with no metadata came out labelled `SBOM` over a note saying they were not bills of materials.
+  The kind is now decided before the metadata check. The rule keys on the **absence of
+  components**, not the presence of vulnerabilities, so an SBOM with embedded VEX stays an SBOM;
+  and a declared root type still outranks it, so an OBOM carrying vulnerability records stays an
+  OBOM.
 - **An empty component list now says why, on every surface.** A standalone VEX, a services-only
   document and one carrying nothing but metadata all list zero components and all rendered
   identically. Measured across the public corpora: **40 of 137 documents** carry no components —
@@ -76,6 +81,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Two more CycloneDX documents that are not bills of materials are named**: an **attestation**
+  (`declarations` only — CycloneDX Attestations) and a **definitions** document (`definitions`
+  only — it defines standards others attest against). Both were labelled `SBOM` and explained as
+  "carries metadata and nothing else", which was false. Their evidence is weaker than VEX's, and is
+  stated: attestation rests on **one** sample, the specification's own `valid-attestation-1.6.json`
+  — which lsxbom cannot load, because `cyclonedx-go` fails to decode it (CycloneDX/cyclonedx-go#275)
+  — and definitions on the **schema alone**, with no sample in any corpus. Fixtures:
+  `testdata/attestation-only.cdx.json`, `testdata/definitions-only.cdx.json`. When a document
+  carries several payloads and no components, the best-evidenced reading wins: VEX, then
+  attestation, then definitions.
 - **A row you can descend into is marked with `→`** at the right of its column, the way macOS
   Finder chevrons a folder. Without it a leaf and a component with fifty dependencies look
   identical until you press `→` and nothing happens. It follows the view's direction, so in

@@ -1,0 +1,50 @@
+{
+  "bomFormat": "CycloneDX",
+  "declarations": {
+    "assessors": [
+      {
+        "bom-ref": "assessor-1",
+        "organization": {
+          "name": "Example Assessors"
+        },
+        "thirdParty": true
+      }
+    ],
+    "attestations": [
+      {
+        "assessor": "assessor-1",
+        "map": [
+          {
+            "claims": [
+              "claim-1"
+            ],
+            "conformance": {
+              "score": 1.0
+            },
+            "requirement": "req-1"
+          }
+        ],
+        "summary": "Attestation for the example standard"
+      }
+    ],
+    "claims": [
+      {
+        "bom-ref": "claim-1",
+        "evidence": [
+          "evidence-1"
+        ],
+        "predicate": "The product meets requirement 1.",
+        "target": "product-only"
+      }
+    ],
+    "evidence": [
+      {
+        "bom-ref": "evidence-1",
+        "description": "Synthetic evidence for a synthetic claim.",
+        "propertyName": "example:evidence"
+      }
+    ]
+  },
+  "specVersion": "1.6",
+  "version": 1
+}

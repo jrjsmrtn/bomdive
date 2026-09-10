@@ -568,12 +568,14 @@ func TestDanglingIsSampledNotDumped(t *testing.T) {
 // documents are this shape (POC-10).
 func TestAStandaloneVEXIsNotCalledAnSBOM(t *testing.T) {
 	for name, want := range map[string]Kind{
-		"vex-standalone":  KindVEX,
-		"sbom-with-vex":   KindSBOM, // components present: embedded, not standalone
-		"services-only":   KindSBOM,
-		"metadata-only":   KindSBOM,
-		"tree-simple":     KindSBOM,
-		"obom-categories": KindOBOM,
+		"vex-standalone":   KindVEX,
+		"attestation-only": KindAttestation,
+		"definitions-only": KindDefinitions,
+		"sbom-with-vex":    KindSBOM, // components present: embedded, not standalone
+		"services-only":    KindSBOM,
+		"metadata-only":    KindSBOM,
+		"tree-simple":      KindSBOM,
+		"obom-categories":  KindOBOM,
 	} {
 		if got := fixture(t, name).Identity().Kind; got != want {
 			t.Errorf("%s: Kind = %q, want %q", name, got, want)
@@ -611,7 +613,8 @@ func TestRootTypeOutranksTheVEXRule(t *testing.T) {
 // list nothing, and only one of them means "wrong tool for this file".
 func TestEveryEmptyDocumentExplainsItselfDistinctly(t *testing.T) {
 	seen := map[string]string{}
-	for _, name := range []string{"vex-standalone", "services-only", "metadata-only"} {
+	for _, name := range []string{"vex-standalone", "services-only", "metadata-only",
+		"attestation-only", "definitions-only"} {
 		g := fixture(t, name)
 		msg, empty := g.Contents().ExplainEmpty()
 		if !empty {
@@ -632,10 +635,12 @@ func TestEveryEmptyDocumentExplainsItselfDistinctly(t *testing.T) {
 // Contents counts what it says it counts.
 func TestContentsCountsVulnerabilitiesAndServices(t *testing.T) {
 	for name, want := range map[string]Contents{
-		"vex-standalone": {Components: 0, Vulnerabilities: 1, Services: 0},
-		"services-only":  {Components: 0, Vulnerabilities: 0, Services: 2},
-		"metadata-only":  {Components: 0, Vulnerabilities: 0, Services: 0},
-		"sbom-with-vex":  {Components: 2, Vulnerabilities: 1, Services: 0},
+		"vex-standalone":   {Components: 0, Vulnerabilities: 1, Services: 0},
+		"services-only":    {Components: 0, Vulnerabilities: 0, Services: 2},
+		"metadata-only":    {Components: 0, Vulnerabilities: 0, Services: 0},
+		"sbom-with-vex":    {Components: 2, Vulnerabilities: 1, Services: 0},
+		"attestation-only": {Declarations: true, Attestations: 1},
+		"definitions-only": {Definitions: true, Standards: 1},
 	} {
 		if got := fixture(t, name).Contents(); got != want {
 			t.Errorf("%s: Contents = %+v, want %+v", name, got, want)
@@ -665,5 +670,70 @@ func TestDescribeSaysWhenADocumentIsNotABOM(t *testing.T) {
 		if strings.Contains(id.Describe(), "not a bill of materials") {
 			t.Errorf("%s: Describe carries the VEX disclaimer: %q", name, id.Describe())
 		}
+	}
+}
+
+// metadata is OPTIONAL, so a document without it must still get a kind. identify
+// returned early on a nil metadata before deciding one, and 6 of the 25 standalone
+// VEX documents in the public corpora — every one with no metadata — were called
+// "SBOM" by the release that introduced the VEX rule.
+func TestADocumentWithNoMetadataStillGetsItsKind(t *testing.T) {
+	doc := &cdx.BOM{
+		BOMFormat:       "CycloneDX",
+		Vulnerabilities: &[]cdx.Vulnerability{{ID: "CVE-2020-0000"}},
+	}
+	if doc.Metadata != nil {
+		t.Fatal("the document has metadata; this test proves nothing")
+	}
+	if got := identify(doc).Kind; got != KindVEX {
+		t.Errorf("Kind = %q, want VEX for a document with no metadata", got)
+	}
+}
+
+// Every non-BOM kind says so on the first line, and the explanation below it names
+// the SAME kind — the label and the sentence come from one decision.
+func TestEachNonBOMKindIsLabelledAndExplainedConsistently(t *testing.T) {
+	for name, want := range map[string]struct {
+		kind  Kind
+		fixed string // a phrase only this kind's explanation contains
+	}{
+		"vex-standalone":   {KindVEX, "standalone VEX"},
+		"attestation-only": {KindAttestation, "It is an attestation"},
+		"definitions-only": {KindDefinitions, "DEFINES 1 standard(s)"},
+	} {
+		g := fixture(t, name)
+		id := g.Identity()
+		if id.Kind != want.kind {
+			t.Errorf("%s: Kind = %q, want %q", name, id.Kind, want.kind)
+		}
+		if id.Kind.IsBOM() {
+			t.Errorf("%s: %q reports itself as a bill of materials", name, id.Kind)
+		}
+		if !strings.Contains(id.Describe(), "not a bill of materials") {
+			t.Errorf("%s: first line does not say it is not a BOM: %q", name, id.Describe())
+		}
+		msg, _ := g.Contents().ExplainEmpty()
+		if !strings.Contains(msg, want.fixed) {
+			t.Errorf("%s: explanation does not name its kind (%q):\n%s", name, want.fixed, msg)
+		}
+	}
+}
+
+// When a document carries several payloads and no components, the best-evidenced
+// reading wins: VEX (25 corpus samples) over attestation (one spec sample) over
+// definitions (none).
+func TestSeveralPayloadsResolveByProvenance(t *testing.T) {
+	both := Contents{Vulnerabilities: 1, Declarations: true, Definitions: true}
+	if got, _ := both.nonBOMKind(); got != KindVEX {
+		t.Errorf("vulnerabilities+declarations+definitions = %q, want VEX", got)
+	}
+	decl := Contents{Declarations: true, Definitions: true}
+	if got, _ := decl.nonBOMKind(); got != KindAttestation {
+		t.Errorf("declarations+definitions = %q, want attestation", got)
+	}
+	// And components present means an inventory, whatever rides along.
+	inv := Contents{Components: 1, Vulnerabilities: 1, Declarations: true, Definitions: true}
+	if got, ok := inv.nonBOMKind(); ok {
+		t.Errorf("a document with components was classified as %q", got)
 	}
 }

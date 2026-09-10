@@ -74,6 +74,8 @@ def properties(doc: dict) -> dict:
         # apart is what stops the tool drawing an unexplained blank.
         "vulnerabilities": len(doc.get("vulnerabilities") or []),
         "services": len(doc.get("services") or []),
+        "attestations": len((doc.get("declarations") or {}).get("attestations") or []),
+        "standards": len((doc.get("definitions") or {}).get("standards") or []),
         "dependency_entries": len(deps),
         "has_dependencies_key": has_deps_key,
         "root_declared": root is not None,

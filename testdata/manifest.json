@@ -1,4 +1,13 @@
 {
+  "attestation-only": {
+    "asserts": {
+      "attestations": 1,
+      "components": 0,
+      "standards": 0
+    },
+    "file": "attestation-only.cdx.json",
+    "why": "A CycloneDX Attestations (CDXA) document: `declarations` and nothing else \u2014 no components, and in the spec's own sample no metadata either. It attests conformance to a standard; it inventories nothing, so it is not a bill of materials. Shape taken from the specification's conformance corpus (`valid-attestation-1.6.json`), contents synthetic."
+  },
   "cycle-deep": {
     "asserts": {
       "cycles_found": 1,
@@ -35,6 +44,15 @@
     },
     "file": "dangling-ref.cdx.json",
     "why": "A dependsOn target that matches no component. Referential integrity was PERFECT in every real BOM measured, so this is the error path rather than an observed shape \u2014 included because 'never seen it' is not 'cannot happen', and the tool must report it rather than crash or invent a node."
+  },
+  "definitions-only": {
+    "asserts": {
+      "attestations": 0,
+      "components": 0,
+      "standards": 1
+    },
+    "file": "definitions-only.cdx.json",
+    "why": "A document whose whole payload is `definitions.standards` \u2014 it DEFINES a standard for others to attest against, rather than inventorying anything. Unmeasured in every corpus available, including the specification's own conformance suite, so this fixture is built from the schema rather than from a sample; that is recorded here because it is a weaker provenance than every other fixture in this corpus."
   },
   "diamond": {
     "asserts": {

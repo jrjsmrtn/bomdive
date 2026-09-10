@@ -188,9 +188,9 @@ type Graph struct {
 	edges      int
 	dangling   []string
 
-	// Counted at load, so a surface can say what an empty component list MEANS.
-	vulnerabilities int
-	services        int
+	// payload is counted at load, so a surface can say what an empty component
+	// list MEANS. Its Components field is unused; Contents fills it from nodes.
+	payload Contents
 
 	props map[string][]Property
 }
@@ -314,12 +314,7 @@ func build(doc *cdx.BOM) *Graph {
 		}
 	}
 
-	if doc.Vulnerabilities != nil {
-		g.vulnerabilities = len(*doc.Vulnerabilities)
-	}
-	if doc.Services != nil {
-		g.services = len(*doc.Services)
-	}
+	g.payload = payloadOf(doc)
 
 	// `dependencies` present-and-empty is the document asserting it has no
 	// relations; absent means the generator said nothing. Callers must be able to
@@ -366,15 +361,55 @@ type Contents struct {
 	Components      int
 	Vulnerabilities int
 	Services        int
+
+	// Declarations is a CycloneDX Attestations section; Attestations counts the
+	// attestations inside it. The section is recorded separately from the count,
+	// because a declarations section holding only claims or evidence is still one.
+	Declarations bool
+	Attestations int
+
+	// Definitions is a section defining standards for others to attest against;
+	// Standards counts them.
+	Definitions bool
+	Standards   int
 }
 
-// Contents reports what the document carries.
-func (g *Graph) Contents() Contents {
-	return Contents{
-		Components:      len(g.nodes),
-		Vulnerabilities: g.vulnerabilities,
-		Services:        g.services,
+// payloadOf counts what a document carries at top level. Components is the RAW
+// count — every listed component, addressable or not — which is what decides
+// whether the document is an inventory at all. identify and build both call this,
+// so there is one count and not two.
+func payloadOf(doc *cdx.BOM) Contents {
+	var c Contents
+	if doc.Components != nil {
+		c.Components = len(*doc.Components)
 	}
+	if doc.Vulnerabilities != nil {
+		c.Vulnerabilities = len(*doc.Vulnerabilities)
+	}
+	if doc.Services != nil {
+		c.Services = len(*doc.Services)
+	}
+	if d := doc.Declarations; d != nil {
+		c.Declarations = true
+		if d.Attestations != nil {
+			c.Attestations = len(*d.Attestations)
+		}
+	}
+	if d := doc.Definitions; d != nil {
+		c.Definitions = true
+		if d.Standards != nil {
+			c.Standards = len(*d.Standards)
+		}
+	}
+	return c
+}
+
+// Contents reports what the document carries. Components here is what lsxbom can
+// LIST — components with a bom-ref — not the raw count payloadOf takes.
+func (g *Graph) Contents() Contents {
+	c := g.payload
+	c.Components = len(g.nodes)
+	return c
 }
 
 // ExplainEmpty says why there is nothing to list, and false when there IS.
@@ -386,24 +421,39 @@ func (c Contents) ExplainEmpty() (string, bool) {
 	if c.Components > 0 {
 		return "", false
 	}
+	notABOM := "this is a CycloneDX document but NOT a bill of materials: it inventories " +
+		"nothing"
+	if kind, ok := c.nonBOMKind(); ok {
+		switch kind {
+		case KindAttestation:
+			return fmt.Sprintf("%s. It is an attestation — a declarations section carrying "+
+				"%d attestation(s) of conformance to a standard, with the claims and evidence "+
+				"behind them. Nothing is missing here — lsxbom navigates components, and this "+
+				"document has none to navigate.", notABOM, c.Attestations), true
+		case KindDefinitions:
+			return fmt.Sprintf("%s. It DEFINES %d standard(s) — requirements others attest "+
+				"against — rather than describing a product. Nothing is missing here — lsxbom "+
+				"navigates components, and this document has none to navigate.",
+				notABOM, c.Standards), true
+		}
+	}
 	switch {
 	case c.Vulnerabilities > 0 && c.Services > 0:
 		return fmt.Sprintf("this document declares NO components: it carries %d vulnerability "+
 			"record(s) and %d service(s). lsxbom navigates components, so there is nothing "+
 			"here to list.", c.Vulnerabilities, c.Services), true
 	case c.Vulnerabilities > 0:
-		return fmt.Sprintf("this is a CycloneDX document but NOT a bill of materials: it "+
-			"inventories nothing and carries %d vulnerability record(s). A standalone VEX "+
+		return fmt.Sprintf("%s and carries %d vulnerability record(s). A standalone VEX "+
 			"asserts which vulnerabilities affect a product described in ANOTHER document. "+
 			"Nothing is missing here — lsxbom navigates components, and this document has "+
-			"none to navigate.", c.Vulnerabilities), true
+			"none to navigate.", notABOM, c.Vulnerabilities), true
 	case c.Services > 0:
 		return fmt.Sprintf("this document declares NO components: it carries %d service(s). "+
 			"lsxbom navigates components, not services, so there is nothing here to list.",
 			c.Services), true
 	default:
-		return "this document declares NO components, and no vulnerabilities or services " +
-			"either — it carries metadata and nothing else. That is schema-valid: it names a " +
+		return "this document declares NO components, and no vulnerabilities, services, " +
+			"declarations or definitions either — it carries metadata and nothing else. That is schema-valid: it names a " +
 			"product without inventorying it.", true
 	}
 }

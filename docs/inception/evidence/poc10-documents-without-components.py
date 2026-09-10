@@ -11,11 +11,18 @@ component-less documents hold instead. Counts documents, never identifiers, so i
 to run over a private corpus.
 
     python3 docs/inception/evidence/poc10-documents-without-components.py .corpora-cache
+
+With --check-labels BINARY it also runs `BINARY ls` over every VEX-shaped document and
+counts the ones whose first line is not "VEX", exiting 1 if there are any. That is the
+check which caught the first VEX fix reaching only 19 of 25 documents.
+
+    python3 ... .corpora-cache --check-labels ~/.local/bin/lsxbom
 """
 import collections
 import glob
 import json
 import os
+import subprocess
 import sys
 
 
@@ -25,7 +32,8 @@ def bucket(n, present):
     return "0" if n == 0 else ">0"
 
 
-def main(root: str) -> int:
+def main(root: str, binary: str | None = None) -> int:
+    vex_paths = []
     grid = collections.Counter()
     payloads = collections.Counter()
     scanned = skipped = 0
@@ -51,6 +59,7 @@ def main(root: str) -> int:
         # What does a document with no inventory actually hold?
         if vulns:
             payloads["vulnerabilities (standalone VEX)"] += 1
+            vex_paths.append(path)
         elif doc.get("services"):
             payloads["services (SaaSBOM shape)"] += 1
         else:
@@ -65,8 +74,29 @@ def main(root: str) -> int:
     print("documents with NO components carry:")
     for what, n in payloads.most_common():
         print(f"  {what:<36}: {n}")
-    return 0
+
+    if not binary:
+        return 0
+    # Measure the TOOL, not the corpus: what the built binary actually prints first.
+    wrong = []
+    for path in vex_paths:
+        out = subprocess.run([binary, "ls", path], capture_output=True, text=True)
+        first = out.stdout.splitlines()[0] if out.stdout else f"(exit {out.returncode})"
+        if not first.startswith("VEX"):
+            wrong.append((os.path.basename(path), first.split(" ")[0]))
+    print()
+    print(f"{binary}: {len(vex_paths) - len(wrong)} of {len(vex_paths)} "
+          f"VEX-shaped documents labelled VEX")
+    for name, label in wrong:
+        print(f"  labelled {label}: {name}")
+    return 1 if wrong else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else ".corpora-cache"))
+    args = sys.argv[1:]
+    binary = None
+    if "--check-labels" in args:
+        i = args.index("--check-labels")
+        binary = args[i + 1]
+        del args[i:i + 2]
+    sys.exit(main(args[0] if args else ".corpora-cache", binary))
