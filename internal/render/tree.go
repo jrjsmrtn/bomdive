@@ -1,0 +1,66 @@
+package render
+
+import "github.com/jrjsmrtn/lsxbom/internal/bom"
+
+// TreeOptions mirrors tree(1) where the vocabulary carries over.
+type TreeOptions struct {
+	From     string // walk from this ref; empty walks from derived roots
+	MaxDepth int    // -L; 0 means unlimited
+}
+
+// Tree walks the dependency graph.
+//
+// It REFUSES INFORMATIVELY rather than printing nothing when the document declares
+// no graph. An empty tree and a document that says it has no relations look
+// identical on screen, and only one of them means the tool worked.
+func Tree(g *bom.Graph, source string, opt TreeOptions) Result {
+	r := New("tree", source, g)
+	r.From = opt.From
+
+	if g.DeclaresNoGraph() {
+		r.Notes = append(r.Notes,
+			"this BOM declares no dependency graph: `dependencies` is present and empty, "+
+				"so the document is asserting there are no relations — not failing to compute them")
+		r.Notes = append(r.Notes, "use `lsxbom ls --by-category` to navigate it")
+		return r
+	}
+	if !g.HasDependenciesKey() {
+		r.Notes = append(r.Notes,
+			"this BOM has no `dependencies` field at all, so the generator said nothing "+
+				"about relations — which is not the same as asserting there are none")
+		return r
+	}
+
+	starts := []string{opt.From}
+	if opt.From == "" {
+		roots, synthetic := g.Roots()
+		r.SyntheticRoots = synthetic
+		starts = starts[:0]
+		for _, n := range roots {
+			starts = append(starts, n.Ref)
+		}
+		if synthetic && len(starts) > 0 {
+			r.Notes = append(r.Notes,
+				"roots are DERIVED from components nothing depends on; this document's declared "+
+					"root is not in its dependency graph")
+		}
+	}
+	if len(starts) == 0 {
+		r.Notes = append(r.Notes, "no roots found to walk from")
+		return r
+	}
+
+	for _, start := range starts {
+		g.Walk(start, opt.MaxDepth, func(v bom.Visit) bool {
+			e := entryOf(g, v.Node)
+			e.Depth, e.Repeat, e.Cycle = v.Depth, v.Repeat, v.Cycle
+			r.Entries = append(r.Entries, e)
+			return true
+		})
+	}
+
+	if !r.Coverage.Complete {
+		r.Notes = append(r.Notes, "this tree does NOT show every component — see coverage")
+	}
+	return r
+}

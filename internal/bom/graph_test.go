@@ -220,3 +220,23 @@ func TestEveryFixtureLoads(t *testing.T) {
 		}
 	}
 }
+
+// Pointing at the wrong file must be an error, not a plausible empty BOM. Before
+// this check, valid-JSON-but-not-a-BOM rendered "0 of 0 components" and exit 0.
+func TestNonBOMIsRejectedNotRenderedEmpty(t *testing.T) {
+	for name, body := range map[string]string{
+		"not a bom":      `{"hello":"world"}`,
+		"wrong format":   `{"bomFormat":"SPDX","specVersion":"1.6","version":1}`,
+		"no specVersion": `{"bomFormat":"CycloneDX","version":1}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "x.json")
+			if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Load(path); err == nil {
+				t.Error("loaded without error; a wrong file would render as an empty BOM")
+			}
+		})
+	}
+}

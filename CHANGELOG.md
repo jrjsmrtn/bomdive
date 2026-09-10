@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`ls` and `tree`** (`internal/cli`, `internal/render`): `ls` lists components or one level of
+  dependencies and groups a graphless BOM by `cdx:osquery:category`; `tree` walks the DAG, expanding
+  a shared component once and back-referencing it after, marking cycles distinctly, and **refusing
+  informatively** rather than printing nothing when a BOM declares no graph. `--json` and `--long`.
+- **Coverage as a structural guarantee**: both surfaces render from one `Result` type, so neither
+  can omit coverage, synthetic-root or no-graph caveats. A 9,314-component BOM reports
+  "829 of 9314 components in the dependency graph (8%)" rather than a clean-looking partial tree.
+- A document that parses as JSON but is not a CycloneDX BOM is now **rejected**, where it previously
+  rendered as an empty BOM with exit 0.
 - **Traversal core** (`internal/bom`): CycloneDX loading across spec 1.4–1.7, BOM-type
   discrimination from `metadata.lifecycles` + root component type, a graph exposing **one level at
   a time in both directions**, roots derived from in-degree-0 nodes and flagged synthetic,

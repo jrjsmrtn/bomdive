@@ -1,0 +1,326 @@
+package render
+
+import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/jrjsmrtn/lsxbom/internal/bom"
+)
+
+func load(t *testing.T, name string) *bom.Graph {
+	t.Helper()
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", name+".cdx.json"))
+	if err != nil {
+		t.Fatalf("load %s: %v", name, err)
+	}
+	return g
+}
+
+func fixtureNames(t *testing.T) []string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("..", "..", "testdata", "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m map[string]struct {
+		File string `json:"file"`
+	}
+	if err := json.Unmarshal(raw, &m); err != nil {
+		t.Fatal(err)
+	}
+	if len(m) == 0 {
+		t.Fatal("manifest empty; property tests below would pass vacuously")
+	}
+	names := make([]string, 0, len(m))
+	for n := range m {
+		names = append(names, n)
+	}
+	return names
+}
+
+// THE correctness guarantee, as a property over every fixture and both commands.
+// ADR-0004 makes coverage a guarantee rather than a flag; an example test would
+// only prove it for the cases someone remembered to write.
+func TestCoverageAppearsInEveryTextOutput(t *testing.T) {
+	for _, name := range fixtureNames(t) {
+		g := load(t, name)
+		for _, r := range []Result{
+			List(g, name, ListOptions{}),
+			Tree(g, name, TreeOptions{}),
+		} {
+			var buf bytes.Buffer
+			if err := Text(&buf, r, false); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(buf.String(), "coverage:") {
+				t.Errorf("%s/%s: text output has no coverage line", name, r.Command)
+			}
+		}
+	}
+}
+
+func TestCoverageAppearsInEveryJSONOutput(t *testing.T) {
+	for _, name := range fixtureNames(t) {
+		g := load(t, name)
+		for _, r := range []Result{
+			List(g, name, ListOptions{}),
+			Tree(g, name, TreeOptions{}),
+		} {
+			var buf bytes.Buffer
+			if err := JSON(&buf, r); err != nil {
+				t.Fatal(err)
+			}
+			var back map[string]any
+			if err := json.Unmarshal(buf.Bytes(), &back); err != nil {
+				t.Fatalf("%s: invalid JSON: %v", name, err)
+			}
+			cov, ok := back["coverage"].(map[string]any)
+			if !ok {
+				t.Errorf("%s/%s: JSON has no coverage object", name, r.Command)
+				continue
+			}
+			for _, k := range []string{"components", "in_graph", "percent", "complete"} {
+				if _, ok := cov[k]; !ok {
+					t.Errorf("%s/%s: coverage lacks %q", name, r.Command, k)
+				}
+			}
+			// A pipeline cannot distinguish null from an empty list without care.
+			if back["entries"] == nil {
+				t.Errorf("%s/%s: entries is null, want []", name, r.Command)
+			}
+		}
+	}
+}
+
+// A graphless BOM must be told apart from a failed walk, in BOTH surfaces.
+func TestGraphlessBOMRefusesRatherThanRenderingNothing(t *testing.T) {
+	g := load(t, "obom-categories")
+	r := Tree(g, "obom", TreeOptions{})
+	if len(r.Entries) != 0 {
+		t.Errorf("entries = %d, want 0", len(r.Entries))
+	}
+	if !r.DeclaresNoGraph {
+		t.Error("DeclaresNoGraph = false on a BOM with dependencies:[]")
+	}
+	joined := strings.Join(r.Notes, " ")
+	if !strings.Contains(joined, "declares no dependency graph") {
+		t.Errorf("notes do not explain the empty result: %v", r.Notes)
+	}
+	if !strings.Contains(joined, "--by-category") {
+		t.Error("notes do not point at the command that does work")
+	}
+}
+
+// Absent key and empty array are different claims and must read differently.
+func TestAbsentDependenciesReadsDifferentlyFromEmpty(t *testing.T) {
+	empty := Tree(load(t, "no-dependencies-empty"), "e", TreeOptions{})
+	absent := Tree(load(t, "no-dependencies-absent"), "a", TreeOptions{})
+	if !empty.DeclaresNoGraph || absent.DeclaresNoGraph {
+		t.Error("the two cases are being conflated")
+	}
+	if strings.Join(empty.Notes, " ") == strings.Join(absent.Notes, " ") {
+		t.Error("both cases produce identical notes; a reader cannot tell them apart")
+	}
+}
+
+func TestSyntheticRootsAreFlaggedInBothSurfaces(t *testing.T) {
+	r := Tree(load(t, "rootless"), "rootless", TreeOptions{})
+	if !r.SyntheticRoots {
+		t.Fatal("SyntheticRoots = false where the declared root is absent from the graph")
+	}
+	var text bytes.Buffer
+	_ = Text(&text, r, false)
+	if !strings.Contains(text.String(), "DERIVED") {
+		t.Error("text output does not say the roots were derived")
+	}
+	var js bytes.Buffer
+	_ = JSON(&js, r)
+	if !strings.Contains(js.String(), `"synthetic_roots": true`) {
+		t.Error("JSON output does not flag synthetic roots")
+	}
+}
+
+func TestTreeGlyphsMarkRepeatAndCycleDifferently(t *testing.T) {
+	var diamond, cycle bytes.Buffer
+	_ = Text(&diamond, Tree(load(t, "diamond"), "d", TreeOptions{}), false)
+	_ = Text(&cycle, Tree(load(t, "cycle-direct"), "c", TreeOptions{}), false)
+
+	if !strings.Contains(diamond.String(), "already shown") {
+		t.Error("diamond: shared node not marked as a back-reference")
+	}
+	if strings.Contains(diamond.String(), "cycle") {
+		t.Error("diamond: a shared node was labelled a cycle; they are different things")
+	}
+	if !strings.Contains(cycle.String(), "cycle") {
+		t.Error("cycle: loop not marked")
+	}
+}
+
+func TestTreeDrawingIsWellFormed(t *testing.T) {
+	var buf bytes.Buffer
+	_ = Text(&buf, Tree(load(t, "diamond"), "d", TreeOptions{}), false)
+	got := buf.String()
+	for _, want := range []string{"├── ", "└── ", "app@1.0.0"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("tree output missing %q\n%s", want, got)
+		}
+	}
+}
+
+func TestListWorksOnEveryFixture(t *testing.T) {
+	for _, name := range fixtureNames(t) {
+		g := load(t, name)
+		if r := List(g, name, ListOptions{}); len(r.Entries) == 0 && len(g.Components()) > 0 {
+			t.Errorf("%s: ls returned nothing for %d components", name, len(g.Components()))
+		}
+	}
+}
+
+func TestReverseListsDependents(t *testing.T) {
+	g := load(t, "diamond")
+	var shared string
+	for _, n := range g.Components() {
+		if n.Name == "shared" {
+			shared = n.Ref
+		}
+	}
+	r := List(g, "d", ListOptions{From: shared, Reverse: true})
+	if len(r.Entries) != 2 {
+		t.Errorf("dependents of shared = %d, want 2 (a and b)", len(r.Entries))
+	}
+}
+
+func TestUnknownRefIsReportedNotSilentlyEmpty(t *testing.T) {
+	r := List(load(t, "diamond"), "d", ListOptions{From: "pkg:generic/nope@9"})
+	if len(r.Notes) == 0 {
+		t.Error("an unknown ref produced an empty listing with no explanation")
+	}
+}
+
+// The OBOM navigation path — the one that matters most, per POC-7, and the one
+// coverage showed was untested.
+func TestByCategoryGroupsAndCounts(t *testing.T) {
+	r := List(load(t, "obom-categories"), "o", ListOptions{ByCategory: true})
+	var headers, members int
+	counts := map[string]int{}
+	for _, e := range r.Entries {
+		if e.Type == "category" {
+			headers++
+			counts[e.Name] = e.Children
+		} else {
+			members++
+			if e.Depth != 1 {
+				t.Errorf("member %q has depth %d, want 1", e.Name, e.Depth)
+			}
+		}
+	}
+	if headers != 4 {
+		t.Errorf("category headers = %d, want 4", headers)
+	}
+	if members != 5 {
+		t.Errorf("members = %d, want 5", members)
+	}
+	if counts["launchd_services"] != 2 {
+		t.Errorf("launchd_services count = %d, want 2", counts["launchd_services"])
+	}
+}
+
+// Categories are DISCOVERED from the document, never hardcoded: the vocabulary is
+// platform-dependent, so a fixed list would be wrong on most hosts (POC-7).
+func TestByCategoryDiscoversUnknownCategories(t *testing.T) {
+	r := List(load(t, "obom-categories"), "o", ListOptions{ByCategory: true})
+	want := map[string]bool{
+		"certificates": false, "launchd_services": false,
+		"listening_ports": false, "systemd_units": false,
+	}
+	for _, e := range r.Entries {
+		if e.Type == "category" {
+			if _, known := want[e.Name]; !known {
+				t.Errorf("unexpected category %q", e.Name)
+			}
+			want[e.Name] = true
+		}
+	}
+	for cat, seen := range want {
+		if !seen {
+			t.Errorf("category %q not discovered", cat)
+		}
+	}
+}
+
+func TestComponentsWithoutACategoryAreGroupedVisibly(t *testing.T) {
+	r := List(load(t, "purl-less"), "p", ListOptions{ByCategory: true})
+	found := false
+	for _, e := range r.Entries {
+		if e.Type == "category" && e.Name == "(no category)" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("uncategorised components vanished instead of being grouped visibly")
+	}
+}
+
+func TestTypeFilter(t *testing.T) {
+	g := load(t, "hbom-depth1")
+	all := List(g, "h", ListOptions{})
+	devices := List(g, "h", ListOptions{Type: "device"})
+	firmware := List(g, "h", ListOptions{Type: "firmware"})
+	if len(devices.Entries) == 0 || len(devices.Entries) >= len(all.Entries) {
+		t.Errorf("type filter did not narrow: %d of %d", len(devices.Entries), len(all.Entries))
+	}
+	if len(firmware.Entries) != 1 {
+		t.Errorf("firmware = %d, want 1", len(firmware.Entries))
+	}
+	for _, e := range devices.Entries {
+		if e.Type != "device" {
+			t.Errorf("type filter leaked a %q", e.Type)
+		}
+	}
+}
+
+func TestCategoryFilter(t *testing.T) {
+	r := List(load(t, "obom-categories"), "o", ListOptions{Category: "launchd_services"})
+	if len(r.Entries) != 2 {
+		t.Fatalf("entries = %d, want 2", len(r.Entries))
+	}
+	for _, e := range r.Entries {
+		if e.Category != "launchd_services" {
+			t.Errorf("category filter leaked %q", e.Category)
+		}
+	}
+}
+
+// Long format must fall back to bom-ref when there is no purl — 28-40% of a real
+// OBOM has none, and showing a blank identifier would be useless.
+func TestLongFormatFallsBackToRefWhenNoPurl(t *testing.T) {
+	var buf bytes.Buffer
+	_ = Text(&buf, List(load(t, "purl-less"), "p", ListOptions{}), true)
+	out := buf.String()
+	if !strings.Contains(out, "osquery:gatekeeper:data:no-purl-1") {
+		t.Errorf("long format did not fall back to bom-ref:\n%s", out)
+	}
+	if !strings.Contains(out, "pkg:generic/has-purl@1.0.0") {
+		t.Error("long format did not show the purl where one exists")
+	}
+}
+
+func TestLongFormatShowsCategory(t *testing.T) {
+	var buf bytes.Buffer
+	_ = Text(&buf, List(load(t, "obom-categories"), "o", ListOptions{}), true)
+	if !strings.Contains(buf.String(), "[launchd_services]") {
+		t.Error("long format omits the category, which is the OBOM navigation axis")
+	}
+}
+
+func TestByCategoryRendersHeadersInText(t *testing.T) {
+	var buf bytes.Buffer
+	_ = Text(&buf, List(load(t, "obom-categories"), "o", ListOptions{ByCategory: true}), false)
+	if !strings.Contains(buf.String(), "launchd_services/") {
+		t.Errorf("category header not rendered:\n%s", buf.String())
+	}
+}

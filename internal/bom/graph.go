@@ -69,6 +69,16 @@ func Load(path string) (*Graph, error) {
 	if err := cdx.NewBOMDecoder(f, cdx.BOMFileFormatJSON).Decode(&doc); err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
+	// A document that parses as JSON but is not a BOM would otherwise render as an
+	// empty one: "0 of 0 components", exit 0. That is the confidently-wrong shape
+	// this tool exists to avoid — pointing at the wrong file must be an error, not
+	// a plausible answer. bomFormat and specVersion are both required by the spec.
+	if doc.BOMFormat != "CycloneDX" {
+		return nil, fmt.Errorf("%s: not a CycloneDX document (bomFormat=%q)", path, doc.BOMFormat)
+	}
+	if doc.SpecVersion == 0 {
+		return nil, fmt.Errorf("%s: no specVersion", path)
+	}
 	return build(&doc), nil
 }
 

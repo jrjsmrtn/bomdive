@@ -9,7 +9,7 @@ schema, and without ever presenting a partial answer as a complete one.
 ## Phases
 
 ### Phase 1 — Read and navigate one BOM
-**Target**: v0.1.x · **Status**: traversal core done (`internal/bom`, 84.9% covered, mutation-tested); renderers next
+**Target**: v0.1.x · **Status**: **complete** — `ls`, `tree`, text and JSON. `internal/bom` 84.9%, `internal/render` 98.8%, ten planted defects all caught by mutation testing
 
 The traversal core, and the two non-interactive renderers. Everything here is constrained by
 decisions already recorded, so this phase is implementation rather than design.
@@ -22,10 +22,10 @@ decisions already recorded, so this phase is implementation rather than design.
       column view is a second renderer rather than a rewrite
 - [x] Derived roots from in-degree-0 nodes, labelled synthetic
 - [x] Cycle-safe traversal, node-uniqueness ([ADR-0004](../adr/0004-the-dependency-graph-is-a-dag.md))
-- [ ] `ls` — components, and `cdx:osquery:category` for a graphless BOM, with `--type` filtering
-- [ ] `tree` — full walk of the same model, refusing informatively on a BOM that declares no graph
-- [ ] **Coverage as a correctness guarantee**, in both the human and `--output json` surfaces
-- [ ] The 19 committed fixtures pass as red-then-green tests
+- [x] `ls` — components, and `cdx:osquery:category` for a graphless BOM, with `--type` filtering
+- [x] `tree` — full walk of the same model, refusing informatively on a BOM that declares no graph
+- [x] **Coverage as a correctness guarantee**, in both the human and `--json` surfaces
+- [x] The 19 committed fixtures pass as red-then-green tests
 
 **Done when**: every fixture renders correctly, including the four cycle cases and the rootless one,
 and no output can present a partial graph as complete.
