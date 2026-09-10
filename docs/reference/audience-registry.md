@@ -3,7 +3,7 @@
 Single source of truth for project audiences and their artifact needs. Derived from the
 [SPARK analysis](../inception/spark-analysis.md), 2026-09-10.
 
-**Aligned with [`ansible-bom`](../../../ansible-bom/docs/reference/audience-registry.md), 2026-09-10.**
+**Aligned with [`ansible-bom`](https://github.com/jrjsmrtn/ansible-bom/blob/develop/docs/reference/audience-registry.md), 2026-09-10.**
 The IDs are deliberately the same, so **A3 names the same person in both repositories** — a packager
 is a packager whichever sibling they are holding. The two tools are opposite ends of one pipeline:
 `ansible-bom` *produces* a BOM for these people, `lsxbom` lets them *read* one. The audiences

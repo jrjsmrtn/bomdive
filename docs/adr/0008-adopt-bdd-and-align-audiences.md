@@ -78,5 +78,5 @@ suite will overestimate what they guarantee.
 
 ## References
 
-- [`ansible-bom`'s registry](../../../ansible-bom/docs/reference/audience-registry.md) — the IDs this adopts
+- [`ansible-bom`'s registry](https://github.com/jrjsmrtn/ansible-bom/blob/develop/docs/reference/audience-registry.md) — the IDs this adopts
 - `docs/reference/audience-registry.md` · `scripts/check-audience-tags.py`

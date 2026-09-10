@@ -176,9 +176,41 @@ whole BOM is rejected over a section lsxbom never reads.
 ⚠ **The known-failure allowlist names a cause per entry**, and cannot absorb our own regressions:
 planting a parser break made 34 documents fail as **unexplained** and the check exited 1.
 
-Other corpora surveyed and not adopted: `CycloneDX/sbom-examples` (83 BOMs, **CC0-1.0**, including
-3 OBOM / 1 HBOM / 5 CBOM — the only *public* OBOM samples found, worth revisiting for fixtures),
-`cyclonedx-go`'s own testdata (89 JSON, 91 XML), and cdxgen's 277 test files.
+## Real-world corpora: surviving documents we did not write
+
+`scripts/check-corpora.sh` runs lsxbom over BOMs written by other people, by other tools, for other
+reasons. It asks a **different question** from the conformance check: that one asks whether we
+honour the specification, this one whether we survive reality.
+
+| Corpus | Licence | What it adds |
+|---|---|---|
+| `CycloneDX/sbom-examples` | **CC0-1.0** | 66 BOMs — the only **public OBOM (3), HBOM (1), CBOM (5), SaaSBOM, MBOM** samples found. POC-7's were all from a private estate |
+| `CycloneDX/cdxgen` | Apache-2.0 | 62 BOMs from the generator whose output this workspace actually holds |
+| `anchore/syft` | Apache-2.0 | version-identify fixtures, JSON 1.2–1.7 and **XML 1.0–1.7** — the only XML coverage available |
+
+```bash
+./scripts/check-corpora.sh                    # all three, cached
+./scripts/check-corpora.sh --corpus syft --refresh
+```
+
+**137 documents parse, 0 unexplained.** Planting a parser break makes all 137 fail, so the check is
+not passing vacuously.
+
+⚠ **Three bugs in this script, all of the same kind: I assumed what the corpus was instead of
+checking.** Each is recorded because each produced a *confident wrong answer* about lsxbom.
+
+| Symptom | Actual cause |
+|---|---|
+| 9 files "unexpected end of JSON input" | GitHub's contents API returns **empty content above 1 MB**; they were zero-byte files. A **download** failure reported as a **parse** failure |
+| 124 files "not a CycloneDX document" | cdxgen's `test/data` holds generator **inputs** — `package.json`, lockfiles, vcpkg manifests — beside its outputs |
+| "no documents fetched" | a single `\.` in a double-quoted jq string is a parse error; the filter matched nothing |
+
+The script now fetches with the raw media type, reports an empty file as a **fetch** failure in its
+own words, and **identifies a BOM by its `bomFormat` rather than assuming one** — reporting the
+non-BOM count so the skip is visible rather than silent.
+
+`cyclonedx-go`'s own testdata (89 JSON, 91 XML) is not adopted separately: the spec conformance
+corpus covers the same ground with a negative half.
 
 ## Profiling
 

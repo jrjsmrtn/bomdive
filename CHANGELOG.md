@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   person in both repositories. A4 moves from Integration to Primary, because a viewer's security
   engineer reads BOMs rather than consuming output.
 - `scripts/check-audience-tags.py` enforcing traceability in both directions.
+- `scripts/check-corpora.sh` — runs lsxbom over 137 real BOMs from `sbom-examples` (CC0-1.0),
+  cdxgen and syft. Brings the first **public** OBOM, HBOM, CBOM, SaaSBOM and MBOM documents into the
+  test set; POC-7's samples were all private.
 - `scripts/check-conformance.sh` — runs lsxbom against the CycloneDX specification's own
   conformance corpus (359 valid / 141 invalid documents). Found an upstream `cyclonedx-go` defect on
   its first run: a document the spec calls valid fails to decode.

@@ -42,3 +42,4 @@ secrets.yaml
 CLAUDE.local.md
 testdata/.schema-cache/
 .conformance-cache/
+.corpora-cache/
