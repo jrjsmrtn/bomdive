@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pulled in transitively by the TUI library. Not reachable from this code, but a supply-chain tool
   shipping a known-vulnerable dependency is a poor look and the fix was free.
 
+### Added
+
+- `--cpuprofile` and `--memprofile` on every command, plus benchmarks that accept the same. Stdlib
+  `runtime/pprof`, no new dependency, no effect on output — and profiles are written even when the
+  command fails, which is when they are most wanted.
+
 ### Performance
 
 - `Walk` was **O(n²)** on a deep dependency chain: path membership was a linear scan of a slice.

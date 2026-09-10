@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -166,5 +167,64 @@ func TestHelpNamesWhatTheToolIsNot(t *testing.T) {
 	_, out, _ := run("--help")
 	if !strings.Contains(out, "not a BOM generator") {
 		t.Errorf("help omits the scope boundary:\n%s", out)
+	}
+}
+
+func TestCPUProfileIsWritten(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "cpu.prof")
+	code, _, errOut := run("ls", "--cpuprofile", path, fx("diamond"))
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, errOut)
+	}
+	st, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("no profile written: %v", err)
+	}
+	if st.Size() == 0 {
+		t.Error("profile is empty; StopCPUProfile did not run")
+	}
+}
+
+func TestMemProfileIsWritten(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "mem.prof")
+	if code, _, e := run("tree", "--memprofile", path, fx("diamond")); code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, e)
+	}
+	st, err := os.Stat(path)
+	if err != nil || st.Size() == 0 {
+		t.Fatalf("no heap profile written: %v", err)
+	}
+}
+
+// PostRun does not run when a command fails, so a naive wiring loses the profile
+// on exactly the runs worth profiling.
+func TestProfileIsWrittenEvenWhenTheCommandFails(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "cpu.prof")
+	code, _, _ := run("tree", "--cpuprofile", path, "/nonexistent.json")
+	if code == 0 {
+		t.Fatal("expected the command to fail")
+	}
+	if st, err := os.Stat(path); err != nil || st.Size() == 0 {
+		t.Error("profile lost on a failing run, which is when it is most wanted")
+	}
+}
+
+func TestUnwritableProfilePathIsReportedNotIgnored(t *testing.T) {
+	code, _, errOut := run("ls", "--cpuprofile", "/nonexistent-dir/cpu.prof", fx("diamond"))
+	if code == 0 {
+		t.Error("an unwritable profile path was ignored; the user would wait for a file that never appears")
+	}
+	if !strings.Contains(errOut, "cpuprofile") {
+		t.Errorf("error does not name the flag: %q", errOut)
+	}
+}
+
+// Profiling must not change what the command outputs.
+func TestProfilingDoesNotAlterOutput(t *testing.T) {
+	_, plain, _ := run("tree", fx("diamond"))
+	path := filepath.Join(t.TempDir(), "cpu.prof")
+	_, profiled, _ := run("tree", "--cpuprofile", path, fx("diamond"))
+	if plain != profiled {
+		t.Error("output differs when profiling is on")
 	}
 }

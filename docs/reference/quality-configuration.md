@@ -115,6 +115,45 @@ Both are instances of the same rule: **state the success criterion in terms of t
 many came back, does this exact string appear, did the file change — rather than checking that a
 command "ran".
 
+## Profiling
+
+Added because a benchmark said the walk was slow and a **guess about why was wrong**: the suspect
+was a sort, memoising it made things *worse*, and the real cost — a linear path scan, O(n²) on a
+deep chain — surfaced only by accident. A profiler would have said so in one command.
+
+**On a real BOM**, since the interesting inputs are real files:
+
+```bash
+lsxbom tree --cpuprofile cpu.prof --memprofile mem.prof bom.cdx.json
+go tool pprof -top -nodecount=15 cpu.prof
+go tool pprof -http=: cpu.prof          # flame graph in a browser
+```
+
+**On the benchmarks**, when a change needs a before/after:
+
+```bash
+go test ./internal/bom/ -bench . -benchtime 200x -run XXX \
+  -cpuprofile cpu.prof -memprofile mem.prof
+go tool pprof -top -sample_index=inuse_space mem.prof
+```
+
+Both flags are stdlib `runtime/pprof` — **no new dependency**, and they do not alter output.
+Profiles are written even when the command *fails*, which is when they are most wanted; cobra's
+`PostRun` does not fire on error, so that needed handling rather than assuming.
+
+### What the profile says today (2026-09-10)
+
+| | share |
+|---|---|
+| `runtime.madvise` and GC coordination | ~50% |
+| stdlib JSON decoding | ~7% |
+| **all of `internal/bom`** | **2.06%** (`resolve`) |
+
+**The program is allocation-bound, not compute-bound, and almost none of the cost is ours.** Going
+faster now means not parsing the whole document — a different architecture, unjustified at 0.05s
+for a 10 MB BOM. Recorded so the next person tempted to micro-optimise the traversal can see it is
+already 2% of the problem.
+
 ## Mutation testing is how a suite earns trust here
 
 A test suite that has only ever passed is unproven. Every package is checked by planting a defect

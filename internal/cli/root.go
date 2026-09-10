@@ -4,6 +4,9 @@ package cli
 import (
 	"fmt"
 	"io"
+	"os"
+	"runtime"
+	"runtime/pprof"
 
 	"github.com/jrjsmrtn/lsxbom/internal/bom"
 	"github.com/jrjsmrtn/lsxbom/internal/render"
@@ -26,6 +29,10 @@ type app struct {
 	err  io.Writer
 	json bool
 	long bool
+
+	cpuProfile string
+	memProfile string
+	stopCPU    func()
 }
 
 // Run executes the CLI with explicit args and streams, and returns the exit code.
@@ -50,13 +57,70 @@ func Run(version string, args []string, stdout, stderr io.Writer) int {
 	root.SetErr(stderr)
 	root.PersistentFlags().BoolVar(&a.json, "json", false, "emit JSON instead of text")
 	root.PersistentFlags().BoolVarP(&a.long, "long", "l", false, "long format: type, purl and category")
+	root.PersistentFlags().StringVar(&a.cpuProfile, "cpuprofile", "", "write a CPU profile to this file")
+	root.PersistentFlags().StringVar(&a.memProfile, "memprofile", "", "write a heap profile to this file")
+
+	// Profiling wraps the command rather than living inside it, so every subcommand
+	// gets it and none has to remember to. It exists because a benchmark told us the
+	// walk was slow and a GUESS about why was wrong — see quality-configuration.md.
+	root.PersistentPreRunE = func(*cobra.Command, []string) error { return a.startProfiling() }
+	root.PersistentPostRunE = func(*cobra.Command, []string) error { return a.stopProfiling() }
 	root.AddCommand(a.lsCmd(), a.treeCmd(), a.browseCmd())
 
 	if err := root.Execute(); err != nil {
+		// PostRun does not run when the command fails, so profiles would be lost on
+		// exactly the runs worth profiling.
+		_ = a.stopProfiling()
 		fmt.Fprintln(stderr, "lsxbom:", err)
 		return 1
 	}
 	return 0
+}
+
+func (a *app) startProfiling() error {
+	if a.cpuProfile == "" {
+		return nil
+	}
+	f, err := os.Create(a.cpuProfile)
+	if err != nil {
+		return fmt.Errorf("cpuprofile: %w", err)
+	}
+	if err := pprof.StartCPUProfile(f); err != nil {
+		f.Close()
+		return fmt.Errorf("cpuprofile: %w", err)
+	}
+	a.stopCPU = func() {
+		pprof.StopCPUProfile()
+		f.Close()
+	}
+	return nil
+}
+
+func (a *app) stopProfiling() error {
+	if a.stopCPU != nil {
+		a.stopCPU()
+		a.stopCPU = nil
+	}
+	if a.memProfile == "" {
+		return nil
+	}
+	f, err := os.Create(a.memProfile)
+	if err != nil {
+		return fmt.Errorf("memprofile: %w", err)
+	}
+	defer f.Close()
+	// GC first, so the heap profile describes what is RETAINED rather than what
+	// happens to be uncollected. Without it the numbers flatter the program.
+	//
+	// ⚠ DELIBERATELY UNTESTED. Removing this line is not caught by any test, and
+	// mutation testing confirmed that. Asserting it would mean parsing the profile
+	// and comparing allocation totals, which is flaky and would be the first gate
+	// disabled. It changes the QUALITY of the report, not whether one is produced.
+	runtime.GC()
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		return fmt.Errorf("memprofile: %w", err)
+	}
+	return nil
 }
 
 func (a *app) emit(r render.Result) error {

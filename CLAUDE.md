@@ -128,7 +128,14 @@ go build ./...                 # pure Go, CGO_ENABLED=0, cross-compiles free
 go test ./...
 python3 scripts/check-pglite-trigger.py --self-test   # prove the watcher can fail
 python3 docs/inception/evidence/bom-graph-shape.py <bom.json>   # re-measure graph shape
+
+go test ./internal/bom/ -bench . -benchtime 200x -run XXX     # benchmarks
+lsxbom tree --cpuprofile cpu.prof <bom.json>                  # profile a real BOM
+go tool pprof -top -nodecount=15 cpu.prof
 ```
+
+⚠ **Profile before optimising.** The one hotspot found so far was not the one guessed at, and the
+guess made things slower — see `docs/reference/quality-configuration.md`.
 
 ## Engines are opt-in build tags; the default binary links none
 
