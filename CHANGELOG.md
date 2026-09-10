@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `scripts/check-coverage.sh` — a ≥80% floor for every package under `internal/`, wired into the
+  pre-push gate and reconciled against `go list`, so a package with no tests at all cannot go
+  unreported. ADR-0002 amended to match what is enforced.
 - `--cpuprofile` and `--memprofile` on every command, plus benchmarks that accept the same. Stdlib
   `runtime/pprof`, no new dependency, no effect on output — and profiles are written even when the
   command fails, which is when they are most wanted.
