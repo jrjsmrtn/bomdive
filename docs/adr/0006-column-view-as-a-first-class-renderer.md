@@ -70,6 +70,11 @@ one model**, and the column view is the one that spans every BOM type.
 
 ## Open questions, to be settled before the view is built
 
+> **✅ All three are now settled by [ADR-0007](0007-column-view-open-questions.md), by measurement.
+> Two of the three answers contradict what is proposed below** — the reverse edge turned out to be
+> *more* column-friendly than the forward one, and middle-elision is nearly twice as bad as keeping
+> the tail. The text below is kept as the record of what was expected.
+
 1. **Which direction do columns face?** Finder descends into children. The useful BOM question is
    often the *reverse* edge — what depends on this — which has no Finder analogue. Likely both, with
    the column header stating which way you are facing.

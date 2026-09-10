@@ -31,19 +31,20 @@ decisions already recorded, so this phase is implementation rather than design.
 and no output can present a partial graph as complete.
 
 ### Phase 2 — The column view
-**Target**: v0.2.x · **Status**: designed, not started
+**Target**: v0.2.x · **Status**: **unblocked** — the three open questions are settled (ADR-0007); implementation not started
 
 Miller columns ([ADR-0006](../adr/0006-column-view-as-a-first-class-renderer.md)) — the renderer
 that spans both the graph and no-graph cases.
 
-- [ ] **Settle the three open questions first**: column direction (`dependsOn` versus dependents),
-      purl truncation, and the leaf detail pane
+- [x] **Settle the three open questions** — done, by measurement:
+      [ADR-0007](../adr/0007-column-view-open-questions.md)
 - [ ] Column renderer over the Phase 1 model
 - [ ] Type-to-filter within a column
 - [ ] Per-category detail layout for an OBOM (no fixed column set — POC-7)
 
-⚠ **The open questions gate the work.** Direction in particular is not cosmetic: the useful BOM
-query is often the reverse edge, which the Finder model has no analogue for.
+⚠ **One measurement carries a stated limit.** Fan-in was measured only on sparse graphs (81% and
+8% coverage). If a dense BOM shows fan-in in the hundreds, reverse mode needs paging that forward
+mode does not — re-check before relying on it beyond these shapes.
 
 ### Phase 3 — Corpus questions
 **Target**: v0.3.x · **Status**: deliberately deferred, may never be built
