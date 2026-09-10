@@ -24,7 +24,10 @@ Tier-specific artifacts:
 - `docs/inception/` — the SPARK analysis and its **evidence**, which is re-runnable
 - `docs/reference/audience-registry.md` — A1–A4 and the artifacts each is owed
 - `docs/roadmap/watched-pglite-age.md` — a watched trigger, with a checker
-- `scripts/` — `check-pglite-trigger.py`
+- `docs/reference/quality-configuration.md` — the gates, and what is deliberately absent
+- `scripts/` — `check-pglite-trigger.py` (**not** a hook; it needs a schedule — see the
+  quality-configuration reference)
+- `.editorconfig`, `.lefthook.yml`, `.lefthook/pre-push/gates.sh`
 - git on `main` + `develop`, conventional commits
 
 **Deliberately not adopted at t1** — decisions, not oversights: Diátaxis `docs/` tree (nothing to

@@ -1,0 +1,37 @@
+# Two-stage gates for lsxbom. Install with: lefthook install
+#
+# PRE-PUSH USES `scripts:`, NOT `commands:`, DELIBERATELY.
+# lefthook derives a pre-push file set from `@{push}`, which git resolves per *branch*,
+# not per *remote*. The first push advances it, so on a second remote the diff is empty
+# and every `commands:` entry is SKIPPED while printing a clean summary. This repo has one
+# remote today and the convention adds a `github` one on publication, so the shape is
+# chosen now rather than after a silent gate loss. Whole-repo checks never needed a file
+# set anyway. `glob:` stays in pre-commit, where staged-file scoping is the point.
+
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --verbose
+    gofmt:
+      glob: "*.go"
+      run: |
+        unformatted=$(gofmt -l {staged_files})
+        if [ -n "$unformatted" ]; then
+          echo "gofmt needed for:"; echo "$unformatted"; exit 1
+        fi
+    vet:
+      glob: "*.go"
+      run: go vet ./...
+    adr-index:
+      glob: "docs/adr/*"
+      run: python3 ../../workspace/scripts/check-adr-index.py docs/adr
+    doc-links:
+      glob: "*.md"
+      run: python3 ../../workspace/scripts/check-doc-links.py .
+
+pre-push:
+  parallel: false
+  scripts:
+    "gates.sh":
+      runner: bash

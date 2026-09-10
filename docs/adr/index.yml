@@ -10,16 +10,19 @@ foundational:
     title: Record Architecture Decisions
     purpose: HOW TO DECIDE
     status: Accepted
+    date: 2026-09-10
   - id: 2
     file: 0002-adopt-development-best-practices.md
     title: Adopt Development Best Practices
     purpose: HOW TO DEVELOP
     status: Accepted
+    date: 2026-09-10
   - id: 3
     file: 0003-go-with-cyclonedx-go.md
     title: Use Go with cyclonedx-go
     purpose: WHAT TECH
     status: Accepted
+    date: 2026-09-10
 
 project:
   - id: 4
@@ -27,8 +30,10 @@ project:
     title: The dependency graph is a DAG, and how tree renders it
     purpose: HOW TO TRAVERSE
     status: Accepted
+    date: 2026-09-10
   - id: 5
     file: 0005-engines-behind-build-tags.md
     title: Graph and SQL engines stay behind opt-in build tags
     purpose: HOW TO BUILD
     status: Accepted
+    date: 2026-09-10
