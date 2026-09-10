@@ -102,6 +102,27 @@ Both are instances of the same rule: **state the success criterion in terms of t
 many came back, does this exact string appear, did the file change — rather than checking that a
 command "ran".
 
+## Mutation testing is how a suite earns trust here
+
+A test suite that has only ever passed is unproven. Every package is checked by planting a defect
+and confirming the suite fails — sixteen so far, across `bom`, `render` and `cli`.
+
+It has paid for itself three times, and none of the three would have been found by reading:
+
+- **A test measured the wrong signal.** `TestDanglingRefIsReportedNotInvented` looked for a dangling
+  ref appearing in output; the real defect emits a Go *zero value* with an **empty** Ref, so the
+  assertion never matched. A test written to catch exactly that class of bug had it.
+- **A guard was only caught by a crash.** Removing the cycle guard blew the stack, which kills the
+  process, names no test, and is indistinguishable from an unrelated failure. A depth-capped walk
+  turned it into an assertion with a diagnostic.
+- **It stopped a false claim reaching a commit message.** A comment asserted that package-global
+  cobra flags would leak between invocations. Planting them showed they would not — cobra
+  re-registers each flag with its default on every run. The comment and the test name were corrected
+  to what is actually true.
+
+⚠ **A mutation that fails to COMPILE proves nothing.** Two did, and were redone as valid code; one
+of those was the false claim above. A build error is not a caught defect.
+
 ## Validation
 
 ```bash

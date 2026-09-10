@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func treeCmd() *cobra.Command {
+func (a *app) treeCmd() *cobra.Command {
 	var opt render.TreeOptions
 	c := &cobra.Command{
 		Use:   "tree <bom.json> [bom-ref]",
@@ -24,7 +24,7 @@ func treeCmd() *cobra.Command {
 			if len(args) == 2 {
 				opt.From = args[1]
 			}
-			return emit(render.Tree(g, args[0], opt))
+			return a.emit(render.Tree(g, args[0], opt))
 		},
 	}
 	c.Flags().IntVarP(&opt.MaxDepth, "level", "L", 0, "descend at most this many levels (0 = unlimited)")

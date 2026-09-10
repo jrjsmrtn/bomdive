@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- CLI smoke tests (`internal/cli`, 97.0%): every flag verified to reach the renderer, error paths
+  to exit non-zero with stderr-only diagnostics, and stdout kept clean on failure so a `--json`
+  pipeline is never corrupted.
 - **`ls` and `tree`** (`internal/cli`, `internal/render`): `ls` lists components or one level of
   dependencies and groups a graphless BOM by `cdx:osquery:category`; `tree` walks the DAG, expanding
   a shared component once and back-referencing it after, marking cycles distinctly, and **refusing

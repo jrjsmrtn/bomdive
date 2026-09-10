@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func lsCmd() *cobra.Command {
+func (a *app) lsCmd() *cobra.Command {
 	var opt render.ListOptions
 	c := &cobra.Command{
 		Use:   "ls <bom.json> [bom-ref]",
@@ -23,7 +23,7 @@ func lsCmd() *cobra.Command {
 			if len(args) == 2 {
 				opt.From = args[1]
 			}
-			return emit(render.List(g, args[0], opt))
+			return a.emit(render.List(g, args[0], opt))
 		},
 	}
 	c.Flags().StringVar(&opt.Type, "type", "", "only components of this type (library, device, data, …)")
