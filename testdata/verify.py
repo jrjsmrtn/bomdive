@@ -97,8 +97,20 @@ def check(dirpath: pathlib.Path):
     manifest = json.loads((dirpath / "manifest.json").read_text())
     failures, checked = [], 0
     for name, entry in sorted(manifest.items()):
-        doc = json.loads((dirpath / entry["file"]).read_text())
-        actual = properties(doc)
+        path = dirpath / entry["file"]
+        # XML fixtures are checked for ENCODING and version only. Re-implementing
+        # the graph measurement against a second syntax would be a second thing to
+        # keep correct, and what these fixtures exist to prove is that the encoding
+        # is handled at all.
+        if path.suffix == ".xml":
+            text = path.read_text()
+            actual = {
+                "encoding": "xml",
+                "specVersion": next((v for v in ("1.0","1.1","1.2","1.3","1.4","1.5","1.6","1.7")
+                                     if f"schema/bom/{v}" in text), None),
+            }
+        else:
+            actual = properties(json.loads(path.read_text()))
         for key, want in entry["asserts"].items():
             checked += 1
             got = actual.get(key)

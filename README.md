@@ -1,7 +1,7 @@
 # lsxbom
 
 Read a CycloneDX xBOM — SBOM, OBOM, HBOM — at the terminal, with the muscle memory of `ls(1)`
-and `tree(1)`.
+and `tree(1)`, plus a Finder-style column view. **JSON and XML, spec 1.0–1.7.**
 
 > **Status**: bootstrapped 2026-09-10, no code yet. See
 > [`docs/inception/spark-analysis.md`](docs/inception/spark-analysis.md) for the design and the

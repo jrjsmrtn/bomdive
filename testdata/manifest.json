@@ -145,5 +145,21 @@
     },
     "file": "tree-simple.cdx.json",
     "why": "A plain tree. The only fixture where the naive implementation is correct \u2014 so it proves the renderer works, not that it is careful."
+  },
+  "xml-no-metadata": {
+    "asserts": {
+      "encoding": "xml",
+      "specVersion": "1.1"
+    },
+    "file": "xml-no-metadata.cdx.xml",
+    "why": "CycloneDX 1.1, which has NO metadata element at all \u2014 metadata.component arrived in 1.2. A reader that assumes a root component exists breaks here, and JSON fixtures cannot express this because CycloneDX JSON starts at 1.2."
+  },
+  "xml-simple": {
+    "asserts": {
+      "encoding": "xml",
+      "specVersion": "1.6"
+    },
+    "file": "xml-simple.cdx.xml",
+    "why": "The ordinary case: a rooted graph in XML rather than JSON."
   }
 }

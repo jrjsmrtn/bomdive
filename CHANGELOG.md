@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **XML input**, spec **1.0–1.7** — two versions below anything CycloneDX JSON can express. Format is
+  detected from **content**, not the file extension, and a UTF-8 byte order mark is tolerated.
 - **BDD with Gherkin** (godog): 14 scenarios across `user-ls`, `user-tree` and `api-json`, driving
   the CLI in-process. `Strict: true`, so an undefined step fails rather than passing quietly.
 - Audience registry **aligned with `ansible-bom`** — A1–A7 IDs unchanged, so an ID names the same

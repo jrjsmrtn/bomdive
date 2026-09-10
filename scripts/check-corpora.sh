@@ -69,9 +69,10 @@ run_corpus() { # label dir
         echo "  ✗ $label: no documents fetched — this corpus would pass vacuously" >&2
         total_fail=$((total_fail+1)); return
     fi
-    local pass=0 fail=0 known=0 xml=0 notbom=0
+    local pass=0 fail=0 known=0 notbom=0
     for f in "${files[@]}"; do
-        case "$f" in *.xml) xml=$((xml+1)); continue ;; esac   # XML input is not claimed yet
+        # XML is claimed as of 2026-09-10 and is no longer skipped. syft's corpus
+        # spans 1.0-1.7, which reaches TWO versions below anything JSON can express.
         if [ ! -s "$f" ]; then
             printf '  ✗ %-52s EMPTY FILE — a fetch failure, not a parse failure\n' "$(basename "$f")" >&2
             fail=$((fail+1)); continue
@@ -80,7 +81,8 @@ run_corpus() { # label dir
         # holds generator INPUTS — package.json, lockfiles, vcpkg manifests — beside
         # its outputs, and counting those as failures said more about this script's
         # assumptions than about lsxbom. Identify a BOM rather than assuming one.
-        if ! grep -q '"bomFormat"' "$f" 2>/dev/null; then
+        # A BOM identifies itself by bomFormat in JSON and by its namespace in XML.
+        if ! grep -qE '"bomFormat"|cyclonedx\.org/schema/bom' "$f" 2>/dev/null; then
             notbom=$((notbom+1)); continue
         fi
         if "$BIN" ls "$f" >/dev/null 2>&1; then
@@ -94,7 +96,6 @@ run_corpus() { # label dir
     done
     printf '  %-14s %3d parsed, %d known, %d unexplained' "$label" "$pass" "$known" "$fail"
     [ $notbom -gt 0 ] && printf '  (%d non-BOM files skipped)' "$notbom"
-    [ $xml -gt 0 ] && printf '  (%d XML skipped — not claimed)' "$xml"
     printf '\n'
     total_pass=$((total_pass+pass)); total_fail=$((total_fail+fail)); total_known=$((total_known+known))
 }

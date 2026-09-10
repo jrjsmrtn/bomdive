@@ -7,7 +7,8 @@ memory of `ls(1)` and `tree(1)`.
 
 - **Category**: Development
 - **Type**: CLI tool
-- **Stack**: Go 1.25+ (`cyclonedx-go` for the model, `cobra` for the CLI, `gojq` as query escape hatch)
+- **Stack**: Go 1.25+ (`cyclonedx-go` for the model — JSON *and* XML, `cobra` for the CLI,
+  `tview` for the column view, `godog` for BDD)
 - **License**: Not set (Private profile, unpublished)
 - **Tier**: t1
 - **Distribution profile**: Private (ships-artifacts: no)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -238,5 +239,123 @@ func TestNonBOMIsRejectedNotRenderedEmpty(t *testing.T) {
 				t.Error("loaded without error; a wrong file would render as an empty BOM")
 			}
 		})
+	}
+}
+
+// XML is a second ENCODING, not a second format: the same model with identity on
+// the root element's namespace instead of a bomFormat field. A guard written
+// against JSON silently rejects every valid XML BOM, which is what happened until
+// syft's corpus surfaced it.
+func TestXMLIsParsed(t *testing.T) {
+	g, err := Load(filepath.Join("..", "..", "testdata", "xml-simple.cdx.xml"))
+	if err != nil {
+		t.Fatalf("XML not parsed: %v", err)
+	}
+	if got := len(g.Components()); got != 2 {
+		t.Errorf("components = %d, want 2", got)
+	}
+	if roots, synthetic := g.Roots(); len(roots) != 1 || synthetic {
+		t.Errorf("roots = %d synthetic=%v, want 1 declared", len(roots), synthetic)
+	}
+}
+
+// CycloneDX 1.1 has no metadata element at all — metadata.component arrived in
+// 1.2 — and CycloneDX JSON does not exist below 1.2, so only an XML fixture can
+// express this. A reader assuming a root component exists breaks here.
+func TestXMLWithoutMetadataElement(t *testing.T) {
+	g, err := Load(filepath.Join("..", "..", "testdata", "xml-no-metadata.cdx.xml"))
+	if err != nil {
+		t.Fatalf("1.1 XML not parsed: %v", err)
+	}
+	if g.Identity().RootDeclared {
+		t.Error("RootDeclared = true for a 1.1 document, which has no metadata element")
+	}
+	if got := len(g.Components()); got != 2 {
+		t.Errorf("components = %d, want 2", got)
+	}
+}
+
+func TestFormatIsDetectedFromContentNotExtension(t *testing.T) {
+	xml, err := os.ReadFile(filepath.Join("..", "..", "testdata", "xml-simple.cdx.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"bom.json", "bom.txt", "bom"} {
+		t.Run(name, func(t *testing.T) {
+			p := filepath.Join(t.TempDir(), name)
+			if err := os.WriteFile(p, xml, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Load(p); err != nil {
+				t.Errorf("XML content named %q was not parsed: %v", name, err)
+			}
+		})
+	}
+}
+
+func TestUTF8ByteOrderMarkIsTolerated(t *testing.T) {
+	for _, fx := range []string{"diamond.cdx.json", "xml-simple.cdx.xml"} {
+		t.Run(fx, func(t *testing.T) {
+			raw, err := os.ReadFile(filepath.Join("..", "..", "testdata", fx))
+			if err != nil {
+				t.Fatal(err)
+			}
+			p := filepath.Join(t.TempDir(), fx)
+			if err := os.WriteFile(p, append([]byte{0xEF, 0xBB, 0xBF}, raw...), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Load(p); err != nil {
+				t.Errorf("a UTF-8 BOM broke parsing: %v", err)
+			}
+		})
+	}
+}
+
+func TestNonBOMXMLIsRejected(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "x.xml")
+	if err := os.WriteFile(p, []byte(`<?xml version="1.0"?><html><body/></html>`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(p); err == nil {
+		t.Error("non-BOM XML loaded without error")
+	}
+}
+
+func TestUnrecognisedContentIsRejectedByName(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "x.json")
+	if err := os.WriteFile(p, []byte("just some text"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(p)
+	if err == nil {
+		t.Fatal("plain text loaded without error")
+	}
+	if !strings.Contains(err.Error(), "not JSON or XML") {
+		t.Errorf("error does not name the cause: %v", err)
+	}
+}
+
+// The case the XML namespace guard actually exists for.
+//
+// A <bom> element in a foreign namespace DECODES cleanly — the decoder only
+// objects to a different element name, as with <html>. Without the namespace
+// check it would render as a CycloneDX BOM, which is the confidently-wrong shape.
+// Worth its own test because the obvious mutation (disabling the check) fails to
+// COMPILE, and a build error proves nothing.
+func TestXMLInAForeignNamespaceIsRejected(t *testing.T) {
+	doc := `<?xml version="1.0" encoding="UTF-8"?>
+<bom xmlns="http://example.com/not-cyclonedx" version="1">
+  <components><component type="library"><name>a</name><version>1.0.0</version></component></components>
+</bom>`
+	p := filepath.Join(t.TempDir(), "x.xml")
+	if err := os.WriteFile(p, []byte(doc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(p)
+	if err == nil {
+		t.Fatal("a <bom> in a foreign namespace loaded as a CycloneDX document")
+	}
+	if !strings.Contains(err.Error(), "not a CycloneDX document") {
+		t.Errorf("error does not name the cause: %v", err)
 	}
 }

@@ -24,8 +24,10 @@ go.work.sum
 
 # BOM scan artifacts (generated; commit only a deliberate release BOM)
 *.cdx.json
+*.cdx.xml
 *.spdx.json
 !testdata/**/*.cdx.json
+!testdata/**/*.cdx.xml
 
 # Secrets and credentials
 .env

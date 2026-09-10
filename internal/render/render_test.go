@@ -13,14 +13,24 @@ import (
 
 func load(t *testing.T, name string) *bom.Graph {
 	t.Helper()
-	g, err := bom.Load(filepath.Join("..", "..", "testdata", name+".cdx.json"))
+	return loadFile(t, name+".cdx.json")
+}
+
+func loadFile(t *testing.T, file string) *bom.Graph {
+	t.Helper()
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", file))
 	if err != nil {
-		t.Fatalf("load %s: %v", name, err)
+		t.Fatalf("load %s: %v", file, err)
 	}
 	return g
 }
 
-func fixtureNames(t *testing.T) []string {
+// fixtureFiles returns the manifest's FILE names, not its fixture names.
+//
+// Reconstructing "name + .cdx.json" is what these helpers used to do, and it broke
+// the moment the corpus gained XML fixtures — the manifest already records the
+// real filename, so deriving one is inventing a fact the manifest states.
+func fixtureFiles(t *testing.T) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "..", "testdata", "manifest.json"))
 	if err != nil {
@@ -35,19 +45,19 @@ func fixtureNames(t *testing.T) []string {
 	if len(m) == 0 {
 		t.Fatal("manifest empty; property tests below would pass vacuously")
 	}
-	names := make([]string, 0, len(m))
-	for n := range m {
-		names = append(names, n)
+	files := make([]string, 0, len(m))
+	for _, e := range m {
+		files = append(files, e.File)
 	}
-	return names
+	return files
 }
 
 // THE correctness guarantee, as a property over every fixture and both commands.
 // ADR-0004 makes coverage a guarantee rather than a flag; an example test would
 // only prove it for the cases someone remembered to write.
 func TestCoverageAppearsInEveryTextOutput(t *testing.T) {
-	for _, name := range fixtureNames(t) {
-		g := load(t, name)
+	for _, name := range fixtureFiles(t) {
+		g := loadFile(t, name)
 		for _, r := range []Result{
 			List(g, name, ListOptions{}),
 			Tree(g, name, TreeOptions{}),
@@ -64,8 +74,8 @@ func TestCoverageAppearsInEveryTextOutput(t *testing.T) {
 }
 
 func TestCoverageAppearsInEveryJSONOutput(t *testing.T) {
-	for _, name := range fixtureNames(t) {
-		g := load(t, name)
+	for _, name := range fixtureFiles(t) {
+		g := loadFile(t, name)
 		for _, r := range []Result{
 			List(g, name, ListOptions{}),
 			Tree(g, name, TreeOptions{}),
@@ -172,8 +182,8 @@ func TestTreeDrawingIsWellFormed(t *testing.T) {
 }
 
 func TestListWorksOnEveryFixture(t *testing.T) {
-	for _, name := range fixtureNames(t) {
-		g := load(t, name)
+	for _, name := range fixtureFiles(t) {
+		g := loadFile(t, name)
 		if r := List(g, name, ListOptions{}); len(r.Entries) == 0 && len(g.Components()) > 0 {
 			t.Errorf("%s: ls returned nothing for %d components", name, len(g.Components()))
 		}

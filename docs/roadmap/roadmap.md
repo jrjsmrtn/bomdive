@@ -66,9 +66,8 @@ phase is complete as documentation and no engine is ever linked.
 **Target**: v1.0.0 · **Status**: not scheduled
 
 - [ ] Phases 1 and 2 stable, CLI surface no longer moving
-- [ ] XML input claimed only once tested (free from the library, currently unclaimed). **syft's
-      corpus now supplies XML fixtures for 1.0–1.7**, which `check-corpora.sh` skips explicitly
-      rather than silently — the material to close this is in place
+- [x] **XML input claimed** — tested across **1.0–1.7**, which reaches *two versions below* anything
+      CycloneDX JSON can express. Format is detected from content, not the file extension
 - [x] Performance budget met: `tree` over a 10 MB / ~10⁴-component BOM in under 2 seconds —
       measured **0.05s** end to end on a real 10 MB BOM, and **13ms** for load+walk of a synthetic
       10k-component one. `BenchmarkLoad10k` / `BenchmarkWalk10k` and a budget test make it

@@ -323,6 +323,62 @@ for v in ("1.4", "1.5", "1.7"):
     )
 
 
+# ---------------------------------------------------------------- XML encoding
+#
+# XML is not a second format so much as a second ENCODING: the same model, with
+# identity carried by the root element's namespace instead of a `bomFormat` field.
+# That difference is the whole reason these fixtures exist — a guard written
+# against JSON silently rejects every valid XML BOM, which is exactly what
+# happened before syft's corpus surfaced it.
+XML_FIXTURES = {
+    "xml-simple": (
+        "1.6",
+        "The ordinary case: a rooted graph in XML rather than JSON.",
+        {"root": ("app", "1.0.0"), "components": [("app", "1.0.0"), ("a", "1.0.0")],
+         "deps": [("app", ["a"]), ("a", [])]},
+    ),
+    "xml-no-metadata": (
+        "1.1",
+        "CycloneDX 1.1, which has NO metadata element at all — metadata.component "
+        "arrived in 1.2. A reader that assumes a root component exists breaks here, "
+        "and JSON fixtures cannot express this because CycloneDX JSON starts at 1.2.",
+        {"root": None, "components": [("a", "1.0.0"), ("b", "2.0.0")], "deps": []},
+    ),
+}
+
+
+def xml_doc(spec, spec_data):
+    ns = f"http://cyclonedx.org/schema/bom/{spec}"
+    out = ['<?xml version="1.0" encoding="UTF-8"?>',
+           f'<bom xmlns="{ns}" serialNumber="urn:uuid:3e5d8b2a-30cd-409f-9519-558c53e542c5" version="1">']
+    if spec_data["root"]:
+        n, v = spec_data["root"]
+        out += ['  <metadata>',
+                f'    <component type="library" bom-ref="pkg:generic/{n}@{v}">',
+                f'      <name>{n}</name>', f'      <version>{v}</version>',
+                '    </component>', '  </metadata>']
+    out.append('  <components>')
+    for n, v in spec_data["components"]:
+        out += [f'    <component type="library" bom-ref="pkg:generic/{n}@{v}">',
+                f'      <name>{n}</name>', f'      <version>{v}</version>',
+                f'      <purl>pkg:generic/{n}@{v}</purl>', '    </component>']
+    out.append('  </components>')
+    if spec_data["deps"]:
+        out.append('  <dependencies>')
+        for ref, on in spec_data["deps"]:
+            r = f"pkg:generic/{ref}@1.0.0"
+            if not on:
+                out.append(f'    <dependency ref="{r}"/>')
+            else:
+                out.append(f'    <dependency ref="{r}">')
+                for d in on:
+                    out.append(f'      <dependency ref="pkg:generic/{d}@1.0.0"/>')
+                out.append('    </dependency>')
+        out.append('  </dependencies>')
+    out.append('</bom>')
+    return "\n".join(out) + "\n"
+
+
 def main():
     out = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else pathlib.Path(__file__).parent)
     out.mkdir(parents=True, exist_ok=True)
@@ -331,6 +387,11 @@ def main():
         path = out / f"{name}.cdx.json"
         path.write_text(json.dumps(spec["doc"], indent=2, sort_keys=True) + "\n")
         manifest[name] = {"file": path.name, "why": spec["why"], "asserts": spec["asserts"]}
+    for name, (spec, why, data) in sorted(XML_FIXTURES.items()):
+        path = out / f"{name}.cdx.xml"
+        path.write_text(xml_doc(spec, data))
+        manifest[name] = {"file": path.name, "why": why,
+                          "asserts": {"specVersion": spec, "encoding": "xml"}}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     print(f"{len(manifest)} fixtures + manifest.json -> {out}")
 

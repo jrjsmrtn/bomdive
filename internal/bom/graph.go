@@ -1,9 +1,13 @@
 package bom
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"sort"
+	"strings"
 
 	cdx "github.com/CycloneDX/cyclonedx-go"
 )
@@ -65,23 +69,80 @@ func Load(path string) (*Graph, error) {
 	}
 	defer f.Close()
 
-	var doc cdx.BOM
-	// AutodetectJSON is unused here on purpose: the decoder resolves the spec
-	// version from the document itself, across 1.0-1.7.
-	if err := cdx.NewBOMDecoder(f, cdx.BOMFileFormatJSON).Decode(&doc); err != nil {
+	format, r, err := detectFormat(f)
+	if err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
-	// A document that parses as JSON but is not a BOM would otherwise render as an
-	// empty one: "0 of 0 components", exit 0. That is the confidently-wrong shape
-	// this tool exists to avoid — pointing at the wrong file must be an error, not
-	// a plausible answer. bomFormat and specVersion are both required by the spec.
-	if doc.BOMFormat != "CycloneDX" {
-		return nil, fmt.Errorf("%s: not a CycloneDX document (bomFormat=%q)", path, doc.BOMFormat)
+
+	var doc cdx.BOM
+	// The decoder resolves the SPEC version from the document itself; only the
+	// ENCODING has to be chosen here.
+	if err := cdx.NewBOMDecoder(r, format).Decode(&doc); err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
 	}
-	if doc.SpecVersion == 0 {
-		return nil, fmt.Errorf("%s: no specVersion", path)
+	// A document that parses but is not a BOM would otherwise render as an empty
+	// one: "0 of 0 components", exit 0. That is the confidently-wrong shape this
+	// tool exists to avoid — pointing at the wrong file must be an error, not a
+	// plausible answer.
+	//
+	// The check is FORMAT-AWARE, because the two encodings identify themselves
+	// differently and the library's own tags say so: BOMFormat is `xml:"-"` and
+	// XMLNS is `json:"-"`. A JSON document carries bomFormat; an XML one carries
+	// the CycloneDX namespace on its root element and no bomFormat at all. A
+	// bomFormat-only guard silently rejects every valid XML BOM.
+	if err := checkIsBOM(&doc, format); err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 	return build(&doc), nil
+}
+
+// checkIsBOM rejects a document that parsed but is not a CycloneDX BOM.
+func checkIsBOM(doc *cdx.BOM, format cdx.BOMFileFormat) error {
+	if format == cdx.BOMFileFormatXML {
+		if !strings.Contains(doc.XMLNS, "cyclonedx.org/schema/bom") {
+			return fmt.Errorf("not a CycloneDX document (xmlns=%q)", doc.XMLNS)
+		}
+		return nil
+	}
+	if doc.BOMFormat != "CycloneDX" {
+		return fmt.Errorf("not a CycloneDX document (bomFormat=%q)", doc.BOMFormat)
+	}
+	if doc.SpecVersion == 0 {
+		return fmt.Errorf("no specVersion")
+	}
+	return nil
+}
+
+// detectFormat sniffs JSON or XML from the CONTENT, not the file extension.
+//
+// Extensions lie: a BOM arrives as .bom, .cdx, .txt or no name at all, and picking
+// the decoder from a suffix means a correctly-named file works while an identical
+// one does not. Sniffing the first meaningful byte is both simpler and right.
+//
+// A UTF-8 byte order mark is skipped. Real generators emit them, and an unhandled
+// BOM makes a valid document fail with a decoder error naming the wrong cause.
+func detectFormat(r io.Reader) (cdx.BOMFileFormat, io.Reader, error) {
+	br := bufio.NewReader(r)
+
+	if mark, err := br.Peek(3); err == nil && bytes.Equal(mark, []byte{0xEF, 0xBB, 0xBF}) {
+		_, _ = br.Discard(3)
+	}
+	for {
+		b, err := br.Peek(1)
+		if err != nil {
+			return 0, nil, fmt.Errorf("empty or unreadable document")
+		}
+		switch b[0] {
+		case ' ', '\t', '\n', '\r':
+			_, _ = br.Discard(1)
+		case '{':
+			return cdx.BOMFileFormatJSON, br, nil
+		case '<':
+			return cdx.BOMFileFormatXML, br, nil
+		default:
+			return 0, nil, fmt.Errorf("not JSON or XML (starts with %q)", string(b[0]))
+		}
+	}
 }
 
 func build(doc *cdx.BOM) *Graph {

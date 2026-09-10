@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bom xmlns="http://cyclonedx.org/schema/bom/1.1" serialNumber="urn:uuid:3e5d8b2a-30cd-409f-9519-558c53e542c5" version="1">
+  <components>
+    <component type="library" bom-ref="pkg:generic/a@1.0.0">
+      <name>a</name>
+      <version>1.0.0</version>
+      <purl>pkg:generic/a@1.0.0</purl>
+    </component>
+    <component type="library" bom-ref="pkg:generic/b@2.0.0">
+      <name>b</name>
+      <version>2.0.0</version>
+      <purl>pkg:generic/b@2.0.0</purl>
+    </component>
+  </components>
+</bom>
