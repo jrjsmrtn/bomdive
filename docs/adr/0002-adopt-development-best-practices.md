@@ -1,0 +1,91 @@
+# 2. Adopt Development Best Practices
+
+Date: 2026-09-10
+
+## Status
+
+Accepted
+
+## Context
+
+lsxbom is a small, single-contributor Go CLI at tier t1. Practices are scaled to that: enough to
+keep quality high and make AI-assisted sessions consistent, without ceremony that will be ignored.
+
+This project follows the
+[AI-Assisted Project Orchestration patterns](https://github.com/jrjsmrtn/ai-assisted-project-orchestration).
+
+## Decision
+
+### 1. Testing
+
+- **Framework**: Go's `testing`, table-driven.
+- **Approach**: TDD for the traversal core, which is where the real complexity is.
+- **Fixtures are committed, real, and adversarial.** The test corpus includes BOMs measured to
+  contain **cycles**, a BOM whose declared root is absent from the dependency graph, and an OBOM
+  with `dependencies: []`. Every one of those broke a naive implementation during analysis; a
+  fixture set of well-formed trees would test nothing that matters.
+- **Coverage target**: >80% for the traversal and rendering packages. Not enforced elsewhere.
+
+### 2. Semantic Versioning
+
+[SemVer 2.0.0](https://semver.org/). Patch-level during development (0.1.x). No 1.0 until `ls`
+and `tree` are proven against the full fixture corpus and the CLI surface has stopped moving.
+
+### 3. Git Workflow
+
+Gitflow — `main`, `develop`, `feature/*` — matching the `ansible-bom` sibling.
+Conventional Commits.
+
+**A commit message MUST NOT claim more than the commit contains.** Re-read it against
+`git diff --cached`, not against intent. The risk is highest when the message is generated,
+because fluent prose about an intended change reads identically whether or not the change landed.
+
+### 4. Change Documentation
+
+Keep a Changelog in `CHANGELOG.md`.
+
+### 5. Formatting and Quality Automation
+
+- `gofmt` / `go vet` — non-negotiable, and cheap.
+- **Git hooks via lefthook** (see `setup-git-hooks`): pre-commit is fast — format, `go vet`,
+  `gitleaks`; pre-push is thorough — `go test`, `staticcheck`, `govulncheck`.
+- The repository inherits a baseline `gitleaks` pre-commit hook from `~/.git-template`.
+
+### 6. Documentation
+
+**No Diátaxis tree at t1** — there is nothing to sort into it yet. Documentation is: `README.md`
+(the front door), `CLAUDE.md` (session context), this ADR log, and `docs/inception/` (the
+analysis and its evidence). The tree arrives with promotion to t2.
+
+**A README or CLAUDE.md MUST NOT assert a number a command can derive.** Counts and percentages
+are the fastest-decaying content in a repository and nothing validates them. Point at the evidence
+script instead.
+
+### 7. Licensing
+
+**Not applicable at the Private profile.** No `LICENSE`, no REUSE, no SPDX headers. This is a
+decision, not an omission — adding them would imply a distribution intent that has not been taken.
+Revisit at the `public-release` gate, which needs its own ADR.
+
+### 8. Code Conventions
+
+- **Documentation placeholders**: RFC 5737 for IPs, RFC 7042 for MACs, RFC 2606 for domains.
+- **Never commit a real BOM from a private estate.** Test corpora may be measured, but only
+  anonymised *shape* is recorded — see `docs/inception/evidence/poc2-corpus-shape.py`, which
+  takes the corpus directory as an argument for precisely this reason.
+- Interface comments explain what a caller needs without reading the implementation.
+  Implementation comments only where the code is non-obvious — the test is whether deleting the
+  comment would let someone reintroduce a bug or repeat a rejected approach.
+
+## Consequences
+
+**Positive**: consistent sessions; the adversarial fixture set means the hard cases are tested
+first rather than last; hooks catch the mechanical failures.
+
+**Negative**: gitflow is heavier than a single contributor strictly needs; the fixture corpus has
+to be generated and committed before much code exists.
+
+## References
+
+- [AI-Assisted Project Orchestration](https://github.com/jrjsmrtn/ai-assisted-project-orchestration)
+- [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
