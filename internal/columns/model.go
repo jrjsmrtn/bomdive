@@ -92,7 +92,12 @@ type Model struct {
 // declares no dependency graph opens on its categories, because descending
 // dependencies would show nothing at all.
 func New(g *bom.Graph) *Model {
-	m := &Model{g: g, byCategory: g.DeclaresNoGraph()}
+	// HasCategories is load-bearing, not defensive. A document that declares no
+	// graph AND carries no categories has no category axis: grouping it yields one
+	// "(no category)" bucket holding everything, so the view announced it was
+	// browsing categories and made the reader descend through a level that says
+	// nothing. Falling back to a flat component list is the honest shape.
+	m := &Model{g: g, byCategory: g.DeclaresNoGraph() && g.HasCategories()}
 	m.cols = []Column{m.entryColumn()}
 	return m
 }
@@ -109,8 +114,41 @@ func (m *Model) ByCategory() bool { return m.byCategory }
 // Columns returns the chain.
 func (m *Model) Columns() []Column { return m.cols }
 
+// Axis names what the entry column lists. It exists so a caller can EXPLAIN the
+// view without re-deriving the choice — entryColumn switches on it, so there is
+// one decision and not two that can drift apart.
+type Axis int
+
+const (
+	// AxisRoots: components nothing depends on, descending the dependency graph.
+	AxisRoots Axis = iota
+	// AxisCategories: cdx:osquery:category values, the OBOM navigation axis.
+	AxisCategories
+	// AxisFlat: every component, because there is no relation or category to
+	// group by.
+	AxisFlat
+)
+
+// Axis reports which entry column this document got.
+func (m *Model) Axis() Axis {
+	switch {
+	case m.byCategory:
+		return AxisCategories
+	case m.g.Coverage().Edges == 0:
+		return AxisFlat
+	default:
+		if roots, _ := m.g.Roots(); len(roots) == 0 {
+			return AxisFlat
+		}
+		return AxisRoots
+	}
+}
+
 func (m *Model) entryColumn() Column {
-	if m.byCategory {
+	switch m.Axis() {
+	case AxisFlat:
+		return Column{Title: "components", Entries: m.g.Components()}
+	case AxisCategories:
 		cats := m.g.Categories()
 		names := make([]string, 0, len(cats))
 		for k := range cats {
@@ -134,10 +172,6 @@ func (m *Model) entryColumn() Column {
 	title := "roots"
 	if synthetic {
 		title = "roots (derived)"
-	}
-	if len(roots) == 0 {
-		// Nothing to descend from, so open on everything rather than on an empty pane.
-		return Column{Title: "components", Entries: m.g.Components()}
 	}
 	return Column{Title: title, Entries: roots}
 }

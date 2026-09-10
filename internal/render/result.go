@@ -77,6 +77,11 @@ type Result struct {
 	DeclaresNoGraph bool `json:"declares_no_graph"`
 	HasDependencies bool `json:"has_dependencies"`
 
+	// GraphState names which of the four cases this document is, so a consumer of
+	// the JSON does not have to re-derive it from the two booleans above and get it
+	// wrong the way this project's own surfaces did.
+	GraphState string `json:"graph_state"`
+
 	Coverage Coverage `json:"coverage"`
 	Entries  []Entry  `json:"entries"`
 
@@ -85,13 +90,24 @@ type Result struct {
 }
 
 func coverageOf(c bom.Coverage) Coverage {
-	pct := 0
-	if c.Components > 0 {
-		pct = c.InGraph * 100 / c.Components
-	}
 	return Coverage{
-		Components: c.Components, InGraph: c.InGraph, Percent: pct,
+		Components: c.Components, InGraph: c.InGraph, Percent: c.Percent(),
 		Edges: c.Edges, Complete: c.Complete(), Dangling: c.Dangling,
+	}
+}
+
+// stateName is the wire form of bom.GraphState. Spelled out rather than numeric so
+// a JSON consumer reads a word instead of an integer whose meaning lives in Go.
+func stateName(s bom.GraphState) string {
+	switch s {
+	case bom.GraphPartial:
+		return "partial"
+	case bom.GraphDeclaredEmpty:
+		return "declared-empty"
+	case bom.GraphUndeclared:
+		return "undeclared"
+	default:
+		return "complete"
 	}
 }
 
@@ -104,13 +120,26 @@ func entryOf(g *bom.Graph, n bom.Node) Entry {
 
 // New builds the common part of a Result, so every command starts from the same
 // mandatory caveats rather than assembling them by hand.
+//
+// The graph-state note is attached HERE, not per command. It used to be written
+// out by the tree renderer alone, so `lsxbom ls` and the column view printed a bare
+// 0% with nothing to distinguish "the document says there are no relations" from
+// "the document says nothing" from "relations exist and miss most components".
+// Attaching it at construction is the same argument that put Coverage in this type:
+// a caveat a renderer must remember to add is a caveat that will be forgotten.
 func New(command, source string, g *bom.Graph) Result {
 	id := g.Identity()
-	return Result{
+	cov := g.Coverage()
+	r := Result{
 		Command: command, Source: source,
 		Kind: string(id.Kind), Identity: id.Describe(),
 		DeclaresNoGraph: g.DeclaresNoGraph(),
 		HasDependencies: g.HasDependenciesKey(),
-		Coverage:        coverageOf(g.Coverage()),
+		GraphState:      stateName(cov.State()),
+		Coverage:        coverageOf(cov),
 	}
+	if cov.State() != bom.GraphComplete {
+		r.Notes = append(r.Notes, cov.Explain())
+	}
+	return r
 }

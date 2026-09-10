@@ -17,17 +17,11 @@ func Tree(g *bom.Graph, source string, opt TreeOptions) Result {
 	r := New("tree", source, g)
 	r.From = opt.From
 
-	if g.DeclaresNoGraph() {
-		r.Notes = append(r.Notes,
-			"this BOM declares no dependency graph: `dependencies` is present and empty, "+
-				"so the document is asserting there are no relations — not failing to compute them")
-		r.Notes = append(r.Notes, "use `lsxbom ls --by-category` to navigate it")
-		return r
-	}
-	if !g.HasDependenciesKey() {
-		r.Notes = append(r.Notes,
-			"this BOM has no `dependencies` field at all, so the generator said nothing "+
-				"about relations — which is not the same as asserting there are none")
+	// Why there is nothing to walk is stated by the graph-state note that New
+	// attaches. What belongs HERE is only what is specific to this command: that
+	// the walk produced nothing, and where to go instead.
+	if g.DeclaresNoGraph() || !g.HasDependenciesKey() {
+		r.Notes = append(r.Notes, "there is nothing to walk: "+navigateInstead(g))
 		return r
 	}
 
@@ -63,4 +57,14 @@ func Tree(g *bom.Graph, source string, opt TreeOptions) Result {
 		r.Notes = append(r.Notes, "this tree does NOT show every component — see coverage")
 	}
 	return r
+}
+
+// navigateInstead names the axis that IS navigable. Advising --by-category on a
+// document carrying no categories sends a reader to a single "(no category)"
+// bucket, which is the degenerate-axis failure the column view had.
+func navigateInstead(g *bom.Graph) string {
+	if g.HasCategories() {
+		return "use `lsxbom ls --by-category` to navigate this document by category"
+	}
+	return "use `lsxbom ls` to list its components"
 }

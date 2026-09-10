@@ -134,7 +134,9 @@ func (w *world) theOutputWarnsNotEveryComponentIsShown() error {
 func (w *world) theOutputSaysRootsWereDerived() error { return w.theOutputContains("DERIVED") }
 
 func (w *world) theOutputExplainsNoDependencyGraph() error {
-	return w.theOutputContains("declares no dependency graph")
+	// "present and EMPTY" is the claim that distinguishes this document from one
+	// with no `dependencies` field, which the tool must not conflate.
+	return w.theOutputContains("present and EMPTY")
 }
 
 func (w *world) theOutputSuggestsListingByCategory() error {

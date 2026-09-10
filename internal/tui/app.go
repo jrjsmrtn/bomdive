@@ -8,6 +8,7 @@ package tui
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -37,6 +38,13 @@ type ui struct {
 	filter    *tview.InputField
 	root      *tview.Flex
 	filtering bool
+
+	// help is the `?` overlay, and pages is what puts it OVER the view rather than
+	// replacing it — a reader asking what "partial" means should not lose their
+	// place in the document to find out.
+	help    *tview.TextView
+	pages   *tview.Pages
+	helping bool
 
 	// width is the screen width, captured by the before-draw hook. tview exposes no
 	// GetScreen, so this is the only honest way to know how wide a pane may be.
@@ -80,7 +88,7 @@ func run(g *bom.Graph, source string, screen tcell.Screen) error {
 		return false
 	})
 	u.redraw()
-	return u.app.SetRoot(u.root, true).EnableMouse(false).Run()
+	return u.app.SetRoot(u.pages, true).EnableMouse(false).Run()
 }
 
 func newUI(g *bom.Graph, source string) *ui {
@@ -119,12 +127,92 @@ func newUI(g *bom.Graph, source string) *ui {
 		AddItem(body, 0, 1, true).
 		AddItem(u.status, 1, 0, false)
 
+	u.help = tview.NewTextView().SetDynamicColors(true).SetWrap(true)
+	u.help.SetBorder(true).SetTitle(" what this means — ? or Esc to close ")
+
+	u.pages = tview.NewPages().AddPage("main", u.root, true, true)
+
 	return u
+}
+
+// centred puts a primitive in the middle of the screen, rows tall, which is what
+// tview offers instead of a floating window. A fixed row count rather than a
+// proportion, so the box hugs its content: an overlay two-thirds empty reads as
+// something that failed to load.
+func centred(p tview.Primitive, rows int) tview.Primitive {
+	return tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(nil, 0, 1, false).
+			AddItem(p, rows, 0, true).
+			AddItem(nil, 0, 1, false), 0, 8, true).
+		AddItem(nil, 0, 1, false)
+}
+
+// overlayWidth is the help box's inner width: 8/10 of the screen, less its border.
+func (u *ui) overlayWidth() int {
+	w := u.width
+	if w <= 0 {
+		w = 80
+	}
+	if inner := (w * 8 / 10) - 2; inner > 20 {
+		return inner
+	}
+	return 20
+}
+
+// overlayRows is how tall the box must be to hold the text, wrapping included, and
+// never taller than the screen. Same measurement the detail pane needs, for the
+// same reason: a pane sized by guesswork is either clipped or mostly empty.
+func (u *ui) overlayRows(text string) int {
+	w := u.overlayWidth()
+	rows := 2 // the border
+	for _, line := range strings.Split(text, "\n") {
+		rows += wrappedRows(stripTags(line), w)
+	}
+	if u.height > 2 && rows > u.height-2 {
+		return u.height - 2
+	}
+	return rows
+}
+
+// stripTags removes tview colour tags, which occupy no cells and so must not be
+// counted when measuring how far a line wraps.
+func stripTags(s string) string { return colourTag.ReplaceAllString(s, "") }
+
+var colourTag = regexp.MustCompile(`\[[a-zA-Z-]+\]`)
+
+// toggleHelp opens or closes the overlay. The text is rebuilt on OPEN rather than
+// on redraw: it describes the current selection's context, and a stale help screen
+// explaining a component the cursor has left is worse than none.
+func (u *ui) toggleHelp() {
+	u.helping = !u.helping
+	if !u.helping {
+		u.pages.RemovePage("help")
+		return
+	}
+	text := u.helpText()
+	u.help.SetText(text).ScrollToBeginning()
+	// Rebuilt rather than shown: the box is sized to this document's text, and the
+	// screen may have been resized since the last time it was opened.
+	u.pages.RemovePage("help")
+	u.pages.AddPage("help", centred(u.help, u.overlayRows(text)), true, true)
 }
 
 func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 	if u.filtering {
 		return ev // the input field owns the keyboard
+	}
+	// While the overlay is up it owns the keyboard too, except for quitting. Any
+	// navigation key would move a view the reader cannot see.
+	if u.helping {
+		switch {
+		case ev.Key() == tcell.KeyCtrlC, ev.Rune() == 'q':
+			u.app.Stop()
+		default:
+			u.toggleHelp()
+		}
+		return nil
 	}
 	switch ev.Key() {
 	case tcell.KeyUp:
@@ -180,6 +268,9 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 			u.scrollDetail(+1)
 		case 'K':
 			u.scrollDetail(-1)
+		case '?':
+			u.toggleHelp()
+			return nil
 		case '/':
 			u.filtering = true
 			u.filter.SetText(u.model.Active().Filter)
@@ -376,22 +467,87 @@ func (u *ui) detailText() string {
 // failure the text renderer is built to avoid.
 func (u *ui) statusText() string {
 	c := u.model.Graph().Coverage()
-	pct := 0
-	if c.Components > 0 {
-		pct = c.InGraph * 100 / c.Components
-	}
+
+	// One label per state, and RED reserved for the one state that is a defect in
+	// the document. It previously read "partial" for a BOM with no `dependencies`
+	// field, which is the opposite claim: nothing was missing, because nothing was
+	// ever declared. See bom.GraphState.
 	warn := ""
-	if !c.Complete() {
-		warn = "  [red]partial[-]"
-	}
-	if u.model.ByCategory() {
-		warn = "  [yellow]no dependency graph — browsing categories[-]"
+	switch st := c.State(); st {
+	case bom.GraphPartial:
+		warn = "  [red]" + st.Label() + "[-]"
+	case bom.GraphDeclaredEmpty, bom.GraphUndeclared:
+		warn = "  [yellow]" + st.Label() + "[-]"
 	}
 	// Kept short on purpose: at 120 columns the longer form ran off the right edge
 	// and silently lost "q quit", which is the one hint a user cannot do without.
+	// That is also why the label is terse and `?` carries the explanation — the
+	// status bar has no room to say what "partial" means, and a word a reader
+	// cannot expand is a word that misleads.
 	return fmt.Sprintf("[darkgray]coverage[-] %d/%d (%d%%)%s  [darkgray]"+
-		"↑↓ →← nav  ⇞⇟ detail  ⇥flip /filter q quit[-]",
-		c.InGraph, c.Components, pct, warn)
+		"↑↓ →← nav  ⇞⇟ detail  ⇥flip /filter [-][white]?[-][darkgray]help q quit[-]",
+		c.InGraph, c.Components, c.Percent(), warn)
+}
+
+// helpText explains THIS document and THIS view, not the program in general. The
+// status bar can only afford one word for the graph state, so the word has to be
+// expandable on demand or it is just jargon.
+func (u *ui) helpText() string {
+	g := u.model.Graph()
+	c := g.Coverage()
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "[white]%s[-]\n[darkgray]%s[-]\n\n", g.Identity().Describe(), u.source)
+
+	label := c.State().Label()
+	if label == "" {
+		label = "complete"
+	}
+	fmt.Fprintf(&b, "[darkgray]the status bar says[-]  coverage %d/%d (%d%%)  [white]%s[-]\n\n",
+		c.InGraph, c.Components, c.Percent(), label)
+	fmt.Fprintf(&b, "%s\n\n", c.Explain())
+	fmt.Fprintf(&b, "[darkgray]this view[-]  %s\n", u.axisText())
+
+	if n := len(c.Dangling); n > 0 {
+		fmt.Fprintf(&b, "\n[red]%d dependsOn target(s) match no component[-] — the graph "+
+			"references components this document does not contain: %s\n",
+			n, strings.Join(c.Dangling, ", "))
+	}
+
+	b.WriteString("\n[darkgray]keys[-]\n" +
+		"  ↑↓ / j k    move within a column\n" +
+		"  →← / l h    descend into a component, or back out\n" +
+		"  ⇥           flip between depends-on and depended-on-by\n" +
+		"  ⇞ ⇟ / J K   scroll the detail pane; Home/End jump to its ends\n" +
+		"  /           filter the current column, Esc clears it\n" +
+		"  ? or Esc    close this\n" +
+		"  q           quit\n")
+	return b.String()
+}
+
+// axisText says what the entry column lists AND why that axis was chosen, because
+// the choice is made from the document rather than by the user.
+//
+// One line per case, unwrapped: the pane wraps, and hard-wrapping inside text that
+// is wrapped again produces a ragged column with orphaned fragments.
+func (u *ui) axisText() string {
+	switch u.model.Axis() {
+	case columns.AxisCategories:
+		return "the leftmost column lists `cdx:osquery:category` values, because this document " +
+			"declares no dependency graph. That is the axis it does give you — descend into a " +
+			"category to see its components."
+	case columns.AxisFlat:
+		return "the leftmost column lists every component flat. With no relations declared there " +
+			"is nothing to descend into, and no categories to group by either."
+	default:
+		if _, synthetic := u.model.Graph().Roots(); synthetic {
+			return "the leftmost column lists DERIVED roots — components nothing else depends " +
+				"on. This document's declared root is not in its own dependency graph, so the " +
+				"roots were inferred rather than read."
+		}
+		return "the leftmost column lists the document's declared roots. Descend to see what a " +
+			"component depends on; ⇥ flips to what depends on it."
+	}
 }
 
 func truncTitle(s string, w int) string {

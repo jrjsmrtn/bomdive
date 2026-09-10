@@ -53,11 +53,11 @@ func List(g *bom.Graph, source string, opt ListOptions) Result {
 		}
 	}
 
-	// Say why a listing is flat, rather than letting a reader infer the tool failed.
-	if opt.From == "" && g.DeclaresNoGraph() {
-		r.Notes = append(r.Notes,
-			"this BOM declares no dependency graph (`dependencies` is present and empty) — "+
-				"navigate it with --by-category")
+	// Why the listing is flat is the graph-state note New attaches. All that is
+	// command-specific is the suggestion, and only when it would help.
+	if opt.From == "" && !opt.ByCategory && g.Coverage().Edges == 0 && g.HasCategories() {
+		r.Notes = append(r.Notes, "this document has categories: "+
+			"`lsxbom ls --by-category` groups it by cdx:osquery:category")
 	}
 	return r
 }

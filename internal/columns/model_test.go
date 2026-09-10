@@ -351,3 +351,41 @@ func TestFilterMatchesAnUnnamedComponentByItsRef(t *testing.T) {
 		t.Error("an unnamed component cannot be found by its ref")
 	}
 }
+
+// A document that declares no graph AND carries no categories has no category
+// axis. Grouping it anyway yields ONE "(no category)" bucket holding everything —
+// an extra navigation step that says nothing, under a title claiming a structure
+// the document does not have.
+func TestAxisFallsBackToFlatWithoutCategories(t *testing.T) {
+	for _, tc := range []struct {
+		fixture string
+		want    Axis
+		title   string
+	}{
+		{"obom-categories", AxisCategories, "categories"},
+		{"no-dependencies-empty", AxisFlat, "components"},
+		{"no-dependencies-absent", AxisFlat, "components"},
+		{"tree-simple", AxisRoots, "roots"},
+	} {
+		m := New(load(t, tc.fixture))
+		if got := m.Axis(); got != tc.want {
+			t.Errorf("%s: Axis = %v, want %v", tc.fixture, got, tc.want)
+		}
+		if got := m.Columns()[0].Title; got != tc.title {
+			t.Errorf("%s: entry column title = %q, want %q", tc.fixture, got, tc.title)
+		}
+	}
+}
+
+// With no edges every component has in-degree zero, so Roots derives the whole
+// document. Titling that "roots (derived)" implies a hierarchy that is not there.
+func TestNoEdgesIsNotAColumnOfDerivedRoots(t *testing.T) {
+	m := New(load(t, "no-dependencies-absent"))
+	c := m.Columns()[0]
+	if strings.Contains(c.Title, "roots") {
+		t.Errorf("entry column titled %q on a document with no relations at all", c.Title)
+	}
+	if len(c.Entries) == 0 {
+		t.Error("the fallback column is empty; the components have gone missing")
+	}
+}

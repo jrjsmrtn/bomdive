@@ -116,8 +116,11 @@ func TestGraphlessBOMRefusesRatherThanRenderingNothing(t *testing.T) {
 	if !r.DeclaresNoGraph {
 		t.Error("DeclaresNoGraph = false on a BOM with dependencies:[]")
 	}
+	// Assert the DISTINGUISHING claim, not a phrase that happened to be in the
+	// wording. "present and EMPTY" is the half that separates this from a document
+	// carrying no `dependencies` field at all; a note missing it has lost the point.
 	joined := strings.Join(r.Notes, " ")
-	if !strings.Contains(joined, "declares no dependency graph") {
+	if !strings.Contains(joined, "present and EMPTY") {
 		t.Errorf("notes do not explain the empty result: %v", r.Notes)
 	}
 	if !strings.Contains(joined, "--by-category") {
@@ -332,5 +335,61 @@ func TestByCategoryRendersHeadersInText(t *testing.T) {
 	_ = Text(&buf, List(load(t, "obom-categories"), "o", ListOptions{ByCategory: true}), false)
 	if !strings.Contains(buf.String(), "launchd_services/") {
 		t.Errorf("category header not rendered:\n%s", buf.String())
+	}
+}
+
+// EVERY surface must explain the graph state, not just tree.
+//
+// This is the regression test for the defect that produced it: the absent-versus-
+// empty distinction was written out by the tree renderer alone, so `lsxbom ls` and
+// the column view printed a bare "0%" that a reader could only read as a fault.
+// The note now comes from render.New, and this asserts both commands carry it into
+// their RENDERED TEXT — not merely into a struct field a renderer may ignore.
+func TestBothSurfacesExplainTheGraphState(t *testing.T) {
+	for _, fx := range []string{"partial-coverage", "no-dependencies-empty", "no-dependencies-absent"} {
+		g := load(t, fx)
+		want := g.Coverage().Explain()
+		for _, r := range []Result{
+			List(g, fx, ListOptions{}),
+			Tree(g, fx, TreeOptions{}),
+		} {
+			var out bytes.Buffer
+			if err := Text(&out, r, false); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(out.String(), want) {
+				t.Errorf("%s %s: rendered text does not explain the graph state.\nwant: %s\ngot:\n%s",
+					r.Command, fx, want, out.String())
+			}
+		}
+	}
+}
+
+// A complete graph must NOT be annotated: a caveat on every document is noise, and
+// noise is how a real caveat stops being read.
+func TestACompleteGraphGetsNoStateNote(t *testing.T) {
+	g := load(t, "tree-simple")
+	r := Tree(g, "tree-simple", TreeOptions{})
+	for _, n := range r.Notes {
+		if strings.Contains(n, "coverage is") || strings.Contains(n, "dependency graph reaches") {
+			t.Errorf("a complete graph carries a state note: %q", n)
+		}
+	}
+	if r.GraphState != "complete" {
+		t.Errorf("GraphState = %q, want complete", r.GraphState)
+	}
+}
+
+// The suggestion must not send a reader to an axis the document does not have.
+// --by-category on a document with no categories lands in a single "(no category)"
+// bucket, which looks like the tool losing the components.
+func TestByCategoryIsSuggestedOnlyWhereItHelps(t *testing.T) {
+	withCats := strings.Join(List(load(t, "obom-categories"), "o", ListOptions{}).Notes, " ")
+	if !strings.Contains(withCats, "--by-category") {
+		t.Error("a document WITH categories is not told about --by-category")
+	}
+	without := strings.Join(List(load(t, "no-dependencies-empty"), "n", ListOptions{}).Notes, " ")
+	if strings.Contains(without, "--by-category") {
+		t.Errorf("a document with NO categories is sent to --by-category anyway: %q", without)
 	}
 }

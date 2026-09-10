@@ -15,6 +15,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A BOM with no relations was reported as a defective one.** The column view coloured any
+  document whose coverage was under 100% red `partial`, which is right for a declared dependency
+  graph that misses components and wrong for a document carrying no `dependencies` field at all —
+  there, nothing is missing, because nothing was ever declared. Found while browsing a syft
+  fixture, where `0/1 (0%) partial` reads as a broken tool. There are now four states
+  (`bom.GraphState`), decided once: complete, `partial`, `no dependency graph` (`dependencies`
+  present and empty — an assertion), and `relations undeclared` (the field absent — silence).
+- **Only `tree` explained why coverage was zero.** The absent-versus-empty distinction was written
+  out by the tree renderer alone, so `ls` and the column view printed a bare `0%` with nothing to
+  read it by. The explanation now comes from `render.New`, which is the same argument that put
+  coverage in that type: a caveat a renderer must remember to add is a caveat that gets forgotten.
+- **The column view offered a category axis to documents with no categories**, grouping everything
+  into one `(no category)` bucket — a navigation step that says nothing, under a title claiming a
+  structure the document does not have. It now falls back to a flat component list, and `tree` and
+  `ls` stop suggesting `--by-category` where it would not help. With no edges at all the entry
+  column is titled `components` rather than `roots (derived)`, since every component trivially has
+  in-degree zero and calling that a root implies a hierarchy.
 - **The detail pane could not be scrolled**, so a component with more properties than fit the screen
   was silently cut off — a real HBOM device carries up to 37. `PgDn`/`PgUp`, `Ctrl-D`/`Ctrl-U`,
   `J`/`K`, `Home`/`End`, and the pane title now reports `n-m of total` with `↑`/`↓`, because a pane
@@ -29,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`?` in `browse` explains the status bar**, for the document in front of you: what the coverage
+  numbers mean, why the leftmost column shows what it shows, any dangling `dependsOn` targets, and
+  the key bindings. The status bar has room for one word, and a word a reader cannot expand is
+  jargon — `partial` in particular meant nothing without it.
 - **XML input**, spec **1.0–1.7** — two versions below anything CycloneDX JSON can express. Format is
   detected from **content**, not the file extension, and a UTF-8 byte order mark is tolerated.
 - **BDD with Gherkin** (godog): 14 scenarios across `user-ls`, `user-tree` and `api-json`, driving

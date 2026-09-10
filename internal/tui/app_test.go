@@ -421,3 +421,96 @@ func TestWrappedRowsCountsWrapping(t *testing.T) {
 		}
 	}
 }
+
+// The status bar must not call a silent document "partial".
+//
+// It did: the yellow branch fired only on DeclaresNoGraph — `dependencies` present
+// and empty — so a BOM with no `dependencies` field at all fell through to the red
+// "partial" used for a declared graph that genuinely misses components. Reported
+// from dogfooding a syft fixture, where 0/1 (0%) partial reads as a broken tool.
+func TestStatusLabelsEachGraphStateDistinctly(t *testing.T) {
+	want := map[string]string{
+		"tree-simple":            "",
+		"partial-coverage":       "partial",
+		"no-dependencies-empty":  "no dependency graph",
+		"no-dependencies-absent": "relations undeclared",
+	}
+	for name, label := range want {
+		g, err := bom.Load(filepath.Join("..", "..", "testdata", name+".cdx.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := newUI(g, name).statusText()
+		if label == "" {
+			for _, other := range want {
+				if other != "" && strings.Contains(got, other) {
+					t.Errorf("%s: complete graph labelled %q: %s", name, other, got)
+				}
+			}
+			continue
+		}
+		if !strings.Contains(got, label) {
+			t.Errorf("%s: status %q does not carry %q", name, got, label)
+		}
+		// The label must be its OWN state's, not a neighbour's.
+		for other, otherLabel := range want {
+			if other == name || otherLabel == "" || otherLabel == label {
+				continue
+			}
+			if strings.Contains(got, otherLabel) {
+				t.Errorf("%s: status carries %q, which belongs to %s: %s",
+					name, otherLabel, other, got)
+			}
+		}
+	}
+}
+
+// `?` must explain the word the status bar had no room to explain, for THIS
+// document — and it must go away again.
+func TestHelpOverlayExplainsTheStatusLabel(t *testing.T) {
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "no-dependencies-absent.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := g.Coverage().Explain()
+
+	opened := driveKeys(t, "no-dependencies-absent", ru('?'))
+	// The overlay wraps, so compare on collapsed whitespace rather than on a
+	// line-for-line match the pane width decides.
+	if !strings.Contains(flatten(opened), flatten(want)) {
+		t.Errorf("? does not explain the status label.\nwant: %s\ngot:\n%s", want, opened)
+	}
+
+	closed := driveKeys(t, "no-dependencies-absent", ru('?'), ru('?'))
+	if strings.Contains(flatten(closed), flatten(want)) {
+		t.Errorf("? did not close the overlay:\n%s", closed)
+	}
+	if !strings.Contains(closed, "coverage") {
+		t.Errorf("the view did not come back after closing the overlay:\n%s", closed)
+	}
+}
+
+// Esc closes it too, and does NOT fall through to clearing the column filter.
+func TestEscapeClosesTheHelpOverlay(t *testing.T) {
+	out := driveKeys(t, "tree-simple", ru('?'), sp(tcell.KeyEscape))
+	if strings.Contains(out, "what this means") {
+		t.Errorf("Esc left the overlay open:\n%s", out)
+	}
+}
+
+// flatten reads a wrapped pane back as one string.
+//
+// screenText returns whole SCREEN rows, so a paragraph inside a bordered pane comes
+// back interleaved with border glyphs and with whatever the underlying page is
+// painting either side of it. Dropping the box-drawing runes and collapsing runs of
+// whitespace rejoins the wrapped lines into the sentence that was written, so an
+// assertion does not have to guess where the pane chose to break.
+func flatten(s string) string {
+	s = strings.Map(func(r rune) rune {
+		if strings.ContainsRune("│║╔╗╚╝┌┐└┘├┤┬┴┼─═", r) {
+			return ' '
+		}
+		return r
+	}, s)
+	return strings.Join(strings.Fields(s), " ")
+}

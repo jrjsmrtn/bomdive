@@ -56,10 +56,106 @@ type Coverage struct {
 	InGraph    int      // components appearing in the dependency graph
 	Edges      int      // dependsOn entries
 	Dangling   []string // dependsOn targets matching no component, sorted
+
+	// HasDepsKey is whether the document carried a `dependencies` field at all.
+	// It rides along in Coverage rather than being fetched separately because
+	// every surface that reports the numbers needs it to report them HONESTLY —
+	// see State.
+	HasDepsKey bool
 }
 
 // Complete reports whether every component appears in the dependency graph.
 func (c Coverage) Complete() bool { return c.Components > 0 && c.InGraph == c.Components }
+
+// GraphState is what the document SAYS about relations, which is not the same as
+// how many relations it has.
+//
+// Three of these four states show 0% coverage and mean different things, and two
+// of them were being reported identically: a BOM with no `dependencies` field was
+// labelled "partial", the same word used for a declared graph that genuinely misses
+// components. "Partial" is a defect in the document; silence is not a claim at all.
+// Making the distinction ONCE, here, is what stops a surface flattening it again —
+// the tree renderer got it right and `ls` and the column view did not.
+type GraphState int
+
+const (
+	// GraphComplete: relations are declared and reach every component.
+	GraphComplete GraphState = iota
+	// GraphPartial: relations are declared, and some components sit outside them.
+	GraphPartial
+	// GraphDeclaredEmpty: `dependencies` is present and empty — the document
+	// ASSERTS there are no relations. Every OBOM measured does this.
+	GraphDeclaredEmpty
+	// GraphUndeclared: no `dependencies` field — the generator said NOTHING about
+	// relations, which is not the same as asserting there are none.
+	GraphUndeclared
+)
+
+// State classifies the document. Order matters: what the document declared is
+// asked before how much it covers, because coverage is meaningless otherwise.
+func (c Coverage) State() GraphState {
+	switch {
+	case !c.HasDepsKey:
+		return GraphUndeclared
+	case c.Edges == 0:
+		return GraphDeclaredEmpty
+	case c.Complete():
+		return GraphComplete
+	default:
+		return GraphPartial
+	}
+}
+
+// Label is the terse form, for a status bar with no room to explain itself. Empty
+// for the unremarkable case, so a caller can test it rather than special-casing.
+func (s GraphState) Label() string {
+	switch s {
+	case GraphPartial:
+		return "partial"
+	case GraphDeclaredEmpty:
+		return "no dependency graph"
+	case GraphUndeclared:
+		return "relations undeclared"
+	default:
+		return ""
+	}
+}
+
+// Explain is the long form: one sentence saying what the numbers mean, with the
+// numbers in it. This is what `?` shows and what every non-interactive surface
+// prints as a note, so the terse label always has somewhere to be explained.
+func (c Coverage) Explain() string {
+	switch c.State() {
+	case GraphUndeclared:
+		return fmt.Sprintf("coverage is 0 of %d because this BOM has no `dependencies` field at "+
+			"all: the generator said NOTHING about relations, which is not the same as asserting "+
+			"there are none. Nothing is missing — there was never a graph to be missing from.",
+			c.Components)
+	case GraphDeclaredEmpty:
+		return fmt.Sprintf("coverage is 0 of %d because `dependencies` is present and EMPTY: the "+
+			"document asserts there are no relations between its components. That is a statement, "+
+			"not a gap — every OBOM measured looks like this.", c.Components)
+	case GraphPartial:
+		return fmt.Sprintf("the dependency graph reaches %d of %d components (%d%%) over %d "+
+			"edge(s). The other %d are in the document, but nothing declares a relation to or "+
+			"from them — so a tree cannot reach them and `ls` is the only way to see them.",
+			c.InGraph, c.Components, c.percent(), c.Edges, c.Components-c.InGraph)
+	default:
+		return fmt.Sprintf("the dependency graph reaches all %d components over %d edge(s): "+
+			"a tree walk shows the whole document.", c.Components, c.Edges)
+	}
+}
+
+// Percent is the coverage percentage, rounded down. Exported because three
+// surfaces computed it inline and could each round differently.
+func (c Coverage) Percent() int { return c.percent() }
+
+func (c Coverage) percent() int {
+	if c.Components == 0 {
+		return 0
+	}
+	return c.InGraph * 100 / c.Components
+}
 
 // Graph is a loaded BOM, navigable one level at a time.
 type Graph struct {
@@ -342,7 +438,23 @@ func (g *Graph) Coverage() Coverage {
 		InGraph:    len(seen),
 		Edges:      g.edges,
 		Dangling:   g.dangling,
+		HasDepsKey: g.hasDepsKey,
 	}
+}
+
+// HasCategories reports whether ANY component carries a cdx:osquery:category.
+//
+// Without it, a document with no categories still groups into a single "(no
+// category)" bucket, and the column view opened on one entry containing everything
+// while announcing it was "browsing categories". A degenerate axis is worse than
+// no axis: it adds a navigation step and implies a structure the document lacks.
+func (g *Graph) HasCategories() bool {
+	for _, n := range g.nodes {
+		if n.Category != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // Categories groups components by cdx:osquery:category, for a BOM with no graph.

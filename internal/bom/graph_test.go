@@ -428,3 +428,56 @@ func TestUnnamedComponentInAFixtureHasALabel(t *testing.T) {
 		t.Fatal("fixture has no unnamed component; this test would pass vacuously")
 	}
 }
+
+// The four shapes must be four states. Three of them report 0% coverage and mean
+// different things, and two were reported identically before this existed: a BOM
+// with no `dependencies` field was labelled the same as one whose declared graph
+// misses components. That is the difference between "the document is silent" and
+// "the document is deficient", and no surface can restore it once it is lost here.
+func TestGraphStateSeparatesTheFourShapes(t *testing.T) {
+	want := map[string]GraphState{
+		"tree-simple":            GraphComplete,
+		"partial-coverage":       GraphPartial,
+		"no-dependencies-empty":  GraphDeclaredEmpty,
+		"no-dependencies-absent": GraphUndeclared,
+	}
+	seen := map[string]string{} // explanation -> fixture that produced it
+	for name, wantState := range want {
+		c := fixture(t, name).Coverage()
+		if got := c.State(); got != wantState {
+			t.Errorf("%s: state = %v, want %v", name, got, wantState)
+		}
+		if other, dup := seen[c.Explain()]; dup {
+			t.Errorf("%s and %s produce the SAME explanation; a reader cannot tell "+
+				"them apart: %s", name, other, c.Explain())
+		}
+		seen[c.Explain()] = name
+	}
+}
+
+// The terse label is what the status bar shows, so it must also separate the
+// states — a shared word there defeats the distinction above.
+func TestGraphStateLabelsAreDistinct(t *testing.T) {
+	seen := map[string]GraphState{}
+	for _, s := range []GraphState{GraphComplete, GraphPartial, GraphDeclaredEmpty, GraphUndeclared} {
+		l := s.Label()
+		if other, dup := seen[l]; dup {
+			t.Errorf("states %v and %v share the label %q", s, other, l)
+		}
+		seen[l] = s
+	}
+	if GraphComplete.Label() != "" {
+		t.Errorf("the unremarkable state should have no label, got %q", GraphComplete.Label())
+	}
+}
+
+// HasCategories must be false for a document whose components carry none, or the
+// column view offers a category axis that is one bucket holding everything.
+func TestHasCategoriesIsFalseWithoutAny(t *testing.T) {
+	if fixture(t, "no-dependencies-empty").HasCategories() {
+		t.Error("HasCategories = true on a document with no cdx:osquery:category")
+	}
+	if !fixture(t, "obom-categories").HasCategories() {
+		t.Error("HasCategories = false on the OBOM fixture")
+	}
+}
