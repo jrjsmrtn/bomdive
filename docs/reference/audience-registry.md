@@ -7,7 +7,7 @@ Derived from the [SPARK analysis](../inception/spark-analysis.md), 2026-09-10.
 
 | ID | Audience | Category | Needs | Derived Artifacts |
 |----|----------|----------|-------|-------------------|
-| **A1** | BOM reader at a terminal | Primary | Answer *"what is in this BOM, and what pulled this in?"* without a browser or a memorised schema | BDD:`user-ls`, `user-tree`; Tutorial:*; C4:Person |
+| **A1** | BOM reader at a terminal | Primary | Answer *"what is in this BOM, and what pulled this in?"* without a browser or a memorised schema | BDD:`user-ls`, `user-tree`, `user-columns`; Tutorial:*; C4:Person |
 | **A2** | CI / pipeline author | Integration | Stable `--output json` contract, meaningful exit codes, no interactive prompts | BDD:`api-json-output`, `api-exit-codes`; Reference:*; C4:ExternalSystem (CI runner) |
 | **A3** | Packager / installer | Operational | A single static binary, reproducible build, no cgo, no runtime deps | Howto:`install`, `build-from-source`; C4:Deployment node |
 | **A4** | Go contributor | Contribution | Understand *why* the walk is cycle-safe and the root synthetic — the non-obvious core | Explanation:`graph-model`; ADRs; C4:Component view |
@@ -58,6 +58,12 @@ a complete one.** The SPARK measurements found real BOMs where only 5% of compon
 graph — and POC-2 found **14 of 14 OBOMs with no dependency graph whatsoever**, across thousands of
 components each. Coverage must therefore be reported in **both** surfaces — rendered for A1, and a
 field for A2 — never only in prose that A2 cannot read.
+
+**A1 gained a third surface after [ADR-0006](../adr/0006-column-view-as-a-first-class-renderer.md)**:
+a Miller-column view, alongside `ls` and `tree`. It is the only one of the three that serves every
+BOM type, including the graphless OBOMs — so for A1 it is arguably the *primary* surface and the
+other two are the pipeline-facing pair. A2 is unaffected: a TUI has no machine consumer, and
+`--output json` remains where the coverage field lives.
 
 A second obligation follows from the same measurement: **a BOM with no `dependencies` array is a
 normal document, not a malformed one.** Both audiences must be able to distinguish "this BOM has no

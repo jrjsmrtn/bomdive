@@ -5,6 +5,26 @@
 **Concept**: a Go CLI that reads CycloneDX xBOM JSON (SBOM, OBOM, HBOM) and navigates it with the
 muscle memory of `ls(1)` and `tree(1)`.
 
+> ## ⚠ Amended — read this before the body
+>
+> **This is a dated inception record, not a live design document.** It says what was known and
+> decided on 2026-09-10. Later work superseded parts of it, and those parts are **marked in place
+> rather than rewritten**, so the record of what was believed at inception survives. Where this
+> document and an ADR disagree, **the ADR wins**.
+>
+> | Superseded here | By |
+> |---|---|
+> | `tree` as the primary renderer, and the `explore` deferral reasoning | [ADR-0006](../adr/0006-column-view-as-a-first-class-renderer.md) — the column view is a first-class renderer, and the model must expand lazily |
+> | "must be a single static binary — no cgo" | Corrected in place below; measured in [POC-5](evidence/poc5-cgo-linking-2026-09-10.md) and [POC-6](evidence/poc6-backend-survey-2026-09-10.md) |
+> | The backend comparison | [POC-6](evidence/poc6-backend-survey-2026-09-10.md) — DuckDB, zig, SQLite CTEs, the Cypher survey, the Ladybug↔DuckDB bridge |
+> | "no real OBOM or HBOM measured" | [POC-2](evidence/poc2-bom-corpus-2026-09-10.json), then [POC-7](evidence/poc7-bom-identity-2026-09-10.md) for the discrimination rule and category vocabulary |
+> | Open questions 1, 2 and 4 | Decided — see the marks on each |
+>
+> **Still open and unmeasured**: the merged host view (`hbom --include-runtime`), which would
+> qualify ADR-0004. Documented, never run — see POC-7.
+>
+> Phases and scheduling now live in [`../roadmap/roadmap.md`](../roadmap/roadmap.md), not here.
+
 **Naming note**: the working name was `lsbom`, abandoned because macOS ships `lsbom(8)`
 (`/usr/bin/lsbom`, "list contents of a bom file") for Installer `.bom` files — a collision in the
 same semantic space, on the development platform. `lsxbom` was verified free in `PATH`, in MacPorts,
@@ -94,8 +114,12 @@ works; `tree` is the one that pays off when a graph exists. The original framing
 - Conversion between formats — lossy, and `cyclonedx-cli` already documents its own losses.
 
 **Deferred (future consideration)**
-- **`explore` (interactive TUI)** — a different project with different dependencies, testing story
-  and failure modes. Deferred deliberately; see R4.
+- ~~**`explore` (interactive TUI)** — a different project with different dependencies, testing story
+  and failure modes. Deferred deliberately; see R4.~~
+  **⚠ This reasoning is retired by [ADR-0006](../adr/0006-column-view-as-a-first-class-renderer.md).**
+  The deferral was justified by the idea being *unspecified*; a Miller-column view is a specified
+  interaction with a known shape, and it is the only renderer that works on the graphless BOMs where
+  `tree` is meaningless. It is still not in v0.1, but that is now sequencing, not vagueness.
 - SPDX input — `protobom`-style normalisation would be the route, not a second parser.
 - XML input — free from the chosen library, but untested, so unclaimed until it is.
 - `diff` between two BOMs of the same artifact.
@@ -353,6 +377,13 @@ behaviour is detectable rather than assumed stable.
 | **POC-2** *(done, 2026-09-10)* | Measure a real **OBOM** and **HBOM** | **Done — 23 files.** `tree` does **not** suit an OBOM (no graph, 0/14) or an HBOM (depth 1). Image SBOMs are the strong `tree` case | Done — `evidence/` |
 | **POC-3** | Cycle-safe DAG walk over the measured fixtures | Terminates; renders back-references; coverage line correct | ~half a day |
 | **POC-4** | Parse + walk the 10 MB fixture under 2 s | Benchmark passes | ~2 h |
+| **POC-5** *(done)* | What relaxing "no cgo" costs | **Done.** Self-contained binary survives cgo; cross-compilation is the real cost | `evidence/poc5-*` |
+| **POC-6** *(done)* | Backend survey | **Done.** DuckDB embed and zero-ingest, `zig cc` cross-compilation, build tags, the Cypher survey, the Ladybug↔DuckDB bridge | `evidence/poc6-*` |
+| **POC-7** *(done)* | BOM identity and OBOM navigation | **Done.** Discrimination rule, the custom-lifecycle trap, 40-category vocabulary | `evidence/poc7-*` |
+| **POC-8** *(open)* | Measure a **merged host view** | Would qualify ADR-0004: it is the one HBOM/OBOM shape where a host-level `tree` is meaningful. Documented, never run | ~1 h |
+
+⚠ **POC-3 and POC-4 remain genuinely pending** — they need code that does not exist yet. They are
+Phase 1 acceptance criteria in the roadmap, not stale entries.
 
 ---
 
@@ -408,17 +439,18 @@ document in the corpus.
 
 ### Open questions for stakeholder review
 
-1. **Tier — t0 or t1?** The DAG-rendering decision deserves an ADR, which argues for t1; the project
-   is small and single-contributor, which argues for t0.
-2. **Distribution intent.** `ships-artifacts` changes the release path materially (SBOM, provenance,
-   signing per `wrapup-sprint`). Private-until-proven is this workspace's pattern, and matches
-   `okf-gate`'s precedent.
+1. ~~**Tier — t0 or t1?**~~ — **DECIDED: t1**, bootstrapped 2026-09-10. A roadmap was later adopted
+   as a deliberate deviation without taking the rest of t2; see `CLAUDE.md`.
+2. ~~**Distribution intent.**~~ — **DECIDED: Private, `ships-artifacts: no`.** Public is defensible
+   later and runs through the `public-release` gate with its own ADR.
 3. ~~**Does `lsxbom` render an OBOM at all?**~~ — **ANSWERED by POC-2.** It renders one with `ls`,
    never with `tree`. All three types stay in v0.1, because `ls` covers all three; `tree` is scoped
    to BOMs that carry a graph, which in this corpus means container-image SBOMs and directory scans.
    The remaining decision is what `tree` *does* when asked to walk a graphless BOM (see Knowledge gaps).
-4. **Is a synthetic root acceptable UX**, or should an unrooted BOM be reported as such and refuse to
-   guess?
+4. ~~**Is a synthetic root acceptable UX?**~~ — **ANSWERED by [ADR-0004](../adr/0004-the-dependency-graph-is-a-dag.md)**:
+   roots are derived from in-degree-0 nodes and **labelled as synthetic**. The tool neither refuses
+   nor silently invents. ADR-0006 softens the question further — a column view shows roots as a
+   first column rather than needing a single one.
 
 ---
 
