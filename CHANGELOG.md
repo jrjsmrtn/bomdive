@@ -18,7 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The detail pane could not be scrolled**, so a component with more properties than fit the screen
   was silently cut off — a real HBOM device carries up to 37. `PgDn`/`PgUp`, `Ctrl-D`/`Ctrl-U`,
   `J`/`K`, `Home`/`End`, and the pane title now reports `n-m of total` with `↑`/`↓`, because a pane
-  truncated without an indicator looks complete.
+  truncated without an indicator looks complete. The pane **wraps**, so how far it can scroll is
+  measured by wrapping each key and value at the pane's own width — an earlier estimate of two rows
+  per field undercounted a real OBOM, whose values run past 70 characters in a pane around 55 wide,
+  and a pane that overflowed by wrapping alone still refused to move.
 - A component with **no name** rendered as nothing — a blank row in the column view, an empty
   segment in the header path, `@1.0.0` from `ls`, and a bare `├──` from `tree`. `bom.Node.Label()`
   is now the single place that decides, falling back to `bom-ref`, and filtering matches it too so

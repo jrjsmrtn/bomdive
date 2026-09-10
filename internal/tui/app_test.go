@@ -387,3 +387,37 @@ func TestOverScrollingThenPagingUpMovesImmediately(t *testing.T) {
 		t.Errorf("paging up from the end does not show content below:\n%s", header(up))
 	}
 }
+
+// Few fields, long values: the shape where a two-rows-per-field estimate is wrong.
+//
+// This is what dogfooding an OBOM exposed. The pane wraps, so five fields with
+// 240-character values occupy far more than ten rows — but the estimate said ten,
+// clamped the scroll to zero, and the title claimed everything was visible.
+func TestDetailScrollsWhenContentOverflowsByWrappingAlone(t *testing.T) {
+	top := drive(t, "long-values", tcell.KeyRight)
+	if !strings.Contains(header(top), "of") {
+		t.Fatalf("pane does not report overflow on wrapped content:\n%s", header(top))
+	}
+	down := drive(t, "long-values", tcell.KeyRight, tcell.KeyPgDn)
+	if top == down {
+		t.Error("PgDn did not scroll wrapped content")
+	}
+}
+
+func TestWrappedRowsCountsWrapping(t *testing.T) {
+	for _, tc := range []struct {
+		s     string
+		width int
+		want  int
+	}{
+		{"", 10, 1},
+		{"short", 10, 1},
+		{"exactlyten", 10, 1},
+		{"eleven chars", 10, 2},
+		{"a very long value that needs several rows", 10, 5},
+	} {
+		if got := wrappedRows(tc.s, tc.width); got != tc.want {
+			t.Errorf("wrappedRows(%q, %d) = %d, want %d", tc.s, tc.width, got, tc.want)
+		}
+	}
+}

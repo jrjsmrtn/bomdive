@@ -9,6 +9,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/jrjsmrtn/lsxbom/internal/bom"
@@ -195,8 +196,46 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// detailLines is how many rows the detail pane holds.
-func (u *ui) detailLines() int { return len(u.model.Detail()) * 2 }
+// detailWidth is the detail pane's inner width, derived from the body Flex's 3:2
+// split minus its two border columns.
+func (u *ui) detailWidth() int {
+	if u.width <= 0 {
+		return 40
+	}
+	if w := (u.width * 2 / 5) - 2; w > 4 {
+		return w
+	}
+	return 4
+}
+
+// detailLines is how many rows the pane will actually OCCUPY, wrapping included.
+//
+// It used to return len(Detail()) * 2, on the assumption that every field is a key
+// row plus a value row. The pane wraps, and a real OBOM carries values of 70-plus
+// characters in a pane around 55 wide — so the estimate undercounted, `max` clamped
+// to zero, PgDn did nothing and the title claimed everything was visible. Reported
+// from dogfooding an OBOM, which is exactly where long values live.
+func (u *ui) detailLines() int {
+	w := u.detailWidth()
+	rows := 0
+	for _, kv := range u.model.Detail() {
+		rows += wrappedRows(kv.Key, w)
+		rows += wrappedRows(kv.Value, w-2) // the value is indented two columns
+	}
+	return rows
+}
+
+// wrappedRows is how many terminal rows a string occupies at the given width.
+func wrappedRows(s string, width int) int {
+	if width < 1 {
+		width = 1
+	}
+	n := utf8.RuneCountInString(s)
+	if n == 0 {
+		return 1
+	}
+	return (n + width - 1) / width
+}
 
 // scrollDetail moves the pane and CLAMPS, so the end of a list cannot be scrolled
 // past into blankness that reads as "nothing here".

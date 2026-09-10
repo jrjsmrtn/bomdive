@@ -1,0 +1,41 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "osquery:processes:data:verbose",
+      "name": "verbose",
+      "properties": [
+        {
+          "name": "cdx:osquery:category",
+          "value": "processes"
+        },
+        {
+          "name": "cmdline",
+          "value": "/very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment//very/long/path/segment/"
+        }
+      ],
+      "type": "data",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": [],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/host-os@1.0.0",
+      "name": "host-os",
+      "purl": "pkg:generic/host-os@1.0.0",
+      "type": "operating-system",
+      "version": "1.0.0"
+    },
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      },
+      {
+        "phase": "operations"
+      }
+    ]
+  },
+  "specVersion": "1.7",
+  "version": 1
+}

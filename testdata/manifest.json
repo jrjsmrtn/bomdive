@@ -60,6 +60,13 @@
     "file": "hbom-depth1.cdx.json",
     "why": "The HBOM shape: one dependency entry, rooted, depth 1 \u2014 a host with devices hanging off it. An `ls` shape, not a `tree` shape."
   },
+  "long-values": {
+    "asserts": {
+      "max_value_length": 600
+    },
+    "file": "long-values.cdx.json",
+    "why": "Few properties, but values long enough to WRAP. This is the shape that broke detail scrolling: a row-count estimate of two rows per field undercounts when the pane wraps, so the pane clamped to no-scroll and claimed everything was visible. Real OBOM values reach 70-plus characters in a pane around 55 wide."
+  },
   "many-properties": {
     "asserts": {
       "max_properties": 37,

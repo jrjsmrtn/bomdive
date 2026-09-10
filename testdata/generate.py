@@ -337,6 +337,29 @@ fixture(
     ),
 )
 
+fixture(
+    "long-values",
+    "Few properties, but values long enough to WRAP. This is the shape that broke "
+    "detail scrolling: a row-count estimate of two rows per field undercounts when "
+    "the pane wraps, so the pane clamped to no-scroll and claimed everything was "
+    "visible. Real OBOM values reach 70-plus characters in a pane around 55 wide.",
+    {"max_value_length": 600},
+    bom(
+        spec="1.7",
+        root=lib("host-os", ref=r("host-os"), ctype="operating-system"),
+        components=[
+            # ONE long property, deliberately. More fields would push the naive
+            # two-rows-each estimate over the pane height by itself, and the
+            # fixture would stop distinguishing the bug from the fix.
+            lib("verbose", ref="osquery:processes:data:verbose", purl=False, ctype="data",
+                props=[{"name": OSQ, "value": "processes"},
+                       {"name": "cmdline", "value": "/very/long/path/segment/" * 25}]),
+        ],
+        dependencies=[],
+        metadata_extra={"lifecycles": [{"phase": "pre-build"}, {"phase": "operations"}]},
+    ),
+)
+
 # ---------------------------------------------------------------- error path
 fixture(
     "dangling-ref",
