@@ -4,7 +4,7 @@ Date: 2026-09-11
 
 ## Status
 
-**Proposed.** Two decisions belonged to the maintainer — `CLAUDE.md` makes traversal semantics
+**Accepted** on 2026-09-11. Two decisions belonged to the maintainer — `CLAUDE.md` makes traversal semantics
 human-led — and **both were settled on 2026-09-11, as recommended**:
 
 - **[A]** lsxbom browses records other than components, starting with vulnerabilities: **yes**;
@@ -12,8 +12,7 @@ human-led — and **both were settled on 2026-09-11, as recommended**:
 
 **[C] was carried out, and it changed the design.** The one tool within reach, Dependency-Track
 5.1.0, does not produce a standalone VEX: its export is VEX **embedded** in an SBOM. Section 1 was
-revised for that, as [C] required. **This ADR becomes Accepted when the maintainer accepts the
-revised section 1.**
+revised for that, as [C] required. **The maintainer accepted the revised section 1 on 2026-09-11.**
 
 Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 [ADR-0007](0007-column-view-open-questions.md). It reverses nothing in either.

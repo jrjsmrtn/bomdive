@@ -46,6 +46,27 @@ that spans both the graph and no-graph cases.
 8% coverage). If a dense BOM shows fan-in in the hundreds, reverse mode needs paging that forward
 mode does not — re-check before relying on it beyond these shapes.
 
+### Phase 2b — Vulnerability records
+**Target**: v0.2.x · **Status**: accepted, not started —
+[ADR-0009](../adr/0009-browse-a-standalone-vex.md)
+
+Browse the vulnerability records a CycloneDX document carries. **Embedded VEX first**, because
+that is what tools produce: a Dependency-Track export carries only the affected components, up to
+1,505 vulnerabilities in one document and 1,134 on one component
+(`../inception/evidence/poc11-vex-navigability-2026-09-11.md`).
+
+- [ ] Embedded VEX: from a component, the vulnerabilities that affect it; and the vulnerabilities,
+      grouped, then what each affects
+- [ ] The first column chosen by the document — analysis state when any vulnerability carries
+      one, most severe rating otherwise — with `?` saying which and why
+- [ ] A key to switch between the component axis and the vulnerability axis. Not `⇥`, which
+      reverses dependency edges
+- [ ] Unresolved references shown in one of four states, with a resolution count
+- [ ] Standalone VEX, then BOM-Links into documents named on the command line
+
+⚠ **The analysis-state axis has only been seen in illustrative documents.** Every tool export
+measured came from one untriaged portfolio.
+
 ### Phase 3 — Corpus questions
 **Target**: v0.3.x · **Status**: deliberately deferred, may never be built
 
