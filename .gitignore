@@ -45,3 +45,4 @@ CLAUDE.local.md
 testdata/.schema-cache/
 .conformance-cache/
 .corpora-cache/
+.corpora-cache-vex/

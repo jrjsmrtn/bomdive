@@ -187,22 +187,28 @@ honour the specification, this one whether we survive reality.
 | `CycloneDX/sbom-examples` | **CC0-1.0** | 66 BOMs — the only **public OBOM (3), HBOM (1), CBOM (5), SaaSBOM, MBOM** samples found. POC-7's were all from a private estate |
 | `CycloneDX/cdxgen` | Apache-2.0 | 62 BOMs from the generator whose output this workspace actually holds |
 | `anchore/syft` | Apache-2.0 | version-identify fixtures, JSON 1.2–1.7 and **XML 1.0–1.7** — the only XML coverage available |
+| **VEX**, seven publishers | Apache-2.0, MIT — **two state no terms** | 207 documents: Liquibase's feed (purl references, everything `not_affected`), Apache Camel (Dependency-Track 4.10.1), EvergreenImageRegistry (values outside the schema), Softing Industrial (Dependency-Track 4.13/4.14, triaged), the Moderne feed (embedded, 2,057 vulnerabilities), and two single documents. Cached in `.corpora-cache-vex`, apart from the rest, so POC-9 and POC-10 keep reproducing. The two without terms are fetched for local testing only |
 
 ```bash
-./scripts/check-corpora.sh                    # all three, cached
+./scripts/check-corpora.sh                    # all four, cached
+./scripts/check-corpora.sh --corpus vex       # the VEX sources only
 ./scripts/check-corpora.sh --corpus syft --refresh
 ```
 
 **137 documents parse, 0 unexplained.** Planting a parser break makes all 137 fail, so the check is
 not passing vacuously.
 
-⚠ **Three bugs in this script, all of the same kind: I assumed what the corpus was instead of
+**The VEX corpus: 207 documents parse, 0 unexplained.** A planted missing path — one holding `?`
+and `%` — is reported as `EMPTY FILE — a fetch failure, not a parse failure`, and fails the run.
+
+⚠ **Four bugs in this script, all of the same kind: I assumed what the corpus was instead of
 checking.** Each is recorded because each produced a *confident wrong answer* about lsxbom.
 
 | Symptom | Actual cause |
 |---|---|
 | 9 files "unexpected end of JSON input" | GitHub's contents API returns **empty content above 1 MB**; they were zero-byte files. A **download** failure reported as a **parse** failure |
 | 124 files "not a CycloneDX document" | cdxgen's `test/data` holds generator **inputs** — `package.json`, lockfiles, vcpkg manifests — beside its outputs |
+| 2 Liquibase files "not a BOM" | their paths hold `?` and `%`, which were sent as a **query string**. GitHub answered 404 and the error body was saved as the document. Paths are now encoded, and a failed download leaves an empty file |
 | "no documents fetched" | a single `\.` in a double-quoted jq string is a parse error; the filter matched nothing |
 
 The script now fetches with the raw media type, reports an empty file as a **fetch** failure in its

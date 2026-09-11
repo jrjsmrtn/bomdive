@@ -19,6 +19,13 @@ resolve (a LOCAL ref must name a bom-ref in the same document; a BOM-LINK
 that bom-ref), and, for embedded VEX, whether the components are an inventory or only the
 components some vulnerability affects.
 
+A BY-SOURCE section then reports, per corpus sub-directory: the generator named in
+`metadata.tools`, reference forms (bom-ref, purl, BOM-Link), values outside the schema's
+own enums, and which first column each document gets under ADR-0009 — both the rule first
+accepted (group by analysis state whenever any vulnerability carries one) and the amended
+rule (a column must split: state if that gives two or more groups, else severity if THAT
+does, else state). A first column holding one group is not an axis.
+
 Counts only, never identifiers, so it is safe over a private corpus.
 
     python3 docs/inception/evidence/poc11-vex-navigability.py <corpus-dir>
@@ -29,6 +36,7 @@ import collections
 import glob
 import json
 import os
+import pathlib
 import sys
 
 SEVERITY_ORDER = ["critical", "high", "medium", "low", "info", "none", "unknown"]
@@ -80,7 +88,15 @@ def measure(docs, by_serial):
                 ref = a.get("ref", "")
                 targets[ref] += 1
                 if not ref.startswith("urn:cdx:"):
-                    local["resolves" if ref in own else "names nothing"] += 1
+                    # A purl that names no bom-ref here identifies a PACKAGE, not a missing
+                    # component: ADR-0009 section 2 gives it its own state rather than
+                    # counting it as dangling.
+                    if ref in own:
+                        local["resolves"] += 1
+                    elif ref.startswith("pkg:"):
+                        local["purl — names a package, not a component here"] += 1
+                    else:
+                        local["names nothing"] += 1
                     continue
                 body, _, fragment = ref[len("urn:cdx:"):].partition("#")
                 serial, _, version = body.partition("/")
@@ -114,9 +130,115 @@ def measure(docs, by_serial):
         "components, total": comps_total,
         "components some vulnerability affects": comps_affected,
         "documents whose components are ONLY the affected ones": docs_only_affected,
-        "local refs": dict(local),
+        "non-BOM-Link refs": dict(local),
         "BOM-Link refs": dict(link),
     }
+
+
+def schema_enums():
+    """The schema's own enums, read from the repository's schema cache — never typed in."""
+    here = pathlib.Path(__file__).resolve()
+    path = here.parents[3] / "testdata" / ".schema-cache" / "bom-1.6.schema.json"
+    if not path.exists():
+        return None
+    d = json.load(open(path))["definitions"]
+    return {
+        "state": set(d["impactAnalysisState"]["enum"]),
+        "justification": set(d["impactAnalysisJustification"]["enum"]),
+        "severity": set(d["severity"]["enum"]),
+    }
+
+
+def groups(vulns, axis):
+    """The first-column groups a document yields on one axis. A severity spelled in another
+    case is grouped with the schema value it names; an unknown value is its own group."""
+    out = set()
+    for v in vulns:
+        if axis == "state":
+            out.add((v.get("analysis") or {}).get("state", "(no analysis)"))
+        else:
+            sev = top_severity(v)
+            out.add(sev.lower() if sev.lower() in SEVERITY_ORDER else sev)
+    return out
+
+
+def first_column(vulns):
+    """(accepted rule, amended rule) for one document, as "axis:groups"."""
+    by_state, by_sev = groups(vulns, "state"), groups(vulns, "severity")
+    has_analysis = any(v.get("analysis", {}).get("state") for v in vulns)
+    accepted = f"state:{len(by_state)}" if has_analysis else f"severity:{len(by_sev)}"
+    if len(by_state) >= 2:
+        amended = f"state:{len(by_state)}"
+    elif len(by_sev) >= 2:
+        amended = f"severity:{len(by_sev)}"
+    else:
+        amended = f"state:{len(by_state)}"
+    return accepted, amended
+
+
+def by_source(root):
+    enums = schema_enums()
+    totals = collections.Counter()
+    print("\n== BY SOURCE")
+    for src in sorted(os.listdir(root)):
+        docs = []
+        for path in sorted(glob.glob(os.path.join(root, src, "*.json"))):
+            try:
+                d = json.load(open(path))
+            except Exception:
+                continue
+            if isinstance(d, dict) and d.get("bomFormat") == "CycloneDX" and d.get("vulnerabilities"):
+                docs.append(d)
+        if not docs:
+            continue
+        tools, forms, bad = collections.Counter(), collections.Counter(), collections.Counter()
+        axis_acc, axis_amd = collections.Counter(), collections.Counter()
+        shapes = collections.Counter()
+        for d in docs:
+            shapes["embedded" if d.get("components") else "standalone"] += 1
+            t = (d.get("metadata") or {}).get("tools")
+            if isinstance(t, dict):
+                t = (t.get("components") or []) + (t.get("services") or [])
+            for x in t or []:
+                tools[f"{x.get('name')} {x.get('version') or ''}".strip()] += 1
+            if not t:
+                tools["(none recorded)"] += 1
+            vulns = d["vulnerabilities"]
+            for v in vulns:
+                for a in v.get("affects") or []:
+                    r = a.get("ref", "")
+                    forms["purl" if r.startswith("pkg:") else "BOM-Link" if r.startswith("urn:cdx:")
+                          else "bom-ref"] += 1
+                if enums:
+                    an = v.get("analysis") or {}
+                    if an.get("state") and an["state"] not in enums["state"]:
+                        bad[f"state={an['state']}"] += 1
+                    if an.get("justification") and an["justification"] not in enums["justification"]:
+                        bad[f"justification={an['justification']}"] += 1
+                    for r in v.get("ratings") or []:
+                        if r.get("severity") and r["severity"] not in enums["severity"]:
+                            bad[f"severity={r['severity']}"] += 1
+            acc, amd = first_column(vulns)
+            axis_acc[acc] += 1
+            axis_amd[amd] += 1
+            totals["documents with vulnerabilities"] += 1
+            totals["accepted rule: one group"] += acc.endswith(":1")
+            totals["amended rule: splits"] += int(amd.split(":")[1]) >= 2
+            totals["amended rule: splits on neither axis"] += int(amd.split(":")[1]) < 2
+        one_group = sum(n for k, n in axis_acc.items() if k.endswith(":1"))
+        print(f"  {src}")
+        print(f"    documents with vulnerabilities : {len(docs)}  {dict(shapes)}")
+        print(f"    vulnerabilities                : {sum(len(d['vulnerabilities']) for d in docs)}")
+        print(f"    generator (metadata.tools)     : {dict(tools.most_common())}")
+        print(f"    affects[].ref forms            : {dict(forms)}")
+        print(f"    out-of-schema values           : {dict(bad.most_common()) or 'none'}")
+        print(f"    first column, accepted rule    : {dict(axis_acc.most_common())}  "
+              f"(one group — no axis — in {one_group} of {len(docs)})")
+        print(f"    first column, amended rule     : {dict(axis_amd.most_common())}")
+    if totals:
+        print("\n== ACROSS ALL SOURCES")
+        for k, v in totals.items():
+            print(f"  {k:<40s}: {v}")
 
 
 def main(root: str) -> int:
@@ -150,6 +272,7 @@ def main(root: str) -> int:
             if title == "STANDALONE VEX" and key.startswith(("components", "documents whose")):
                 continue
             print(f"  {key:<55s}: {value}")
+    by_source(root)
     return 0
 
 

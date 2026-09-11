@@ -14,6 +14,11 @@ human-led — and **both were settled on 2026-09-11, as recommended**:
 5.1.0, does not produce a standalone VEX: its export is VEX **embedded** in an SBOM. Section 1 was
 revised for that, as [C] required. **The maintainer accepted the revised section 1 on 2026-09-11.**
 
+**Amended on 2026-09-11** by the maintainer, after 207 real VEX documents from seven publishers
+were measured (*Measured a third time*, below): a grouping column must split, or there is none; a
+purl that names no component gets its own resolution state; values outside the schema are shown as
+written. The same measurement **corrected** this ADR's claim that tools produce only embedded VEX.
+
 Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 [ADR-0007](0007-column-view-open-questions.md). It reverses nothing in either.
 
@@ -92,8 +97,9 @@ shape is recorded: no document, name or identifier is committed.
 
 What this changes:
 
-- **Tools produce embedded VEX.** A standalone VEX has so far appeared only in illustrative use
-  cases.
+- ~~**Tools produce embedded VEX.** A standalone VEX has so far appeared only in illustrative use
+  cases.~~ **Corrected on 2026-09-11:** this held for one Dependency-Track 5.1.0 instance only.
+  Dependency-Track 4.10.1, 4.13.2 and 4.14.1 export standalone VEX — see *Measured a third time*.
 - **On untriaged tool output the analysis-state axis is degenerate** — one group of up to 1,505
   entries. Nothing in that portfolio had been triaged. A triaged one would carry states, but none
   has been measured.
@@ -101,6 +107,42 @@ What this changes:
   present. Neither axis serves both worlds alone.
 - **Cross-document links appear only in the use cases.**
 - **One component can carry 1,134 vulnerabilities.**
+
+### Measured a third time: real VEX from public publishers
+
+After acceptance, a corpus of real VEX was found and adopted into `scripts/check-corpora.sh` as its
+`vex` corpus: 207 documents from seven publishers, every one loaded by lsxbom. Of those, 169 carry
+vulnerabilities. Measured with `docs/inception/evidence/poc11-vex-navigability.py`:
+
+| Source | Licence | Generator | Shape | Vulnerabilities | Analysis | References |
+|---|---|---|---|---|---|---|
+| Apache Camel ×4 | Apache-2.0 | Dependency-Track 4.10.1 | standalone | 249 | none | `bom-ref` |
+| Softing Industrial ×5 | none stated | Dependency-Track 4.13.2, 4.14.1 | standalone | 129 | 2–3 groups per document | `bom-ref` |
+| Liquibase ×108 | Apache-2.0 | none recorded | standalone | 686 | `not_affected` only | **purl, no version** |
+| EvergreenImageRegistry ×49 | Apache-2.0 | evergreenctl 1.0.0, trivy 0.58.0 | standalone | 171 | **outside the schema** | **none** — no `affects` |
+| Moderne feed ×1 | none stated | none recorded | embedded | 2,057 | 3 states | purl, used as `bom-ref` |
+| hyades-e2e, Jahia | Apache-2.0, MIT | none recorded | standalone | 1 each | one group each | `bom-ref`, purl |
+
+What it settles:
+
+- **⚠ Correction: Dependency-Track 4.x produces standalone VEX.** This ADR said tools produce
+  embedded VEX and that standalone VEX appeared only in illustrative documents. That was drawn from
+  one Dependency-Track 5.1.0 instance. Versions 4.10.1, 4.13.2 and 4.14.1 export standalone VEX:
+  both shapes come from tools.
+- **The first column the accepted rule chose is a single group in 159 of the 169 documents.**
+  Section 1 is amended for it.
+- **Real VEX does not keep to the schema.** Evergreen carries 123 `under_investigation` states and
+  123 `vulnerable_code_not_present_execute_path` justifications — neither is a CycloneDX value — and
+  severities in capitals: `MEDIUM` 61, `NONE` 48, `HIGH` 48, `UNKNOWN` 7, `LOW` 4, `CRITICAL` 3.
+  Liquibase carries `vulnerable_code_not_present` 42 times, which is not a CycloneDX justification
+  in 1.5, 1.6 or 1.7. They look like OpenVEX values carried into CycloneDX. lsxbom loads every one
+  of these documents.
+- **References come in three forms, not two.** Liquibase's 686 are purls with no version, naming no
+  component anywhere in their documents — neither a local `bom-ref` nor a BOM-Link. Section 2 gives
+  them a state.
+
+Two sources, Softing Industrial and the Moderne feed, state no reuse terms. They are fetched for
+local testing only — never committed or redistributed — by the maintainer's decision.
 
 ### Scope
 
@@ -158,22 +200,32 @@ Switching between the component axis and the vulnerability axis needs its own ke
 reverses dependency edges, which is a different operation. The binding is an implementation detail
 and gets reviewed like any other.
 
-**The first column groups by `analysis.state` when any vulnerability in the document carries
-one, and by most severe rating otherwise.**
+**A grouping column is shown only when it splits** — amended 2026-09-11. The view tries analysis
+state first, then severity, and shows the first that divides the document into two or more groups.
+When neither does, there is no grouping column: the view opens on the vulnerabilities themselves.
 
-- Analysis states are the answer a VEX exists to give, so they win whenever they are present.
-- On untriaged tool output they are absent from all 3,560 measured vulnerabilities. Grouping by
-  them there yields one group of up to 1,505 entries — the degenerate axis lsxbom already refuses
-  for OBOM categories.
-- Every one of those 3,560 vulnerabilities is rated, so severity is a complete axis there. The use
-  cases are the opposite: 86 of their 112 vulnerabilities are unrated or `none`.
-- The view says which axis it chose, and `?` explains why.
+- Analysis states are the answer a VEX exists to give, so they come first whenever they divide the
+  document.
+- **A column holding one group is not an axis.** The rule first accepted grouped by state whenever
+  any vulnerability carried one. Across the 169 real public documents that carry vulnerabilities,
+  that gave **one group in 159**: Liquibase marks everything `not_affected`, so all 108 of its
+  documents opened on a single group.
+- Under the amended rule **41 of the 169 split**. The other **128 split on neither axis** — mostly
+  small documents, where one vulnerability, or several alike, cannot be divided at all. For them
+  the grouping column is dropped rather than shown with one entry: the principle `HasCategories`
+  applies to OBOM categories.
+- The two axes are complementary in the evidence. Untriaged tool output — all 3,560
+  vulnerabilities in the Dependency-Track 5.1.0 exports — carries ratings and no states. The use
+  cases carry states, and 86 of their 112 vulnerabilities are unrated or `none`.
+- The view says which axis it chose, or that it chose none, and `?` explains why.
 
 Both axes are discovered from the document, not hardcoded — the rule POC-7 set for categories.
 States sort alphabetically, as categories do. Severities follow the schema's own order, most severe
-first: `critical`, `high`, `medium`, `low`, `info`, `none`, `unknown`. A vulnerability that cannot be placed goes in a group of its own, listed last:
-`(no analysis)` or `(no rating)`. Counting it as `not_affected` or `low` would put words in the
-document's mouth.
+first: `critical`, `high`, `medium`, `low`, `info`, `none`, `unknown` — **compared regardless of case**, because real documents write `MEDIUM` and `HIGH`.
+**A value outside the schema is shown as written**, as a group of its own after the known ones: an
+OpenVEX state such as `under_investigation`, or a severity nobody defined. Rejecting it would hide
+the document's claim, and folding it into a known value would put words in its mouth. A
+vulnerability that cannot be placed at all goes last, under `(no analysis)` or `(no rating)`.
 
 **Scale.** One column must hold up to 1,505 vulnerabilities, and one component's list up to 1,134.
 The column view already lists the 4,889 components of a measured OBOM, and `/` filters any column.
@@ -186,8 +238,7 @@ detail.
 
 ### 2. A reference that does not resolve is shown, never dropped
 
-This matches ADR-0004's treatment of a dangling `dependsOn`. Every affected entry is in exactly one
-of four states, and the view says which:
+This matches ADR-0004's treatment of a dangling `dependsOn`. Every affected entry is in exactly one of five states, and the view says which:
 
 | State | Meaning |
 |---|---|
@@ -195,6 +246,7 @@ of four states, and the view says which:
 | **linked, not loaded** | a BOM-Link whose target document was not supplied. Not an error: the VEX correctly points elsewhere |
 | **linked, version differs** | the target's `serialNumber` was supplied, at a different `version`. Not resolved — the view does not guess |
 | **names nothing** | a local ref with no match, or a loaded target without that `bom-ref`. Dangling. 1 of 80 in the corpus |
+| **names a package** | a purl that names no `bom-ref` in the documents loaded. It identifies a *package*, not a missing component: all 686 of Liquibase's references have this form, and none carries a version. Not dangling. Matching it against a component in a named BOM is a later decision, because a purl without a version can match many |
 
 *Linked, not loaded* is deliberately separate from *names nothing*. In the first case the document
 is correct; lsxbom was just not given the document it points to.
@@ -230,9 +282,9 @@ Nine exports were measured, above. Their shape differs from the use cases on bot
 no `analysis`, and a single target with 1,134 vulnerabilities — so, as [C] required, section 1 was
 revised before anything was built.
 
-⚠ **Still unmeasured: a standalone VEX from a tool, and a triaged portfolio.** Every export came
-from one untriaged portfolio, so the analysis-state axis has only ever been seen in illustrative
-use cases.
+✅ **Since measured, on 2026-09-11:** a standalone VEX from a tool — Dependency-Track 4.10.1,
+4.13.2 and 4.14.1 — and triaged real documents: Softing Industrial and the Moderne feed carry two or
+three analysis groups per document. See *Measured a third time*.
 
 ### 3. What this ADR does not change
 
@@ -280,13 +332,15 @@ use cases.
 
 **Risk**
 
-- The analysis-state axis rests on illustrative documents only: every tool export measured was
-  untriaged. Falling back to severity is what keeps the view useful if that never changes.
+- Real VEX does not keep to the schema: out-of-schema states, justifications and severities were
+  measured in two public sources. The view must show what it does not recognise, because the next
+  tool can emit a value nobody has seen yet.
 
 ## References
 
 - POC-11 — `docs/inception/evidence/poc11-vex-navigability.py` and
   `docs/inception/evidence/poc11-vex-navigability-2026-09-11.md`
+- The VEX corpus — `scripts/check-corpora.sh --corpus vex`
 - POC-10 — `docs/inception/evidence/poc10-empty-documents-2026-09-11.md`
 - CycloneDX BOM-Link — <https://cyclonedx.org/capabilities/bomlink/>, cited by the schema's own
   description of `bomLinkElementType`

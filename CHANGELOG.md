@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`check-corpora.sh` saved GitHub's `404` responses as documents.** A path containing `?` or
+  `%` was sent as a query string, the error body was written where the document belonged, and the
+  run skipped it as "not a BOM" — a download failure reported as a property of the corpus, the
+  fourth bug of that kind in this script. Paths are now percent-encoded, and any failed download
+  leaves an empty file, which the run already reports as a fetch failure; a planted missing path
+  proves it. No path in the three existing corpora changes under the encoding, so their results are
+  unaffected. A fetched URL now goes through Python, not curl: one curl build resolved the Moderne
+  feed's CDN name to addresses that never answered.
 - **A CycloneDX document that is not a bill of materials was called an SBOM and drawn as a blank
   pane.** `bomFormat: "CycloneDX"` is a format marker, not a claim of BOM-ness — CycloneDX also
   carries VEX, and a standalone VEX inventories nothing. `identify()` defaulted to `SBOM` and had
@@ -81,6 +89,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A VEX corpus in `scripts/check-corpora.sh`** (`--corpus vex`): 207 documents from seven
+  publishers — Liquibase's VEX feed, Apache Camel's four project VEX files (Dependency-Track 4.10.1),
+  EvergreenImageRegistry, Softing Industrial (Dependency-Track 4.13 and 4.14), the Moderne Backpatch
+  feed, and two single documents. **All 207 load.** It is cached in `.corpora-cache-vex`, apart
+  from the other corpora, so the POC-9 and POC-10 re-runs keep reproducing what they recorded.
+  Softing and Moderne state no reuse terms, so they are fetched for local testing only — never
+  committed or redistributed — by the maintainer's decision.
 - **Two more CycloneDX documents that are not bills of materials are named**: an **attestation**
   (`declarations` only — CycloneDX Attestations) and a **definitions** document (`definitions`
   only — it defines standards others attest against). Both were labelled `SBOM` and explained as

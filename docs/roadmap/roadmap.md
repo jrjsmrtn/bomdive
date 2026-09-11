@@ -50,22 +50,29 @@ mode does not — re-check before relying on it beyond these shapes.
 **Target**: v0.2.x · **Status**: accepted, not started —
 [ADR-0009](../adr/0009-browse-a-standalone-vex.md)
 
-Browse the vulnerability records a CycloneDX document carries. **Embedded VEX first**, because
-that is what tools produce: a Dependency-Track export carries only the affected components, up to
-1,505 vulnerabilities in one document and 1,134 on one component
+Browse the vulnerability records a CycloneDX document carries. **Both shapes are produced by
+tools**: Dependency-Track 4.x exports standalone VEX, and the 5.1.0 instance measured exports
+embedded VEX. **Embedded first**, by the maintainer's decision of 2026-09-11 — it is what that
+instance exports, so it can be dogfooded at once, and component → vulnerabilities then needs no
+second document. Its export carries only the affected components, up to 1,505 vulnerabilities in
+one document and 1,134 on one component
 (`../inception/evidence/poc11-vex-navigability-2026-09-11.md`).
 
 - [ ] Embedded VEX: from a component, the vulnerabilities that affect it; and the vulnerabilities,
       grouped, then what each affects
-- [ ] The first column chosen by the document — analysis state when any vulnerability carries
-      one, most severe rating otherwise — with `?` saying which and why
+- [ ] A grouping column only when it splits: analysis state if that gives two or more groups,
+      otherwise severity if that does, otherwise none — the view opens on the vulnerabilities.
+      `?` says which, and why
 - [ ] A key to switch between the component axis and the vulnerability axis. Not `⇥`, which
       reverses dependency edges
-- [ ] Unresolved references shown in one of four states, with a resolution count
+- [ ] Unresolved references shown in one of five states — including a purl that names a package,
+      not a component in the document — with a resolution count
+- [ ] Values outside the schema shown as they are, and severities sorted regardless of case
 - [ ] Standalone VEX, then BOM-Links into documents named on the command line
 
-⚠ **The analysis-state axis has only been seen in illustrative documents.** Every tool export
-measured came from one untriaged portfolio.
+⚠ **Real VEX does not keep to the schema.** Two public sources carry OpenVEX states and
+justifications, and uppercase severities. The view must show what it does not recognise, not
+reject it or file it under the wrong group.
 
 ### Phase 3 — Corpus questions
 **Target**: v0.3.x · **Status**: deliberately deferred, may never be built

@@ -92,8 +92,8 @@ and the output is a personal inventory. The **shape it exposed** is a committed 
 
 | File | What it is |
 |---|---|
-| `poc11-vex-navigability-2026-09-11.md` | Two worlds that do not overlap. The **25 public use cases** are standalone VEX with analysis states, mostly unrated, and 79 of 80 BOM-Links resolving across documents. **Nine Dependency-Track 5.1.0 exports** are embedded VEX — only the affected components, up to 1,505 vulnerabilities and 1,134 on one component, every one rated and none analysed, no BOM-Links. Recorded as shape only; the exports are private. The evidence behind [ADR-0009](../../adr/0009-browse-a-standalone-vex.md) and its revised section 1 |
-| `poc11-vex-navigability.py` | Measures standalone and embedded VEX separately, over any corpus directory. Counts only, never identifiers |
+| `poc11-vex-navigability-2026-09-11.md` | Three sets of VEX, measured apart. The **25 public use cases** are standalone, with analysis states and 79 of 80 BOM-Links resolving. **Nine Dependency-Track 5.1.0 exports** are embedded — only the affected components, up to 1,505 vulnerabilities, none analysed. **207 documents from seven real publishers** show Dependency-Track 4.x exporting standalone VEX, purl references that name no component, and values outside the schema. The evidence behind [ADR-0009](../../adr/0009-browse-a-standalone-vex.md) and its amendment. The private exports are recorded as shape only |
+| `poc11-vex-navigability.py` | Measures standalone and embedded VEX separately, over any corpus directory, then per source: generator, reference forms, values outside the schema's own enums, and the first column each document gets under ADR-0009's accepted and amended rules. Counts only, never identifiers |
 
 ## Re-running
 
