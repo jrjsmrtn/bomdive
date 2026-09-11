@@ -94,6 +94,21 @@ the corpus script then skipped as "not a BOM". And one curl build resolved the M
 name to addresses that never answered, while the system resolver's did. Both are fixed in the
 script, and a planted missing path proves a failed download now fails the run.
 
+## What a BOM-Link resolves against
+
+A BOM-Link names its target by serial number and version alone. Measured across every corpus
+(`--links .corpora-cache .corpora-cache-vex`):
+
+| | |
+|---|---|
+| CycloneDX JSON documents with a `serialNumber` | 113 |
+| serial-and-version pairs claimed by more than one document | 11 |
+| … byte-identical copies | 2 — the CISA use cases reusing one product BOM |
+| … **different content under one pair** | **9** — the largest, 44 cdxgen test files on the all-zero placeholder serial |
+
+So a serial number is not a reliable identity. ADR-0009 collapses byte-identical copies into one
+document and calls a pair claimed by different documents *linked, ambiguous*.
+
 ## What it means for the design
 
 - ~~**Tools produce embedded VEX.** The standalone shape ADR-0009 was first written around appears
@@ -121,6 +136,7 @@ python3 docs/inception/evidence/poc11-vex-navigability.py .corpora-cache  # the 
 python3 docs/inception/evidence/poc11-vex-navigability.py <dir>           # any exports, e.g. <dir>/export/*.json
 scripts/check-corpora.sh --corpus vex                                    # fetch the third set
 python3 docs/inception/evidence/poc11-vex-navigability.py .corpora-cache-vex  # the third set, by source
+python3 docs/inception/evidence/poc11-vex-navigability.py --links .corpora-cache .corpora-cache-vex  # serial conflicts
 ```
 
 The tool-output column is not re-runnable from a committed file, by design: it needs a portfolio

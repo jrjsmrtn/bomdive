@@ -2,6 +2,7 @@ package columns
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -64,6 +65,7 @@ const (
 	typeGroup    = "vulnerability group"
 	typeVuln     = "vulnerability"
 	typeRef      = "reference"
+	typeFile     = "file"
 )
 
 func isEntry(n bom.Node, kind string) bool { return n.Ref == "" && n.Type == kind }
@@ -165,7 +167,7 @@ func sortVulns(vs []bom.Vulnerability) {
 }
 
 func vulnNode(v bom.Vulnerability) bom.Node {
-	return bom.Node{Type: typeVuln, Name: v.Label(), Category: strconv.Itoa(v.Index)}
+	return bom.Node{Type: typeVuln, Name: v.Label(), Category: strconv.Itoa(v.Index), Doc: v.Doc}
 }
 
 // vulnNodes turns records into rows, most severe first, and makes every row in the
@@ -218,7 +220,7 @@ func (m *Model) targetLabel(v bom.Vulnerability) string {
 	}
 	ref := v.Affects[0].Ref
 	label := ref
-	if n, st := m.g.Resolve(ref); st == bom.RefResolved {
+	if n, st := m.set.Doc(v.Doc).Resolve(ref); st == bom.RefResolved {
 		label = n.Label()
 		if n.Version != "" {
 			label += "@" + n.Version
@@ -278,18 +280,18 @@ func (m *Model) vulnOf(n bom.Node) (bom.Vulnerability, bool) {
 	if err != nil {
 		return bom.Vulnerability{}, false
 	}
-	return m.g.VulnerabilityAt(i)
+	return m.set.VulnerabilityAt(n.Doc, i)
 }
 
 // Mode reports which records the view navigates.
 func (m *Model) Mode() Mode { return m.mode }
 
 // HasVulnerabilities reports whether the document carries any vulnerability record.
-func (m *Model) HasVulnerabilities() bool { return len(m.g.Vulnerabilities()) > 0 }
+func (m *Model) HasVulnerabilities() bool { return len(m.set.Vulnerabilities()) > 0 }
 
 // Grouping reports how the vulnerability axis groups THIS document.
 func (m *Model) Grouping() Grouping {
-	gr, _ := GroupVulnerabilities(m.g.Vulnerabilities())
+	gr, _ := GroupVulnerabilities(m.set.Vulnerabilities())
 	return gr
 }
 
@@ -335,11 +337,11 @@ func (m *Model) ToggleMode() bool {
 
 func (m *Model) vulnEntryColumn() Column {
 	if m.vdir == Reverse {
-		return Column{Title: "affected components", Entries: m.g.AffectedComponents()}
+		return Column{Title: "affected components", Entries: m.set.AffectedComponents()}
 	}
-	gr, groups := GroupVulnerabilities(m.g.Vulnerabilities())
+	gr, groups := GroupVulnerabilities(m.set.Vulnerabilities())
 	if gr == GroupNone {
-		return Column{Title: "vulnerabilities", Entries: m.vulnNodes(m.g.Vulnerabilities())}
+		return Column{Title: "vulnerabilities", Entries: m.vulnNodes(m.set.Vulnerabilities())}
 	}
 	entries := make([]bom.Node, 0, len(groups))
 	for _, g := range groups {
@@ -360,7 +362,7 @@ func (m *Model) vulnDescendable(n bom.Node) bool {
 	case n.Ref == "":
 		return false // a reference that did not resolve, or any other synthetic row
 	default:
-		return m.g.HasVulnerabilities(n.Ref)
+		return m.set.HasVulnerabilities(bom.NodeKey{Doc: n.Doc, Ref: n.Ref})
 	}
 }
 
@@ -371,7 +373,7 @@ func (m *Model) vulnDescendable(n bom.Node) bool {
 func (m *Model) vulnChildren(n bom.Node) []bom.Node {
 	switch {
 	case isEntry(n, typeGroup):
-		_, groups := GroupVulnerabilities(m.g.Vulnerabilities())
+		_, groups := GroupVulnerabilities(m.set.Vulnerabilities())
 		for _, g := range groups {
 			if g.Key == n.Category {
 				return m.vulnNodes(g.Members)
@@ -384,24 +386,24 @@ func (m *Model) vulnChildren(n bom.Node) []bom.Node {
 			return nil
 		}
 		var out []bom.Node
-		seen := map[string]bool{}
+		seen := map[bom.NodeKey]bool{}
 		for _, a := range v.Affects {
 			// Every reference is shown, resolved or not: dropping the unresolved ones
 			// would render a partial answer as complete.
-			if node, st := m.g.Resolve(a.Ref); st == bom.RefResolved {
-				if !seen[node.Ref] {
-					seen[node.Ref] = true
+			if node, st := m.set.Doc(v.Doc).Resolve(a.Ref); st == bom.RefResolved {
+				if k := (bom.NodeKey{Doc: node.Doc, Ref: node.Ref}); !seen[k] {
+					seen[k] = true
 					out = append(out, node)
 				}
 			} else {
-				out = append(out, bom.Node{Type: typeRef, Name: a.Ref, Category: st.String()})
+				out = append(out, bom.Node{Type: typeRef, Name: a.Ref, Category: st.String(), Doc: v.Doc})
 			}
 		}
 		return out
 	case n.Ref == "":
 		return nil
 	default:
-		return m.vulnNodes(m.g.VulnerabilitiesAffecting(n.Ref))
+		return m.vulnNodes(m.set.VulnerabilitiesAffecting(bom.NodeKey{Doc: n.Doc, Ref: n.Ref}))
 	}
 }
 
@@ -420,7 +422,7 @@ func (m *Model) toggleVulnDirection() {
 		return
 	}
 	for i, e := range m.cols[0].Entries {
-		if e.Ref == sel.Ref && e.Type == sel.Type && e.Category == sel.Category {
+		if e.Ref == sel.Ref && e.Doc == sel.Doc && e.Type == sel.Type && e.Category == sel.Category {
 			m.cols[0].Cursor = i
 			return
 		}
@@ -432,7 +434,7 @@ func (m *Model) toggleVulnDirection() {
 func (m *Model) vulnDetail(sel bom.Node) ([]KV, bool) {
 	switch {
 	case isEntry(sel, typeGroup):
-		gr, groups := GroupVulnerabilities(m.g.Vulnerabilities())
+		gr, groups := GroupVulnerabilities(m.set.Vulnerabilities())
 		n := 0
 		for _, g := range groups {
 			if g.Key == sel.Category {
@@ -446,7 +448,15 @@ func (m *Model) vulnDetail(sel bom.Node) ([]KV, bool) {
 		return kv, true
 	case isEntry(sel, typeRef):
 		st := refStateNamed(sel.Category)
-		return []KV{{"reference", sel.Name}, {"resolves", st.String()}, {"meaning", st.Explain()}}, true
+		kv := []KV{{"reference", sel.Name}, {"resolves", st.String()}, {"meaning", st.Explain()}}
+		if st == bom.RefLinkedAmbiguous {
+			var names []string
+			for _, d := range m.set.Doc(sel.Doc).LinkTargets(sel.Name) {
+				names = append(names, filepath.Base(d.Path()))
+			}
+			kv = append(kv, KV{"candidates", strings.Join(names, ", ")})
+		}
+		return kv, true
 	case isEntry(sel, typeVuln):
 		v, ok := m.vulnOf(sel)
 		if !ok {
@@ -470,6 +480,9 @@ func refStateNamed(name string) bom.RefState {
 // the schema defines — neither hiding it nor correcting it.
 func (m *Model) vulnerabilityDetail(v bom.Vulnerability) []KV {
 	kv := []KV{{"id", v.Label()}}
+	if m.multi() {
+		kv = append(kv, KV{"document", filepath.Base(m.set.Doc(v.Doc).Path())})
+	}
 	if v.Ref != "" {
 		kv = append(kv, KV{"bom-ref", v.Ref})
 	}
@@ -530,13 +543,13 @@ func (m *Model) vulnerabilityDetail(v bom.Vulnerability) []KV {
 	}
 	resolved := 0
 	for _, a := range v.Affects {
-		if _, st := m.g.Resolve(a.Ref); st == bom.RefResolved {
+		if _, st := m.set.Doc(v.Doc).Resolve(a.Ref); st == bom.RefResolved {
 			resolved++
 		}
 	}
 	kv = append(kv, KV{"affects", fmt.Sprintf("%d (%d resolved)", len(v.Affects), resolved)})
 	for _, a := range v.Affects {
-		_, st := m.g.Resolve(a.Ref)
+		_, st := m.set.Doc(v.Doc).Resolve(a.Ref)
 		val := a.Ref + " — " + st.String()
 		for _, ver := range a.Versions {
 			val += fmt.Sprintf("; %s%s %s", ver.Version, ver.Range, ver.Status)
@@ -548,8 +561,8 @@ func (m *Model) vulnerabilityDetail(v bom.Vulnerability) []KV {
 
 // vulnSummary adds a component's vulnerabilities to its detail, on either axis, so the
 // component axis answers "is this affected?" without switching.
-func (m *Model) vulnSummary(ref string) []KV {
-	vs := m.g.VulnerabilitiesAffecting(ref)
+func (m *Model) vulnSummary(n bom.Node) []KV {
+	vs := m.set.VulnerabilitiesAffecting(bom.NodeKey{Doc: n.Doc, Ref: n.Ref})
 	if len(vs) == 0 {
 		if m.HasVulnerabilities() {
 			return []KV{{"vulnerabilities", "0"}}

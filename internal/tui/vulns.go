@@ -26,8 +26,8 @@ func groupLabel(gr columns.Grouping) string {
 // when some did not, because "names a package" and "linked, not loaded" are not
 // defects in the document — `?` says which states they are in.
 func (u *ui) vulnStatusText() string {
-	g := u.model.Graph()
-	counts := g.ReferenceCounts()
+	s := u.model.Set()
+	counts := s.ReferenceCounts()
 	total := 0
 	for _, n := range counts {
 		total += n
@@ -39,18 +39,18 @@ func (u *ui) vulnStatusText() string {
 	return fmt.Sprintf("[darkgray]vulns[-] %d  [darkgray]affects[-] %s  [darkgray]%s[-]  [darkgray]"+
 		"↑↓ →← nav  ⇞⇟ detail  ⇥flip [-][white]v[-][darkgray]components /filter [-]"+
 		"[white]?[-][darkgray]why [-][white]H[-][darkgray]keys q quit[-]",
-		len(g.Vulnerabilities()), affects, groupLabel(u.model.Grouping()))
+		len(s.Vulnerabilities()), affects, groupLabel(u.model.Grouping()))
 }
 
 // vulnExplainText is `?` on the vulnerability axis: why the leftmost column groups the
 // way it does, and what every `affects` reference resolved to.
 func (u *ui) vulnExplainText() string {
 	g := u.model.Graph()
-	vs := g.Vulnerabilities()
+	vs := u.model.Set().Vulnerabilities()
 	var b strings.Builder
-	fmt.Fprintf(&b, "[white]%s[-]\n[darkgray]%s[-]\n\n", g.Identity().Describe(), u.source)
+	fmt.Fprintf(&b, "[white]%s[-]\n[darkgray]%s[-]\n\n", g.Identity().Describe(), u.sourceText())
 
-	counts := g.ReferenceCounts()
+	counts := u.model.Set().ReferenceCounts()
 	total := 0
 	for _, n := range counts {
 		total += n
@@ -77,7 +77,7 @@ func (u *ui) vulnAxisText() string {
 		return "the leftmost column lists every component some vulnerability affects. Descend " +
 			"to see what affects it; ⇥ goes back to the vulnerabilities."
 	}
-	n := len(u.model.Graph().Vulnerabilities())
+	n := len(u.model.Set().Vulnerabilities())
 	switch u.model.Grouping() {
 	case columns.GroupState:
 		return fmt.Sprintf("the leftmost column groups the %d vulnerabilities by analysis state, "+

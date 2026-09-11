@@ -678,7 +678,7 @@ func (u *ui) explainText() string {
 	c := g.Coverage()
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "[white]%s[-]\n[darkgray]%s[-]\n\n", g.Identity().Describe(), u.source)
+	fmt.Fprintf(&b, "[white]%s[-]\n[darkgray]%s[-]\n\n", g.Identity().Describe(), u.sourceText())
 
 	label := c.State().Label()
 	if label == "" {
@@ -739,8 +739,21 @@ func (u *ui) helpText() string {
 //
 // One line per case, unwrapped: the pane wraps, and hard-wrapping inside text that
 // is wrapped again produces a ragged column with orphaned fragments.
+// sourceText is the file the explanation is about: the one argument, or — with several
+// named — the document under the cursor, since that is what the rest of `?` describes.
+func (u *ui) sourceText() string {
+	if u.model.Set().Len() > 1 {
+		return u.model.Graph().Path()
+	}
+	return u.source
+}
+
 func (u *ui) axisText() string {
 	switch u.model.Axis() {
+	case columns.AxisFiles:
+		return fmt.Sprintf("the leftmost column lists the %d documents named on the command line, "+
+			"in the order given. Descend into one to open it. BOM-Links resolve among all of them, "+
+			"and v shows every document's vulnerabilities.", u.model.Set().Len())
 	case columns.AxisCategories:
 		return "the leftmost column lists `cdx:osquery:category` values, because this document " +
 			"declares no dependency graph. That is the axis it does give you — descend into a " +

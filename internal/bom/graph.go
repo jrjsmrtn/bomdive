@@ -3,6 +3,7 @@ package bom
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -29,6 +30,11 @@ type Node struct {
 	Type     string
 	PURL     string
 	Category string // cdx:osquery:category, empty when absent
+
+	// Doc is which loaded document the node belongs to — 0 when one is loaded. A
+	// bom-ref is unique only within its own document, so across documents a node's
+	// identity is (Doc, Ref).
+	Doc int
 }
 
 // Label is the human-facing name for a node, falling back to its bom-ref.
@@ -192,26 +198,29 @@ type Graph struct {
 	// list MEANS. Its Components field is unused; Contents fills it from nodes.
 	payload Contents
 
-	// vulns are the `vulnerabilities` records, as written; affectedBy indexes which
-	// records affect each component. serial and version identify this document, so a
-	// BOM-Link back into it can resolve.
-	vulns      []Vulnerability
-	affectedBy map[string][]int
-	serial     string
-	version    int
+	// vulns are the `vulnerabilities` records, as written. serial and version identify
+	// this document, so a BOM-Link can find it; digest tells a byte-identical copy from
+	// a document that merely claims the same serial. path, doc and set place it in the
+	// session: every graph belongs to a Set, of one document when loaded alone.
+	vulns   []Vulnerability
+	serial  string
+	version int
+	digest  [32]byte
+	path    string
+	doc     int
+	set     *Set
 
 	props map[string][]Property
 }
 
 // Load reads a CycloneDX JSON document.
 func Load(path string) (*Graph, error) {
-	f, err := os.Open(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
 
-	format, r, err := detectFormat(f)
+	format, r, err := detectFormat(bytes.NewReader(raw))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
@@ -235,7 +244,10 @@ func Load(path string) (*Graph, error) {
 	if err := checkIsBOM(&doc, format); err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
-	return build(&doc), nil
+	g := build(&doc)
+	g.path = path
+	g.digest = sha256.Sum256(raw)
+	return g, nil
 }
 
 // checkIsBOM rejects a document that parsed but is not a CycloneDX BOM.
@@ -359,6 +371,7 @@ func build(doc *cdx.BOM) *Graph {
 	g.serial = strings.TrimPrefix(doc.SerialNumber, "urn:uuid:")
 	g.version = doc.Version
 	g.loadVulnerabilities(doc)
+	NewSet(g) // a document loaded alone is a set of one
 	return g
 }
 
@@ -600,7 +613,7 @@ func (g *Graph) Roots() (roots []Node, synthetic bool) {
 // metadataRoot synthesises a Node for a declared root that the components list
 // does not contain, so a renderer has something to anchor on.
 func (g *Graph) metadataRoot() Node {
-	return Node{Ref: g.id.RootRef, Name: g.id.RootName, Type: g.id.RootType}
+	return Node{Ref: g.id.RootRef, Name: g.id.RootName, Type: g.id.RootType, Doc: g.doc}
 }
 
 // Coverage reports how much of the document the graph reaches.

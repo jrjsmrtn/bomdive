@@ -1,0 +1,100 @@
+{
+  "bomFormat": "CycloneDX",
+  "metadata": {
+    "component": {
+      "bom-ref": "product-vex",
+      "name": "product",
+      "type": "application"
+    }
+  },
+  "serialNumber": "urn:uuid:77777777-8888-4999-8aaa-bbbbbbbbbbbb",
+  "specVersion": "1.6",
+  "version": 1,
+  "vulnerabilities": [
+    {
+      "affects": [
+        {
+          "ref": "urn:cdx:22222222-3333-4444-8555-666666666666/1#pkg:generic/a@1.0.0"
+        }
+      ],
+      "analysis": {
+        "state": "exploitable"
+      },
+      "bom-ref": "vuln-CVE-2024-6001",
+      "id": "CVE-2024-6001",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "urn:cdx:22222222-3333-4444-8555-666666666666/1#pkg:generic/b@1.0.0"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-6002",
+      "id": "CVE-2024-6002",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "urn:cdx:22222222-3333-4444-8555-666666666666/1#pkg:generic/nope@1.0.0"
+        }
+      ],
+      "bom-ref": "vuln-CVE-2024-6003",
+      "id": "CVE-2024-6003",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "urn:cdx:cccccccc-dddd-4eee-8fff-000000000000/1#x"
+        }
+      ],
+      "bom-ref": "vuln-CVE-2024-6004",
+      "id": "CVE-2024-6004",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "urn:cdx:22222222-3333-4444-8555-666666666666/1#pkg:generic/app@1.0.0"
+        }
+      ],
+      "analysis": {
+        "state": "exploitable"
+      },
+      "bom-ref": "vuln-CVE-2024-6005",
+      "id": "CVE-2024-6005",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

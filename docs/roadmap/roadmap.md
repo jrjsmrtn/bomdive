@@ -47,8 +47,8 @@ that spans both the graph and no-graph cases.
 mode does not — re-check before relying on it beyond these shapes.
 
 ### Phase 2b — Vulnerability records
-**Target**: v0.2.x · **Status**: **in progress** — vulnerability records browse within one document;
-linking across documents is not started — [ADR-0009](../adr/0009-browse-a-standalone-vex.md)
+**Target**: v0.2.x · **Status**: **implemented** — `browse` and `v`, across every document named —
+[ADR-0009](../adr/0009-browse-a-standalone-vex.md)
 
 Browse the vulnerability records a CycloneDX document carries. **Both shapes are produced by
 tools**: Dependency-Track 4.x exports standalone VEX, and the 5.1.0 instance measured exports
@@ -69,8 +69,8 @@ one document and 1,134 on one component
       not a component in the document — with a resolution count
 - [x] Values outside the schema shown as they are, and severities sorted regardless of case
 - [x] Standalone VEX, within one document
-- [ ] BOM-Links into documents named on the command line ([B]) — until then they show as
-      *linked, not loaded*
+- [x] BOM-Links into documents named on the command line ([B]): a files column when two or more
+      are named, and a sixth state, *linked, ambiguous*, for a serial two documents claim
 
 ⚠ **Real VEX does not keep to the schema.** Two public sources carry OpenVEX states and
 justifications, and uppercase severities. The view must show what it does not recognise, not

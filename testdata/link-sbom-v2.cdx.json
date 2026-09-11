@@ -1,0 +1,31 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/a@1.0.0",
+      "name": "a",
+      "purl": "pkg:generic/a@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/b@1.0.0",
+      "name": "b",
+      "purl": "pkg:generic/b@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/app@1.0.0",
+      "name": "app",
+      "purl": "pkg:generic/app@1.0.0",
+      "type": "application",
+      "version": "1.0.0"
+    }
+  },
+  "serialNumber": "urn:uuid:22222222-3333-4444-8555-666666666666",
+  "specVersion": "1.6",
+  "version": 2
+}

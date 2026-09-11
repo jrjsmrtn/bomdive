@@ -19,6 +19,12 @@ were measured (*Measured a third time*, below): a grouping column must split, or
 purl that names no component gets its own resolution state; values outside the schema are shown as
 written. The same measurement **corrected** this ADR's claim that tools produce only embedded VEX.
 
+**[B] settled in detail on 2026-09-11** by the maintainer, while building it: with two or more
+documents named the leftmost column lists the files; the vulnerability axis spans every named
+document; and a link whose serial number and version two different documents claim is *linked,
+ambiguous* — a sixth resolution state, because measurement showed serial numbers are not reliable
+identities.
+
 Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 [ADR-0007](0007-column-view-open-questions.md). It reverses nothing in either.
 
@@ -243,14 +249,14 @@ detail.
 
 ### 2. A reference that does not resolve is shown, never dropped
 
-This matches ADR-0004's treatment of a dangling `dependsOn`. Every affected entry is in exactly one of five states, and the view says which:
+This matches ADR-0004's treatment of a dangling `dependsOn`. Every affected entry is in exactly one of six states, and the view says which:
 
 | State | Meaning |
 |---|---|
-| **resolved** | names a `bom-ref` in this document, or in a linked document that was loaded |
+| **resolved** | names a `bom-ref` in this document, or in a linked document that was loaded — including a document's own subject, its `metadata.component`, whether or not that drives a dependency graph |
 | **linked, not loaded** | a BOM-Link whose target document was not supplied. Not an error: the VEX correctly points elsewhere |
 | **linked, version differs** | the target's `serialNumber` was supplied, at a different `version`. Not resolved — the view does not guess |
-| **names nothing** | a local ref with no match, or a loaded target without that `bom-ref`. Dangling. 1 of 80 in the corpus |
+| **linked, ambiguous** | the serial and version are claimed by two or more named documents with different content. Not resolved: lsxbom will not guess, and the detail names every candidate file |\n| **names nothing** | a local ref with no match, or a loaded target without that `bom-ref`. Dangling. 1 of 80 in the corpus |
 | **names a package** | a purl that names no `bom-ref` in the documents loaded. It identifies a *package*, not a missing component: all 686 of Liquibase's references have this form, and none carries a version. Not dangling. Matching it against a component in a named BOM is a later decision, because a purl without a version can match many |
 
 *Linked, not loaded* is deliberately separate from *names nothing*. In the first case the document
@@ -278,6 +284,27 @@ number, so the user learns which file to add.
 
 **Identity:** a document matches a BOM-Link by `serialNumber` **and** `version`, exactly as the
 link encodes them. The same serial at a different version is not a match.
+
+**A serial number is not a reliable identity in practice.** Measured across 113 public documents
+that carry one (`poc11-vex-navigability.py --links`): 11 serial-and-version pairs are claimed by
+more than one document. **2 are byte-identical copies** — the CISA use cases reuse one product BOM
+across cases — and **9 carry different content**, the largest 44 cdxgen test files sharing the
+all-zero placeholder serial. So byte-identical copies collapse into one document and resolve
+normally, and a pair claimed by different documents makes the link **linked, ambiguous**: shown
+unresolved, with every candidate file named in its detail. Picking one would be a guess presented
+as fact.
+
+**Settled with the implementation, 2026-09-11:**
+
+- **Two or more documents named: the leftmost column lists the files**, each with its kind, and
+  descending into one opens its usual first column. The header, coverage and `?` describe the file
+  you are in. **One document: nothing changes** — a column of one entry is not an axis, the rule
+  section 1 applies to grouping.
+- **The vulnerability axis spans every named document**, so `lsxbom browse app.cdx.json
+  app.vex.json` answers which of the SBOM's components the VEX says are exploitable, whichever order
+  the files are named in. Each record's detail names the file it came from.
+- A `bom-ref` is unique only within its own document, so across documents a component is
+  identified by its document **and** its `bom-ref`.
 
 ### [C] Precondition — measure a VEX that a tool produced: carried out 2026-09-11
 

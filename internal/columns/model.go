@@ -7,7 +7,10 @@
 package columns
 
 import (
+	"fmt"
+	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/jrjsmrtn/lsxbom/internal/bom"
@@ -77,13 +80,12 @@ type KV struct{ Key, Value string }
 
 // Model is the whole view.
 type Model struct {
-	g   *bom.Graph
-	dir Direction
-	// cols is the chain, left to right. cols[0] is always the entry column.
+	// set is every document named on the command line; one document is a set of one.
+	// Every row carries the document it belongs to, and every question about a row is
+	// asked of THAT document: a bom-ref is unique only within its own.
+	set  *bom.Set
+	dir  Direction
 	cols []Column
-	// byCategory makes the entry column list categories rather than components,
-	// which is the only navigable axis when a BOM declares no dependency graph.
-	byCategory bool
 
 	// mode is the component or the vulnerability axis (ADR-0009). vdir is the
 	// vulnerability axis's own direction, and saved is the component chain as it was
@@ -93,37 +95,58 @@ type Model struct {
 	saved []Column
 }
 
-// New builds the view over a loaded BOM.
+// New builds the view over a loaded BOM, and over every document loaded with it.
 //
-// The entry column is chosen from the document rather than assumed: a BOM that
-// declares no dependency graph opens on its categories, because descending
-// dependencies would show nothing at all.
+// The entry column is chosen from the documents rather than assumed. Several named:
+// the files, so none of them is out of reach (ADR-0009 [B]). One named: its own first
+// column — a column listing one file is a column of one entry, which is not an axis.
 func New(g *bom.Graph) *Model {
-	// HasCategories is load-bearing, not defensive. A document that declares no
-	// graph AND carries no categories has no category axis: grouping it yields one
-	// "(no category)" bucket holding everything, so the view announced it was
-	// browsing categories and made the reader descend through a level that says
-	// nothing. Falling back to a flat component list is the honest shape.
-	m := &Model{g: g, byCategory: g.DeclaresNoGraph() && g.HasCategories()}
+	m := &Model{set: g.Set()}
 	m.cols = []Column{m.entryColumn()}
 	return m
 }
 
-// Graph exposes the underlying BOM, for a caller that needs coverage or identity.
-func (m *Model) Graph() *bom.Graph { return m.g }
+// Set exposes every loaded document.
+func (m *Model) Set() *bom.Set { return m.set }
+
+func (m *Model) multi() bool { return m.set.Len() > 1 }
+
+// Graph is the document the view is currently describing: the file under the cursor
+// in the files column, or the document of the selected row. The header, coverage and
+// `?` describe it.
+func (m *Model) Graph() *bom.Graph { return m.set.Doc(m.currentDoc()) }
+
+func (m *Model) currentDoc() int {
+	col := m.active()
+	if m.mode == ModeComponents && m.multi() {
+		col = &m.cols[0]
+	}
+	if sel, ok := col.Selected(); ok {
+		return sel.Doc
+	}
+	return 0
+}
+
+func (m *Model) graphOf(n bom.Node) *bom.Graph { return m.set.Doc(n.Doc) }
 
 // Direction reports which way the view faces.
 func (m *Model) Direction() Direction { return m.dir }
 
-// ByCategory reports whether the entry column lists categories.
-func (m *Model) ByCategory() bool { return m.byCategory }
+// byCategoryOf: a document declaring no graph opens on its categories — but only if it
+// HAS categories. HasCategories is load-bearing: without it a document with neither
+// grouped into one "(no category)" bucket, and the view announced it was browsing
+// categories while making the reader descend through a level that said nothing.
+func byCategoryOf(g *bom.Graph) bool { return g.DeclaresNoGraph() && g.HasCategories() }
+
+// ByCategory reports whether the current document's first column lists categories.
+func (m *Model) ByCategory() bool { return byCategoryOf(m.Graph()) }
 
 // Columns returns the chain.
 func (m *Model) Columns() []Column { return m.cols }
 
-// Axis names what the entry column lists. It exists so a caller can EXPLAIN the
-// view without re-deriving the choice — entryColumn switches on it, so there is
-// one decision and not two that can drift apart.
+// Axis names what the entry column lists. It exists so a caller can EXPLAIN the view
+// without re-deriving the choice — entryColumn switches on it, so there is one decision
+// and not two that can drift apart.
 type Axis int
 
 const (
@@ -131,20 +154,32 @@ const (
 	AxisRoots Axis = iota
 	// AxisCategories: cdx:osquery:category values, the OBOM navigation axis.
 	AxisCategories
-	// AxisFlat: every component, because there is no relation or category to
-	// group by.
+	// AxisFlat: every component, because there is no relation or category to group by.
 	AxisFlat
+	// AxisFiles: the documents named, when there are two or more.
+	AxisFiles
 )
 
-// Axis reports which entry column this document got.
+// Axis reports which entry column this session got.
 func (m *Model) Axis() Axis {
+	if m.multi() {
+		return AxisFiles
+	}
+	return docAxis(m.set.Doc(0))
+}
+
+// DocAxis is the first column the current document gets on its own — what descending
+// into its file opens.
+func (m *Model) DocAxis() Axis { return docAxis(m.Graph()) }
+
+func docAxis(g *bom.Graph) Axis {
 	switch {
-	case m.byCategory:
+	case byCategoryOf(g):
 		return AxisCategories
-	case m.g.Coverage().Edges == 0:
+	case g.Coverage().Edges == 0:
 		return AxisFlat
 	default:
-		if roots, _ := m.g.Roots(); len(roots) == 0 {
+		if roots, _ := g.Roots(); len(roots) == 0 {
 			return AxisFlat
 		}
 		return AxisRoots
@@ -152,11 +187,35 @@ func (m *Model) Axis() Axis {
 }
 
 func (m *Model) entryColumn() Column {
-	switch m.Axis() {
+	if m.multi() {
+		return m.filesColumn()
+	}
+	return entryColumnOf(m.set.Doc(0))
+}
+
+// filesColumn lists the documents named, in the order given, each with its kind.
+func (m *Model) filesColumn() Column {
+	entries := make([]bom.Node, 0, m.set.Len())
+	for i, g := range m.set.Docs() {
+		entries = append(entries, bom.Node{Type: typeFile, Doc: i, Category: strconv.Itoa(i), Name: fileLabel(g)})
+	}
+	return Column{Title: "files", Entries: entries}
+}
+
+func fileLabel(g *bom.Graph) string {
+	name := filepath.Base(g.Path())
+	if g.Path() == "" {
+		name = "document " + strconv.Itoa(g.Doc()+1)
+	}
+	return name + " — " + string(g.Identity().Kind)
+}
+
+func entryColumnOf(g *bom.Graph) Column {
+	switch docAxis(g) {
 	case AxisFlat:
-		return Column{Title: "components", Entries: m.g.Components()}
+		return Column{Title: "components", Entries: g.Components()}
 	case AxisCategories:
-		cats := m.g.Categories()
+		cats := g.Categories()
 		names := make([]string, 0, len(cats))
 		for k := range cats {
 			names = append(names, k)
@@ -168,14 +227,13 @@ func (m *Model) entryColumn() Column {
 			if label == "" {
 				label = "(no category)"
 			}
-			// A synthetic node standing for the category. Ref is empty, which is how
-			// the detail pane and descent tell a category from a component.
-			entries = append(entries, bom.Node{Name: label, Type: "category", Category: c})
+			// A synthetic node standing for the category: Ref empty, Type says which,
+			// Category carries the key — and Doc, so it is asked of its own document.
+			entries = append(entries, bom.Node{Name: label, Type: typeCategory, Category: c, Doc: g.Doc()})
 		}
 		return Column{Title: "categories", Entries: entries}
 	}
-
-	roots, synthetic := m.g.Roots()
+	roots, synthetic := g.Roots()
 	title := "roots"
 	if synthetic {
 		title = "roots (derived)"
@@ -242,28 +300,35 @@ func (m *Model) Descendable(n bom.Node) bool {
 	if m.mode == ModeVulnerabilities {
 		return m.vulnDescendable(n)
 	}
-	// A category entry exists only because entryColumn found members for it, so it
-	// always has some. Counting them would rebuild the whole category map per row.
-	if n.Type == "category" && n.Ref == "" {
+	switch {
+	case isEntry(n, typeFile):
+		// A VEX file inventories nothing, so it opens on nothing — and says so by
+		// carrying no arrow, rather than descending into an empty pane.
+		return len(entryColumnOf(m.graphOf(n)).Entries) > 0
+	case isEntry(n, typeCategory):
+		// A category entry exists only because entryColumn found members for it.
 		return true
+	case m.dir == Reverse:
+		return m.graphOf(n).HasParents(n.Ref)
+	default:
+		return m.graphOf(n).HasChildren(n.Ref)
 	}
-	if m.dir == Reverse {
-		return m.g.HasParents(n.Ref)
-	}
-	return m.g.HasChildren(n.Ref)
 }
 
 func (m *Model) childrenOf(n bom.Node) []bom.Node {
 	if m.mode == ModeVulnerabilities {
 		return m.vulnChildren(n)
 	}
-	if isEntry(n, typeCategory) {
-		return m.g.Categories()[n.Category]
+	switch {
+	case isEntry(n, typeFile):
+		return entryColumnOf(m.graphOf(n)).Entries
+	case isEntry(n, typeCategory):
+		return m.graphOf(n).Categories()[n.Category]
+	case m.dir == Reverse:
+		return m.graphOf(n).Parents(n.Ref)
+	default:
+		return m.graphOf(n).Children(n.Ref)
 	}
-	if m.dir == Reverse {
-		return m.g.Parents(n.Ref)
-	}
-	return m.g.Children(n.Ref)
 }
 
 // ToggleDirection flips the whole view between dependencies and dependents.
@@ -325,10 +390,14 @@ func (m *Model) Detail() []KV {
 			return kv
 		}
 	}
-	if isEntry(sel, typeCategory) {
+	g := m.graphOf(sel)
+	switch {
+	case isEntry(sel, typeFile):
+		return fileDetail(g)
+	case isEntry(sel, typeCategory):
 		return []KV{
 			{"category", sel.Name},
-			{"components", itoa(len(m.g.Categories()[sel.Category]))},
+			{"components", itoa(len(g.Categories()[sel.Category]))},
 		}
 	}
 	kv := []KV{{"name", sel.Name}}
@@ -340,14 +409,37 @@ func (m *Model) Detail() []KV {
 		kv = append(kv, KV{"purl", sel.PURL})
 	}
 	kv = append(kv, KV{"bom-ref", sel.Ref})
+	if m.multi() {
+		kv = append(kv, KV{"document", filepath.Base(g.Path())})
+	}
 	if sel.Category != "" {
 		kv = append(kv, KV{"category", sel.Category})
 	}
-	kv = append(kv, KV{"dependencies", itoa(len(m.g.Children(sel.Ref)))})
-	kv = append(kv, KV{"dependents", itoa(len(m.g.Parents(sel.Ref)))})
-	kv = append(kv, m.vulnSummary(sel.Ref)...)
-	for _, p := range m.g.Properties(sel.Ref) {
+	kv = append(kv, KV{"dependencies", itoa(len(g.Children(sel.Ref)))})
+	kv = append(kv, KV{"dependents", itoa(len(g.Parents(sel.Ref)))})
+	kv = append(kv, m.vulnSummary(sel)...)
+	for _, p := range g.Properties(sel.Ref) {
 		kv = append(kv, KV{p.Name, p.Value})
+	}
+	return kv
+}
+
+// fileDetail describes one named document: what it is, what identifies it to a
+// BOM-Link, and how many of its own references resolved.
+func fileDetail(g *bom.Graph) []KV {
+	c := g.Contents()
+	kv := []KV{{"file", g.Path()}, {"kind", g.Identity().Describe()}}
+	if g.Serial() != "" {
+		kv = append(kv, KV{"serial", g.Serial()}, KV{"version", itoa(g.Version())})
+	}
+	kv = append(kv, KV{"components", itoa(c.Components)}, KV{"vulnerabilities", itoa(c.Vulnerabilities)})
+	counts := g.ReferenceCounts()
+	total := 0
+	for _, n := range counts {
+		total += n
+	}
+	if total > 0 {
+		kv = append(kv, KV{"affects", fmt.Sprintf("%d of %d references resolved", counts[bom.RefResolved], total)})
 	}
 	return kv
 }

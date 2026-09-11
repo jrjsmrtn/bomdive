@@ -93,6 +93,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`browse` takes several documents, and follows BOM-Links between them** (ADR-0009 [B]):
+  `lsxbom browse app.vex.json app.cdx.json`. With two or more named, the leftmost column lists the
+  files, each with its kind, and the header, coverage and `?` describe the file under the cursor;
+  with one, nothing changes. `v` shows every document's vulnerabilities, so an SBOM named first
+  still answers which of its components a VEX says are exploitable. A BOM-Link resolves by serial
+  number and version among the named documents: byte-identical copies count as one, and a serial
+  and version claimed by two different documents is **linked, ambiguous**, with every candidate file
+  named — serial numbers are not reliable identities, since 9 of the 11 serial-and-version pairs
+  shared across the public corpora carry different content. Across documents a component is
+  identified by its document and its `bom-ref`, because a `bom-ref` is unique only within its own.
+  A reference to a document's own **subject** — its `metadata.component` — resolves whether or not
+  that drives a dependency graph. Every CISA use-case link points at a product BOM's subject, and a
+  standalone VEX names its own product the same way; with both of case 8's product BOMs named, all
+  11 links first read *names nothing*, and a VEX's reference to its own product read as dangling.
 - **The vulnerability records in a document can be browsed** — `v` in `browse` switches between
   the component axis and a vulnerability axis (ADR-0009), and switching back returns you to where
   you were. The first column groups by analysis state when the states divide the document, by

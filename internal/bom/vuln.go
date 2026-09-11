@@ -1,7 +1,6 @@
 package bom
 
 import (
-	"strconv"
 	"strings"
 
 	cdx "github.com/CycloneDX/cyclonedx-go"
@@ -18,6 +17,8 @@ type Vulnerability struct {
 	// Index is the record's position in the document. It is the stable key, because
 	// `bom-ref` is optional on a vulnerability.
 	Index int
+	// Doc is the loaded document the record belongs to.
+	Doc int
 
 	Ref, ID, Source                     string
 	Ratings                             []Rating
@@ -136,11 +137,16 @@ const (
 	// not a missing component, so it is not dangling. All 686 references in a measured
 	// public VEX feed are of this form, none with a version.
 	RefNamesPackage
+	// RefLinkedAmbiguous is a BOM-Link whose serial number and version are claimed by
+	// more than one named document, with different content. Serial numbers are not
+	// reliable identities in practice — 9 such pairs in the public corpora (POC-11) —
+	// so lsxbom names the candidates rather than guessing between them.
+	RefLinkedAmbiguous
 )
 
 // RefStates lists every state, in the order a report should give them.
 var RefStates = []RefState{RefResolved, RefNamesPackage, RefLinkedNotLoaded,
-	RefLinkedVersionDiffers, RefNamesNothing}
+	RefLinkedVersionDiffers, RefLinkedAmbiguous, RefNamesNothing}
 
 func (s RefState) String() string {
 	switch s {
@@ -152,6 +158,8 @@ func (s RefState) String() string {
 		return "linked, version differs"
 	case RefNamesPackage:
 		return "names a package"
+	case RefLinkedAmbiguous:
+		return "linked, ambiguous"
 	default:
 		return "names nothing"
 	}
@@ -164,13 +172,17 @@ func (s RefState) Explain() string {
 		return "names a component in this document"
 	case RefLinkedNotLoaded:
 		return "a BOM-Link into another document, which was not supplied — the reference is " +
-			"correct, lsxbom was just not given the document it points to"
+			"correct, lsxbom was just not given the document it points to; name it after " +
+			"this one on the command line"
 	case RefLinkedVersionDiffers:
 		return "a BOM-Link to this document's serial number at a different version — not " +
 			"resolved, because a different version is a different document"
 	case RefNamesPackage:
 		return "a purl that names no component here — it identifies a package, not a " +
 			"missing component, so it is not dangling"
+	case RefLinkedAmbiguous:
+		return "a BOM-Link whose serial number and version are claimed by more than one of " +
+			"the documents named, with different content — lsxbom will not guess which"
 	default:
 		return "matches nothing in this document — dangling"
 	}
@@ -182,28 +194,65 @@ func (s RefState) Explain() string {
 // measured public feed does for all 2,057 of its references. Only a purl that names
 // NO component is RefNamesPackage.
 func (g *Graph) Resolve(ref string) (Node, RefState) {
-	if n, ok := g.Node(ref); ok {
+	if n, ok := g.target(ref); ok {
 		return n, RefResolved
 	}
 	if rest, isLink := strings.CutPrefix(ref, "urn:cdx:"); isLink {
 		body, fragment, _ := strings.Cut(rest, "#")
 		serial, version, _ := strings.Cut(body, "/")
-		if g.serial == "" || !strings.EqualFold(serial, g.serial) {
+		targets, loaded := g.session().linkTargets(serial, version)
+		switch {
+		case len(targets) > 1:
+			return Node{}, RefLinkedAmbiguous
+		case len(targets) == 1:
+			if n, ok := targets[0].target(fragment); ok {
+				return n, RefResolved
+			}
+			return Node{}, RefNamesNothing
+		case loaded:
+			return Node{}, RefLinkedVersionDiffers
+		default:
 			return Node{}, RefLinkedNotLoaded
 		}
-		// A BOM-Link back into THIS document resolves here, at the version it names.
-		if version != strconv.Itoa(g.version) {
-			return Node{}, RefLinkedVersionDiffers
-		}
-		if n, ok := g.Node(fragment); ok {
-			return n, RefResolved
-		}
-		return Node{}, RefNamesNothing
 	}
 	if strings.HasPrefix(ref, "pkg:") {
 		return Node{}, RefNamesPackage
 	}
 	return Node{}, RefNamesNothing
+}
+
+// target is what an `affects` reference can name: a component, or the document's
+// declared root — its SUBJECT, metadata.component — WHETHER OR NOT that drives a
+// dependency graph.
+//
+// Node is stricter on purpose: POC-8's rule is about where a TREE WALK can start,
+// which is a different question. As a vulnerability's target the subject is the most
+// common answer there is: every BOM-Link in the CISA use cases points at a product
+// BOM's subject, and a standalone VEX's local reference names its own product. Using
+// Node here made all 11 of case 8's links read "names nothing" with both product BOMs
+// loaded, and a VEX's reference to its own product read as dangling — contradicting
+// POC-11, whose script had always counted the subject.
+func (g *Graph) target(ref string) (Node, bool) {
+	if n, ok := g.Node(ref); ok {
+		return n, true
+	}
+	if ref != "" && ref == g.id.RootRef && g.id.RootDeclared {
+		return g.metadataRoot(), true
+	}
+	return Node{}, false
+}
+
+// LinkTargets lists the documents a BOM-Link could mean. More than one is what makes it
+// ambiguous, and the detail pane names them.
+func (g *Graph) LinkTargets(ref string) []*Graph {
+	rest, ok := strings.CutPrefix(ref, "urn:cdx:")
+	if !ok {
+		return nil
+	}
+	body, _, _ := strings.Cut(rest, "#")
+	serial, version, _ := strings.Cut(body, "/")
+	targets, _ := g.session().linkTargets(serial, version)
+	return targets
 }
 
 // Vulnerabilities returns every vulnerability record, in document order.
@@ -217,34 +266,31 @@ func (g *Graph) VulnerabilityAt(i int) (Vulnerability, bool) {
 	return g.vulns[i], true
 }
 
-// VulnerabilitiesAffecting returns the records whose `affects` resolves to a
-// component, in document order.
+// VulnerabilitiesAffecting returns the records — from ANY loaded document — whose
+// `affects` resolves to one of this document's components.
 func (g *Graph) VulnerabilitiesAffecting(ref string) []Vulnerability {
-	idx := g.affectedBy[ref]
-	out := make([]Vulnerability, 0, len(idx))
-	for _, i := range idx {
-		out = append(out, g.vulns[i])
-	}
-	return out
+	return g.session().VulnerabilitiesAffecting(NodeKey{g.doc, ref})
 }
 
 // HasVulnerabilities reports whether any record affects a component — without
 // building the list, because the view asks once per visible row.
-func (g *Graph) HasVulnerabilities(ref string) bool { return len(g.affectedBy[ref]) > 0 }
+func (g *Graph) HasVulnerabilities(ref string) bool {
+	return g.session().HasVulnerabilities(NodeKey{g.doc, ref})
+}
 
 // AffectedComponents returns every component some vulnerability affects, in document
 // order.
 func (g *Graph) AffectedComponents() []Node {
 	var out []Node
 	for _, ref := range g.order {
-		if len(g.affectedBy[ref]) > 0 {
+		if g.HasVulnerabilities(ref) {
 			out = append(out, g.nodes[ref])
 		}
 	}
 	// The declared root is not in g.order; a vulnerability may still affect it.
-	if root := g.id.RootRef; root != "" && len(g.affectedBy[root]) > 0 {
+	if root := g.id.RootRef; root != "" && g.HasVulnerabilities(root) {
 		if _, inInventory := g.nodes[root]; !inInventory {
-			if n, ok := g.Node(root); ok {
+			if n, ok := g.target(root); ok {
 				out = append(out, n)
 			}
 		}
@@ -266,14 +312,13 @@ func (g *Graph) ReferenceCounts() map[RefState]int {
 	return out
 }
 
-// loadVulnerabilities reads the records and indexes which components each affects.
-// It runs LAST in build: Resolve needs the node set, the edges (a declared root only
-// resolves once it is known to drive the graph) and the document's serial number.
+// loadVulnerabilities reads the records. It does NOT index what each affects: a link
+// can point into a document loaded after this one, so the Set indexes once every
+// named document is in.
 func (g *Graph) loadVulnerabilities(doc *cdx.BOM) {
 	if doc.Vulnerabilities == nil {
 		return
 	}
-	g.affectedBy = map[string][]int{}
 	for i, v := range *doc.Vulnerabilities {
 		x := Vulnerability{Index: i, Ref: v.BOMRef, ID: v.ID, Description: v.Description,
 			Detail: v.Detail, Recommendation: v.Recommendation}
@@ -301,7 +346,6 @@ func (g *Graph) loadVulnerabilities(doc *cdx.BOM) {
 			}
 		}
 		if v.Affects != nil {
-			indexed := map[string]bool{}
 			for _, af := range *v.Affects {
 				e := Affect{Ref: af.Ref}
 				if af.Range != nil {
@@ -310,10 +354,6 @@ func (g *Graph) loadVulnerabilities(doc *cdx.BOM) {
 					}
 				}
 				x.Affects = append(x.Affects, e)
-				if n, st := g.Resolve(af.Ref); st == RefResolved && !indexed[n.Ref] {
-					indexed[n.Ref] = true
-					g.affectedBy[n.Ref] = append(g.affectedBy[n.Ref], i)
-				}
 			}
 		}
 		g.vulns = append(g.vulns, x)

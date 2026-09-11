@@ -30,6 +30,14 @@ Counts only, never identifiers, so it is safe over a private corpus.
 
     python3 docs/inception/evidence/poc11-vex-navigability.py <corpus-dir>
 
+With --links DIR [DIR ...] it instead measures what a BOM-Link RESOLVES AGAINST: how
+many (serialNumber, version) pairs more than one document claims, across every corpus
+named, and whether those documents are byte-identical copies or different content.
+A BOM-Link identifies its target by serial and version alone, so a pair claimed by two
+different documents cannot be resolved without guessing.
+
+    python3 ... --links .corpora-cache .corpora-cache-vex
+
 <corpus-dir> holds one sub-directory per source, each holding *.json documents.
 """
 import collections
@@ -286,5 +294,33 @@ def main(root: str) -> int:
     return 0
 
 
+def links(roots):
+    import hashlib
+    claims = collections.defaultdict(list)  # (serial, version) -> [sha256]
+    with_serial = 0
+    for root in roots:
+        for path in sorted(glob.glob(os.path.join(root, "*", "*.json"))):
+            try:
+                raw = open(path, "rb").read()
+                d = json.loads(raw)
+            except Exception:
+                continue
+            if not (isinstance(d, dict) and d.get("bomFormat") == "CycloneDX" and d.get("serialNumber")):
+                continue
+            with_serial += 1
+            key = (d["serialNumber"].removeprefix("urn:uuid:").lower(), str(d.get("version")))
+            claims[key].append(hashlib.sha256(raw).hexdigest())
+    shared = {k: v for k, v in claims.items() if len(v) > 1}
+    differ = {k: v for k, v in shared.items() if len(set(v)) > 1}
+    print(f"CycloneDX JSON documents with a serialNumber : {with_serial}")
+    print(f"(serial, version) pairs claimed by more than one document: {len(shared)}")
+    print(f"  byte-identical copies                      : {len(shared) - len(differ)}")
+    print(f"  DIFFERENT content under one serial/version : {len(differ)}")
+    print(f"  largest: {max((len(v) for v in differ.values()), default=0)} documents under one pair")
+    return 0
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--links":
+        sys.exit(links(sys.argv[2:]))
     sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else ".corpora-cache"))

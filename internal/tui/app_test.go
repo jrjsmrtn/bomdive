@@ -832,8 +832,20 @@ func TestTheStatusBarKeepsQuitVisible(t *testing.T) {
 
 // ? on the vulnerability axis explains the grouping it chose and what every reference
 // resolved to — the two things the status bar has only a word each for.
+//
+// It asserts on the TEXT, not the screen. It first read the screen, and broke when the
+// explanation grew past a 30-row terminal: the overlay then scrolled — correctly, with
+// "1-21 of 26" in its title — and the last lines were out of view. Content and screen
+// height are separate questions; TestTheOverlayReportsAndScrollsWhenItDoesNotFit asks
+// the second.
 func TestExplainOnTheVulnerabilityAxis(t *testing.T) {
-	out := flatten(driveKeys(t, "vex-refs", ru('v'), ru('?')))
+	g, err := bom.Load(filepath.Join("..", "..", "testdata", "vex-refs.cdx.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := newUI(g, "vex-refs")
+	u.model.ToggleMode()
+	out := flatten(stripTags(u.explainText()))
 	for _, want := range []string{
 		"there is no grouping column",              // all high, none analysed
 		"1 names a package — a purl that names no", // each state, with its count and meaning
@@ -875,5 +887,32 @@ func TestTheHeaderKeepsThePathLineAt80Columns(t *testing.T) {
 		if !strings.Contains(lines[0], "showing: "+tc.showing) {
 			t.Errorf("%s: the first row lost the direction: %q", tc.fixture, lines[0])
 		}
+	}
+}
+
+// With several documents named, the header, coverage and ? follow the file under the
+// cursor — they describe "the file you are in".
+func TestTheHeaderFollowsTheFileUnderTheCursor(t *testing.T) {
+	s, err := bom.LoadSet([]string{
+		filepath.Join("..", "..", "testdata", "link-sbom.cdx.json"),
+		filepath.Join("..", "..", "testdata", "link-vex.cdx.json"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := newUI(s.Doc(0), "link-sbom")
+	u.width = 120
+	if h := u.headerText(); !strings.Contains(h, "SBOM") {
+		t.Errorf("header on the SBOM file = %q", h)
+	}
+	u.model.Down()
+	if h := u.headerText(); !strings.Contains(h, "VEX") {
+		t.Errorf("header after moving to the VEX file = %q", h)
+	}
+	if src := u.sourceText(); !strings.HasSuffix(src, "link-vex.cdx.json") {
+		t.Errorf("? describes %q, want the VEX under the cursor", src)
+	}
+	if ax := u.axisText(); !strings.Contains(ax, "2 documents named") {
+		t.Errorf("? does not explain the files column: %q", ax)
 	}
 }

@@ -615,6 +615,67 @@ fixture(
     ),
 )
 
+# ----------------------------------------- documents that link into each other
+# ADR-0009 [B]: links resolve among the documents named on the command line. One VEX,
+# and the four things a link into an SBOM can meet: the SBOM, a byte-identical copy of
+# it, a DIFFERENT document claiming the same serial and version (9 such pairs were
+# measured in the public corpora, POC-11), and the SBOM at another version.
+LINK_SBOM = bom(
+    root=lib("app", ref=r("app"), ctype="application"),
+    components=[lib("a"), lib("b")],
+    omit_deps=True,
+    top_level={"serialNumber": "urn:uuid:22222222-3333-4444-8555-666666666666"},
+)
+
+fixture("link-sbom", "The SBOM a linked VEX points into: serial 22222222…, version 1.",
+        {"components": 2}, LINK_SBOM)
+
+fixture("link-sbom-copy",
+        "A byte-identical copy of link-sbom, as the CISA use cases reuse one product BOM "
+        "across cases. Two files, one document: links into it must still resolve.",
+        {"components": 2}, json.loads(json.dumps(LINK_SBOM)))
+
+fixture("link-sbom-other",
+        "A DIFFERENT document claiming link-sbom's serial and version — 9 such pairs exist "
+        "in the public corpora (POC-11), 44 cdxgen files alone sharing the all-zero serial. "
+        "Named together with link-sbom, a link into that serial is ambiguous.",
+        {"components": 2},
+        bom(root=lib("app", ref=r("app"), ctype="application"),
+            components=[lib("a"), lib("c")], omit_deps=True,
+            top_level={"serialNumber": "urn:uuid:22222222-3333-4444-8555-666666666666"}))
+
+fixture("link-sbom-v2", "link-sbom's serial at version 2: a link asking for version 1 is not it.",
+        {"components": 2},
+        bom(root=lib("app", ref=r("app"), ctype="application"),
+            components=[lib("a"), lib("b")], omit_deps=True,
+            top_level={"serialNumber": "urn:uuid:22222222-3333-4444-8555-666666666666", "version": 2}))
+
+fixture(
+    "link-vex",
+    "A standalone VEX whose every reference is a BOM-Link into link-sbom's serial: two "
+    "components that exist there, one that does not, and one link into a document never "
+    "supplied, plus one link to the SBOM's own SUBJECT — its metadata.component, which "
+    "drives no dependency graph, and is what every CISA use-case link points at. What "
+    "each resolves to depends on which documents are named with it.",
+    {"components": 0, "vulnerabilities": 5},
+    bom(
+        root={"bom-ref": "product-vex", "type": "application", "name": "product"},
+        omit_components=True,
+        omit_deps=True,
+        top_level={
+            "serialNumber": "urn:uuid:77777777-8888-4999-8aaa-bbbbbbbbbbbb",
+            "vulnerabilities": [
+                vx("CVE-2024-6001", "urn:cdx:22222222-3333-4444-8555-666666666666/1#" + r("a"), state="exploitable", severity="critical"),
+                vx("CVE-2024-6002", "urn:cdx:22222222-3333-4444-8555-666666666666/1#" + r("b"), state="not_affected",
+                   justification="code_not_reachable", severity="high"),
+                vx("CVE-2024-6003", "urn:cdx:22222222-3333-4444-8555-666666666666/1#" + r("nope"), severity="medium"),
+                vx("CVE-2024-6004", "urn:cdx:cccccccc-dddd-4eee-8fff-000000000000/1#x", severity="low"),
+                vx("CVE-2024-6005", "urn:cdx:22222222-3333-4444-8555-666666666666/1#" + r("app"), state="exploitable", severity="high"),
+            ],
+        },
+    ),
+)
+
 fixture(
     "many-properties",
     "One component carrying 37 properties, the widest osquery category measured "
