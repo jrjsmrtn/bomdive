@@ -1,0 +1,82 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/a@1.0.0",
+      "name": "a",
+      "purl": "pkg:generic/a@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/app@1.0.0",
+      "name": "app",
+      "purl": "pkg:generic/app@1.0.0",
+      "type": "application",
+      "version": "1.0.0"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1,
+  "vulnerabilities": [
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/a@1.0.0"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-2001",
+      "id": "CVE-2024-2001",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/a@1.0.0"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-2002",
+      "id": "CVE-2024-2002",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/a@1.0.0"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-2003",
+      "id": "CVE-2024-2003",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

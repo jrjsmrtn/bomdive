@@ -47,6 +47,23 @@ def vuln(cve, ref):
     }
 
 
+def vx(vid, *refs, state=None, justification=None, severity=None, score=None, ref=None):
+    """One vulnerability record. Every argument is written AS GIVEN, so a fixture can
+    carry values the schema forbids when that is the point of the fixture."""
+    v = {"bom-ref": ref or f"vuln-{vid}", "id": vid}
+    if refs:
+        v["affects"] = [{"ref": r} for r in refs]
+    analysis = {k: val for k, val in (("state", state), ("justification", justification)) if val}
+    if analysis:
+        v["analysis"] = analysis
+    if severity:
+        rating = {"severity": severity, "method": "CVSSv31"}
+        if score is not None:
+            rating["score"] = score
+        v["ratings"] = [rating]
+    return v
+
+
 def lib(name, ref=None, version="1.0.0", purl=True, ctype="library", props=None):
     ref = ref or f"pkg:generic/{name}@{version}"
     c = {"bom-ref": ref, "type": ctype, "name": name, "version": version}
@@ -453,6 +470,149 @@ fixture(
             ],
         },
     },
+)
+
+# ------------------------------------------------------ vulnerability records
+fixture(
+    "vex-embedded-states",
+    "Embedded VEX that has been TRIAGED: three analysis states across four "
+    "vulnerabilities, so the vulnerability axis groups by state. Component a carries "
+    "two vulnerabilities, so component -> vulnerabilities has more than one answer.",
+    {"components": 3, "vulnerabilities": 4},
+    bom(
+        root=lib("app", ref=r("app"), ctype="application"),
+        components=[lib("a"), lib("b"), lib("c")],
+        omit_deps=True,
+        top_level={"vulnerabilities": [
+            vx("CVE-2024-0001", r("a"), state="exploitable", severity="critical", score=9.8),
+            vx("CVE-2024-0002", r("a"), r("b"), state="not_affected",
+               justification="code_not_reachable", severity="high", score=7.5),
+            vx("CVE-2024-0003", r("c"), state="resolved", severity="medium", score=5.3),
+            vx("CVE-2024-0004", r("b"), state="not_affected",
+               justification="code_not_present", severity="low", score=3.1),
+        ]},
+    ),
+)
+
+fixture(
+    "vex-embedded-untriaged",
+    "Embedded VEX with NO analysis on any vulnerability, the shape a Dependency-Track "
+    "5.1.0 export of an untriaged project has (POC-11): every record rated, none "
+    "analysed, only the affected components present. Grouping by state would give one "
+    "group, so the vulnerability axis groups by severity.",
+    {"components": 2, "vulnerabilities": 4},
+    bom(
+        root=lib("app", ref=r("app"), ctype="application"),
+        components=[lib("a"), lib("b")],
+        omit_deps=True,
+        top_level={"vulnerabilities": [
+            vx("CVE-2024-1001", r("a"), severity="high", score=8.1),
+            vx("CVE-2024-1002", r("a"), severity="medium", score=6.5),
+            vx("CVE-2024-1003", r("b"), severity="critical", score=9.1),
+            vx("CVE-2024-1004", r("b"), severity="high", score=7.2),
+        ]},
+    ),
+)
+
+fixture(
+    "vex-uniform",
+    "Every vulnerability in the same state AND the same severity, so neither axis "
+    "splits the document. 128 of 169 real public documents measured are like this "
+    "(POC-11). The view must open on the vulnerabilities, with no grouping column "
+    "holding a single group.",
+    {"components": 1, "vulnerabilities": 3},
+    bom(
+        root=lib("app", ref=r("app"), ctype="application"),
+        components=[lib("a")],
+        omit_deps=True,
+        top_level={"vulnerabilities": [
+            vx("CVE-2024-2001", r("a"), state="not_affected", justification="code_not_reachable", severity="high"),
+            vx("CVE-2024-2002", r("a"), state="not_affected", justification="code_not_reachable", severity="high"),
+            vx("CVE-2024-2003", r("a"), state="not_affected", justification="code_not_reachable", severity="high"),
+        ]},
+    ),
+)
+
+fixture(
+    "vex-refs",
+    "One vulnerability per way an `affects` reference can resolve (ADR-0009 section 2): "
+    "a local bom-ref; a purl that IS a component's bom-ref; a purl with no version that "
+    "names no component; a BOM-Link back into this very document; the same link at a "
+    "different version; a BOM-Link to a document not supplied; a string that names "
+    "nothing. Plus one vulnerability with no `affects` at all, as 49 real documents "
+    "have (POC-11), and one naming the SAME component twice — by bom-ref and by a "
+    "BOM-Link — which must still be listed once.",
+    {"components": 2, "vulnerabilities": 9},
+    bom(
+        root=lib("app", ref=r("app"), ctype="application"),
+        components=[lib("a"), lib("b", ref="pkg:npm/b@2.0.0")],
+        omit_deps=True,
+        top_level={
+            "serialNumber": "urn:uuid:11111111-2222-4333-8444-555555555555",
+            "vulnerabilities": [
+                vx("CVE-2024-3001", r("a"), severity="high"),
+                vx("CVE-2024-3002", "pkg:npm/b@2.0.0", severity="high"),
+                vx("CVE-2024-3003", "pkg:maven/org.example/lib", severity="high"),
+                vx("CVE-2024-3004", "urn:cdx:11111111-2222-4333-8444-555555555555/1#" + r("a"), severity="high"),
+                vx("CVE-2024-3005", "urn:cdx:11111111-2222-4333-8444-555555555555/2#" + r("a"), severity="high"),
+                vx("CVE-2024-3006", "urn:cdx:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/1#x", severity="high"),
+                vx("CVE-2024-3007", "no-such-ref", severity="high"),
+                vx("CVE-2024-3008", severity="high"),
+                vx("CVE-2024-3009", r("a"), "urn:cdx:11111111-2222-4333-8444-555555555555/1#" + r("a"),
+                   severity="high"),
+            ],
+        },
+    ),
+)
+
+fixture(
+    "vex-shared-ids",
+    "Records that SHARE a vulnerability id within one document — 2,169 of 3,294 real "
+    "public records do (POC-11), because a publisher may write one record per affected "
+    "artifact. One id on two versions of a package and on a third component; one id "
+    "recorded twice against the same component; one id that is unique; one id on two "
+    "purls that name no component, as real VEX feeds write them. Shown by id alone they "
+    "are identical rows.",
+    {"components": 3, "vulnerabilities": 8},
+    bom(
+        root=lib("app", ref=r("app"), ctype="application"),
+        components=[lib("jetty", version="1.0.0"), lib("jetty", version="2.0.0"), lib("c")],
+        omit_deps=True,
+        top_level={"vulnerabilities": [
+            vx("CVE-2024-5001", "pkg:generic/jetty@1.0.0", severity="high", ref="vuln-5001-a"),
+            vx("CVE-2024-5001", "pkg:generic/jetty@2.0.0", severity="high", ref="vuln-5001-b"),
+            vx("CVE-2024-5001", r("c"), severity="high", ref="vuln-5001-c"),
+            vx("CVE-2024-5002", r("c"), severity="high"),
+            vx("CVE-2024-5003", r("c"), severity="high", ref="vuln-5003-a"),
+            vx("CVE-2024-5003", r("c"), severity="high", ref="vuln-5003-b"),
+            vx("CVE-2024-5004", "pkg:maven/org.example/lib-one", severity="high", ref="vuln-5004-a"),
+            vx("CVE-2024-5004", "pkg:maven/org.example/lib-two", severity="high", ref="vuln-5004-b"),
+        ]},
+    ),
+)
+
+fixture(
+    "vex-out-of-schema",
+    "Values the CycloneDX schema forbids and real VEX carries (POC-11): an OpenVEX state "
+    "(`under_investigation`), an OpenVEX justification (`vulnerable_code_not_present`), "
+    "and severities in capitals. DELIBERATELY SCHEMA-INVALID — validate-schema.py "
+    "requires it to fail validation. lsxbom must load it, show each value as written, "
+    "and rank MEDIUM with medium.",
+    {"components": 0, "vulnerabilities": 4},
+    bom(
+        root=lib("app", ref=r("app"), ctype="application"),
+        omit_components=True,
+        omit_deps=True,
+        top_level={"vulnerabilities": [
+            vx("CVE-2024-4001", "pkg:maven/org.example/one", state="under_investigation", severity="MEDIUM"),
+            vx("CVE-2024-4002", "pkg:maven/org.example/two", state="not_affected",
+               justification="vulnerable_code_not_present", severity="HIGH"),
+            vx("CVE-2024-4003", "pkg:maven/org.example/three", state="not_affected",
+               justification="code_not_reachable", severity="medium"),
+            vx("CVE-2024-4004", "pkg:maven/org.example/four", state="not_affected",
+               justification="code_not_reachable", severity="HIGH"),
+        ]},
+    ),
 )
 
 fixture(

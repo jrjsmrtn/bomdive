@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/jrjsmrtn/lsxbom/internal/bom"
@@ -703,7 +704,15 @@ func TestScrollingDoesNotCloseTheOverlay(t *testing.T) {
 	// Assert on a line only the key table has. "keys" alone matches the status
 	// bar's own "Hkeys" hint, so the overlay could close and the test still pass —
 	// the unscoped-Contains failure this project keeps rediscovering.
-	const onlyInTheOverlay = "flip between depends-on"
+	//
+	// It asserts on the overlay's TITLE, the one thing the overlay always shows. It
+	// first asserted on a line of the key table, and that broke the moment the table
+	// grew past a 30-row screen: PgDn then really scrolled, the line left the view, and
+	// the test reported "closed" for an overlay that was open and scrolled — measuring
+	// the scroll position rather than whether the overlay was up. "H or Esc to close"
+	// appears in the title whether or not it is clipped, and nowhere else: the status
+	// bar reads "Hkeys".
+	const onlyInTheOverlay = "H or Esc to close"
 	opened := driveKeys(t, "tree-simple", ru('H'))
 	if !strings.Contains(flatten(opened), onlyInTheOverlay) {
 		t.Fatalf("H did not open the key table, so this test proves nothing:\n%s", opened)
@@ -742,5 +751,129 @@ func TestAnEmptyDocumentSaysSoRatherThanReportingGraphState(t *testing.T) {
 	}
 	if got := newUI(g, "partial-coverage").statusText(); !strings.Contains(got, "partial") {
 		t.Errorf("a populated document lost its graph-state label: %s", got)
+	}
+}
+
+// statusLine is the last non-blank screen row: the status bar.
+func statusLine(screen string) string {
+	lines := strings.Split(strings.TrimRight(screen, " \n"), "\n")
+	return strings.TrimSpace(lines[len(lines)-1])
+}
+
+// v switches to the vulnerability axis, and the header says which way the view faces:
+// the two axes, like the two directions, can look alike.
+func TestVSwitchesToTheVulnerabilityAxis(t *testing.T) {
+	out := driveKeys(t, "vex-embedded-states", ru('v'))
+	if h := header(out); !strings.Contains(h, "showing: vulnerabilities → affected") {
+		t.Errorf("header does not name the vulnerability axis: %q", h)
+	}
+	if !strings.Contains(out, "by analysis state") {
+		t.Errorf("the entry column is not grouped by state:\n%s", out)
+	}
+	// 4 vulnerabilities naming 5 targets, all resolved.
+	if st := statusLine(out); !strings.Contains(st, "vulns 4") || !strings.Contains(st, "affects 5/5") {
+		t.Errorf("status bar = %q, want the vulnerability count and the resolution count", st)
+	}
+}
+
+func TestVIsANoOpWithoutVulnerabilities(t *testing.T) {
+	out := driveKeys(t, "tree-simple", ru('v'))
+	if strings.Contains(header(out), "vulnerabilities") {
+		t.Errorf("v switched axis on a document with no vulnerabilities:\n%s", header(out))
+	}
+	if st := statusLine(out); !strings.Contains(st, "coverage") || strings.Contains(st, "vvulns") {
+		t.Errorf("status bar = %q: want coverage, and no v hint where there is nothing to switch to", st)
+	}
+}
+
+func TestTheVHintAppearsWhereThereAreVulnerabilities(t *testing.T) {
+	out := driveKeys(t, "vex-embedded-states")
+	if st := statusLine(out); !strings.Contains(st, "vvulns") {
+		t.Errorf("status bar = %q, want the v hint", st)
+	}
+}
+
+// Switching back must return the reader to exactly where they were.
+func TestSwitchingBackRestoresTheScreen(t *testing.T) {
+	before := header(driveKeys(t, "vex-embedded-states", ru('j'), ru('j')))
+	after := header(driveKeys(t, "vex-embedded-states", ru('j'), ru('j'), ru('v'), ru('l'), ru('v')))
+	if before != after {
+		t.Errorf("header after v, l, v = %q, want %q", after, before)
+	}
+}
+
+// At 120 columns the status bar once ran off the edge and lost "q quit". Measured on the
+// longest cases this view can produce, including the vulnerability axis.
+func TestTheStatusBarKeepsQuitVisible(t *testing.T) {
+	for _, tc := range []struct {
+		fixture string
+		vulns   bool
+	}{
+		{"vex-refs", true}, {"vex-embedded-untriaged", true}, {"vex-out-of-schema", true},
+		{"vex-embedded-states", false}, {"no-dependencies-absent", false},
+	} {
+		g, err := bom.Load(filepath.Join("..", "..", "testdata", tc.fixture+".cdx.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		u := newUI(g, tc.fixture)
+		if tc.vulns && !u.model.ToggleMode() {
+			t.Fatalf("%s: no vulnerability axis", tc.fixture)
+		}
+		st := stripTags(u.statusText())
+		if n := utf8.RuneCountInString(st); n > 110 {
+			t.Errorf("%s (vulns=%v): status bar is %d runes, over 110: %q", tc.fixture, tc.vulns, n, st)
+		}
+		if !strings.HasSuffix(st, "q quit") {
+			t.Errorf("%s: status bar does not end in q quit: %q", tc.fixture, st)
+		}
+	}
+}
+
+// ? on the vulnerability axis explains the grouping it chose and what every reference
+// resolved to — the two things the status bar has only a word each for.
+func TestExplainOnTheVulnerabilityAxis(t *testing.T) {
+	out := flatten(driveKeys(t, "vex-refs", ru('v'), ru('?')))
+	for _, want := range []string{
+		"there is no grouping column",              // all high, none analysed
+		"1 names a package — a purl that names no", // each state, with its count and meaning
+		"1 linked, version differs",
+		"1 linked, not loaded",
+		"1 names nothing",
+		"5 resolved",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("? does not say %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestHelpListsTheVKey(t *testing.T) {
+	if out := flatten(driveKeys(t, "tree-simple", ru('H'))); !strings.Contains(out, "switch between components and vulnerabilities") {
+		t.Errorf("H does not list v:\n%s", out)
+	}
+}
+
+// The header is two rows. If its first line wraps, the path line is pushed off the
+// screen — which happened at 80 columns on the vulnerability axis, and on the component
+// axis for any OBOM, whose identity alone is 58 characters. The second row must be the
+// path, and the first must still name the direction.
+func TestTheHeaderKeepsThePathLineAt80Columns(t *testing.T) {
+	for _, tc := range []struct {
+		fixture string
+		keys    []key
+		showing string
+	}{
+		{"vex-embedded-states", []key{ru('v')}, "vulnerabilities → affected"},
+		{"vex-embedded-states", []key{ru('v'), sp(tcell.KeyTab)}, "affected → vulnerabilities"},
+		{"obom-categories", nil, "dependencies"},
+	} {
+		lines := strings.Split(driveKeys(t, tc.fixture, tc.keys...), "\n")
+		if len(lines) < 2 || !strings.HasPrefix(strings.TrimSpace(lines[1]), "path:") {
+			t.Errorf("%s: the second row is not the path line: %q", tc.fixture, lines[1])
+		}
+		if !strings.Contains(lines[0], "showing: "+tc.showing) {
+			t.Errorf("%s: the first row lost the direction: %q", tc.fixture, lines[0])
+		}
 	}
 }

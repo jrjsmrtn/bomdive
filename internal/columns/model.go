@@ -84,6 +84,13 @@ type Model struct {
 	// byCategory makes the entry column list categories rather than components,
 	// which is the only navigable axis when a BOM declares no dependency graph.
 	byCategory bool
+
+	// mode is the component or the vulnerability axis (ADR-0009). vdir is the
+	// vulnerability axis's own direction, and saved is the component chain as it was
+	// left, restored when the reader switches back.
+	mode  Mode
+	vdir  Direction
+	saved []Column
 }
 
 // New builds the view over a loaded BOM.
@@ -232,6 +239,9 @@ func (m *Model) Left() bool {
 // on every repaint. TestDescendableAgreesWithChildrenOf ties it to childrenOf, which
 // is the honest way to keep a fast path from drifting from the slow one it mirrors.
 func (m *Model) Descendable(n bom.Node) bool {
+	if m.mode == ModeVulnerabilities {
+		return m.vulnDescendable(n)
+	}
 	// A category entry exists only because entryColumn found members for it, so it
 	// always has some. Counting them would rebuild the whole category map per row.
 	if n.Type == "category" && n.Ref == "" {
@@ -244,7 +254,10 @@ func (m *Model) Descendable(n bom.Node) bool {
 }
 
 func (m *Model) childrenOf(n bom.Node) []bom.Node {
-	if n.Type == "category" && n.Ref == "" {
+	if m.mode == ModeVulnerabilities {
+		return m.vulnChildren(n)
+	}
+	if isEntry(n, typeCategory) {
 		return m.g.Categories()[n.Category]
 	}
 	if m.dir == Reverse {
@@ -258,6 +271,10 @@ func (m *Model) childrenOf(n bom.Node) []bom.Node {
 // The chain is rebuilt from the current selection rather than kept, because the
 // columns to the left describe a route that the flipped graph does not have.
 func (m *Model) ToggleDirection() {
+	if m.mode == ModeVulnerabilities {
+		m.toggleVulnDirection()
+		return
+	}
 	sel, ok := m.active().Selected()
 	if m.dir == Forward {
 		m.dir = Reverse
@@ -303,7 +320,12 @@ func (m *Model) Detail() []KV {
 	if !ok {
 		return nil
 	}
-	if sel.Type == "category" && sel.Ref == "" {
+	if m.mode == ModeVulnerabilities {
+		if kv, handled := m.vulnDetail(sel); handled {
+			return kv
+		}
+	}
+	if isEntry(sel, typeCategory) {
 		return []KV{
 			{"category", sel.Name},
 			{"components", itoa(len(m.g.Categories()[sel.Category]))},
@@ -323,6 +345,7 @@ func (m *Model) Detail() []KV {
 	}
 	kv = append(kv, KV{"dependencies", itoa(len(m.g.Children(sel.Ref)))})
 	kv = append(kv, KV{"dependents", itoa(len(m.g.Parents(sel.Ref)))})
+	kv = append(kv, m.vulnSummary(sel.Ref)...)
 	for _, p := range m.g.Properties(sel.Ref) {
 		kv = append(kv, KV{p.Name, p.Value})
 	}

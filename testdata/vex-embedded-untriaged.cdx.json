@@ -1,0 +1,96 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "pkg:generic/a@1.0.0",
+      "name": "a",
+      "purl": "pkg:generic/a@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:generic/b@1.0.0",
+      "name": "b",
+      "purl": "pkg:generic/b@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/app@1.0.0",
+      "name": "app",
+      "purl": "pkg:generic/app@1.0.0",
+      "type": "application",
+      "version": "1.0.0"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1,
+  "vulnerabilities": [
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/a@1.0.0"
+        }
+      ],
+      "bom-ref": "vuln-CVE-2024-1001",
+      "id": "CVE-2024-1001",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "score": 8.1,
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/a@1.0.0"
+        }
+      ],
+      "bom-ref": "vuln-CVE-2024-1002",
+      "id": "CVE-2024-1002",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "score": 6.5,
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/b@1.0.0"
+        }
+      ],
+      "bom-ref": "vuln-CVE-2024-1003",
+      "id": "CVE-2024-1003",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "score": 9.1,
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:generic/b@1.0.0"
+        }
+      ],
+      "bom-ref": "vuln-CVE-2024-1004",
+      "id": "CVE-2024-1004",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "score": 7.2,
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

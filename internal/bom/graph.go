@@ -192,6 +192,14 @@ type Graph struct {
 	// list MEANS. Its Components field is unused; Contents fills it from nodes.
 	payload Contents
 
+	// vulns are the `vulnerabilities` records, as written; affectedBy indexes which
+	// records affect each component. serial and version identify this document, so a
+	// BOM-Link back into it can resolve.
+	vulns      []Vulnerability
+	affectedBy map[string][]int
+	serial     string
+	version    int
+
 	props map[string][]Property
 }
 
@@ -347,6 +355,10 @@ func build(doc *cdx.BOM) *Graph {
 	}
 	sort.Strings(g.dangling)
 	g.dangling = dedupe(g.dangling)
+
+	g.serial = strings.TrimPrefix(doc.SerialNumber, "urn:uuid:")
+	g.version = doc.Version
+	g.loadVulnerabilities(doc)
 	return g
 }
 

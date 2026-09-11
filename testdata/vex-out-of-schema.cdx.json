@@ -1,0 +1,91 @@
+{
+  "bomFormat": "CycloneDX",
+  "metadata": {
+    "component": {
+      "bom-ref": "pkg:generic/app@1.0.0",
+      "name": "app",
+      "purl": "pkg:generic/app@1.0.0",
+      "type": "application",
+      "version": "1.0.0"
+    }
+  },
+  "specVersion": "1.6",
+  "version": 1,
+  "vulnerabilities": [
+    {
+      "affects": [
+        {
+          "ref": "pkg:maven/org.example/one"
+        }
+      ],
+      "analysis": {
+        "state": "under_investigation"
+      },
+      "bom-ref": "vuln-CVE-2024-4001",
+      "id": "CVE-2024-4001",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "MEDIUM"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:maven/org.example/two"
+        }
+      ],
+      "analysis": {
+        "justification": "vulnerable_code_not_present",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-4002",
+      "id": "CVE-2024-4002",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "HIGH"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:maven/org.example/three"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-4003",
+      "id": "CVE-2024-4003",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "medium"
+        }
+      ]
+    },
+    {
+      "affects": [
+        {
+          "ref": "pkg:maven/org.example/four"
+        }
+      ],
+      "analysis": {
+        "justification": "code_not_reachable",
+        "state": "not_affected"
+      },
+      "bom-ref": "vuln-CVE-2024-4004",
+      "id": "CVE-2024-4004",
+      "ratings": [
+        {
+          "method": "CVSSv31",
+          "severity": "HIGH"
+        }
+      ]
+    }
+  ]
+}

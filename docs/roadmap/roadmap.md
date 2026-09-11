@@ -47,8 +47,8 @@ that spans both the graph and no-graph cases.
 mode does not — re-check before relying on it beyond these shapes.
 
 ### Phase 2b — Vulnerability records
-**Target**: v0.2.x · **Status**: accepted, not started —
-[ADR-0009](../adr/0009-browse-a-standalone-vex.md)
+**Target**: v0.2.x · **Status**: **in progress** — vulnerability records browse within one document;
+linking across documents is not started — [ADR-0009](../adr/0009-browse-a-standalone-vex.md)
 
 Browse the vulnerability records a CycloneDX document carries. **Both shapes are produced by
 tools**: Dependency-Track 4.x exports standalone VEX, and the 5.1.0 instance measured exports
@@ -58,17 +58,19 @@ second document. Its export carries only the affected components, up to 1,505 vu
 one document and 1,134 on one component
 (`../inception/evidence/poc11-vex-navigability-2026-09-11.md`).
 
-- [ ] Embedded VEX: from a component, the vulnerabilities that affect it; and the vulnerabilities,
+- [x] Embedded VEX: from a component, the vulnerabilities that affect it; and the vulnerabilities,
       grouped, then what each affects
-- [ ] A grouping column only when it splits: analysis state if that gives two or more groups,
+- [x] A grouping column only when it splits: analysis state if that gives two or more groups,
       otherwise severity if that does, otherwise none — the view opens on the vulnerabilities.
       `?` says which, and why
-- [ ] A key to switch between the component axis and the vulnerability axis. Not `⇥`, which
-      reverses dependency edges
-- [ ] Unresolved references shown in one of five states — including a purl that names a package,
+- [x] A key to switch between the component axis and the vulnerability axis — `v`. Not `⇥`,
+      which reverses dependency edges
+- [x] Unresolved references shown in one of five states — including a purl that names a package,
       not a component in the document — with a resolution count
-- [ ] Values outside the schema shown as they are, and severities sorted regardless of case
-- [ ] Standalone VEX, then BOM-Links into documents named on the command line
+- [x] Values outside the schema shown as they are, and severities sorted regardless of case
+- [x] Standalone VEX, within one document
+- [ ] BOM-Links into documents named on the command line ([B]) — until then they show as
+      *linked, not loaded*
 
 ⚠ **Real VEX does not keep to the schema.** Two public sources carry OpenVEX states and
 justifications, and uppercase severities. The view must show what it does not recognise, not

@@ -137,6 +137,11 @@ What it settles:
   Liquibase carries `vulnerable_code_not_present` 42 times, which is not a CycloneDX justification
   in 1.5, 1.6 or 1.7. They look like OpenVEX values carried into CycloneDX. lsxbom loads every one
   of these documents.
+- **A vulnerability id is not a key.** 2,169 of the 3,294 records share their id with another in
+  the same document — the Moderne feed writes one record per affected artifact, 1,958 of 2,057. A
+  row showing the id alone is indistinguishable from its neighbours, so a repeated id also names
+  what the record affects, then its `bom-ref` if that still repeats. The same lesson as component
+  names.
 - **References come in three forms, not two.** Liquibase's 686 are purls with no version, naming no
   component anywhere in their documents — neither a local `bom-ref` nor a BOM-Link. Section 2 gives
   them a state.
@@ -183,7 +188,7 @@ One view, two shapes. The document decides which applies.
 | Column | Lists | Each entry shows |
 |---|---|---|
 | 1 | the groups — see *The first column* below | the group and its count |
-| 2 | the vulnerabilities in the selected group | `id`, for example `CVE-2021-44228` |
+| 2 | the vulnerabilities in the selected group | `id`, for example `CVE-2021-44228` — and, where the id repeats in the column, what the record affects |
 | 3 | what the selected vulnerability affects | the target's name if resolved, otherwise the ref |
 | detail | the fields of the selection | see below |
 

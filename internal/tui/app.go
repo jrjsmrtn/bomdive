@@ -395,6 +395,13 @@ func (u *ui) keys(ev *tcell.EventKey) *tcell.EventKey {
 		case 'H':
 			u.showOverlay(overlayHelp)
 			return nil
+		// v switches between the component axis and the vulnerability axis
+		// (ADR-0009). Not ⇥: that reverses edges, which is a different operation.
+		case 'v':
+			if !u.model.ToggleMode() {
+				return nil // no vulnerability records: nothing to switch to
+			}
+			u.detailScroll = 0
 		case '/':
 			u.filtering = true
 			u.filter.SetText(u.model.Active().Filter)
@@ -511,7 +518,7 @@ func (u *ui) redraw() {
 		// columns are tightest.
 		rowW := paneW - 3
 		for _, n := range c.Visible() {
-			label := columns.Label(n.Label(), n.Version, paneW-6)
+			label := u.model.RowLabel(n, paneW-6)
 			list.AddItem(columns.Row(label, u.model.Descendable(n), rowW), "", 0, nil)
 		}
 		if i == len(cols)-1 {
@@ -536,12 +543,36 @@ func (u *ui) headerText() string {
 	id := u.model.Graph().Identity()
 	// The direction is stated because forward and reverse are visually identical,
 	// and a view that silently swapped them would lie (ADR-0007).
-	dir := "[yellow]" + u.model.Direction().String() + "[-]"
 	path := strings.Join(u.model.Path(), " [darkgray]>[-] ")
 	if path == "" {
 		path = "[darkgray](nothing selected)[-]"
 	}
-	return fmt.Sprintf("[white]%s[-]   showing: %s\n[darkgray]path:[-] %s", id.Describe(), dir, path)
+	// The first line must FIT. The header is exactly two rows, so a first line that
+	// wrapped pushed the path line off the screen: at 80 columns an OBOM's identity
+	// plus "showing: dependencies" was already 82 characters. The identity is trimmed
+	// rather than the direction, because the direction changes with every flip and
+	// ADR-0007 requires it stated; the identity is constant, and `?` shows it whole.
+	showing := u.model.Showing()
+	identity := id.Describe()
+	if w := u.width; w > 0 {
+		room := w - utf8.RuneCountInString("   showing: "+showing) - 1
+		identity = truncHead(identity, room)
+	}
+	return fmt.Sprintf("[white]%s[-]   showing: [yellow]%s[-]\n[darkgray]path:[-] %s",
+		tview.Escape(identity), showing, path)
+}
+
+// truncHead keeps the HEAD of s, which for an identity is the part that matters —
+// "OBOM (root operating-system; …" — unlike a component name, whose tail matters.
+func truncHead(s string, w int) string {
+	if w < 2 {
+		w = 2
+	}
+	r := []rune(s)
+	if len(r) <= w {
+		return s
+	}
+	return string(r[:w-1]) + columns.Ellipsis
 }
 
 // detailTitle says whether the pane is showing everything. Without it a truncated
@@ -597,6 +628,9 @@ func (u *ui) detailText() string {
 // showed three of nine thousand components without saying so would be exactly the
 // failure the text renderer is built to avoid.
 func (u *ui) statusText() string {
+	if u.model.Mode() == columns.ModeVulnerabilities {
+		return u.vulnStatusText()
+	}
 	c := u.model.Graph().Coverage()
 
 	// One label per state, and RED reserved for the one state that is a defect in
@@ -621,10 +655,15 @@ func (u *ui) statusText() string {
 	// That is also why the label is terse and `?` carries the explanation — the
 	// status bar has no room to say what "partial" means, and a word a reader
 	// cannot expand is a word that misleads.
+	// The v hint only where there is something to switch to.
+	vulns := ""
+	if u.model.HasVulnerabilities() {
+		vulns = "[-][white]v[-][darkgray]vulns "
+	}
 	return fmt.Sprintf("[darkgray]coverage[-] %d/%d (%d%%)%s  [darkgray]"+
-		"↑↓ →← nav  ⇞⇟ detail  ⇥flip /filter [-][white]?[-][darkgray]why [-]"+
+		"↑↓ →← nav  ⇞⇟ detail  ⇥flip %s/filter [-][white]?[-][darkgray]why [-]"+
 		"[white]H[-][darkgray]keys q quit[-]",
-		c.InGraph, c.Components, c.Percent(), warn)
+		c.InGraph, c.Components, c.Percent(), warn, vulns)
 }
 
 // explainText answers "why does it say that", for THIS document: what the status
@@ -632,6 +671,9 @@ func (u *ui) statusText() string {
 // column shows what it shows. It carries no key table — that is `H`, and a reader
 // who wants to know what "partial" means is not asking to be taught the keyboard.
 func (u *ui) explainText() string {
+	if u.model.Mode() == columns.ModeVulnerabilities {
+		return u.vulnExplainText()
+	}
 	g := u.model.Graph()
 	c := g.Coverage()
 
@@ -675,7 +717,10 @@ func (u *ui) helpText() string {
 	return "[darkgray]navigate[-]\n" +
 		"  ↑ ↓ / j k    move within a column\n" +
 		"  → ← / l h    descend into a component, or back out\n" +
-		"  ⇥            flip between depends-on and depended-on-by\n" +
+		"  ⇥            flip between depends-on and depended-on-by; on the vulnerability\n" +
+		"               axis, between vulnerabilities and the components they affect\n" +
+		"  v            switch between components and vulnerabilities, when the document\n" +
+		"               has any; switching back returns you to where you were\n" +
 		"  /            filter the current column; Esc clears the filter\n" +
 		"\n[darkgray]detail pane[-]\n" +
 		"  ⇞ ⇟          scroll a page; Ctrl-U and Ctrl-D do the same\n" +

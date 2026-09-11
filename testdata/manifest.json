@@ -214,6 +214,46 @@
     "file": "tree-simple.cdx.json",
     "why": "A plain tree. The only fixture where the naive implementation is correct \u2014 so it proves the renderer works, not that it is careful."
   },
+  "vex-embedded-states": {
+    "asserts": {
+      "components": 3,
+      "vulnerabilities": 4
+    },
+    "file": "vex-embedded-states.cdx.json",
+    "why": "Embedded VEX that has been TRIAGED: three analysis states across four vulnerabilities, so the vulnerability axis groups by state. Component a carries two vulnerabilities, so component -> vulnerabilities has more than one answer."
+  },
+  "vex-embedded-untriaged": {
+    "asserts": {
+      "components": 2,
+      "vulnerabilities": 4
+    },
+    "file": "vex-embedded-untriaged.cdx.json",
+    "why": "Embedded VEX with NO analysis on any vulnerability, the shape a Dependency-Track 5.1.0 export of an untriaged project has (POC-11): every record rated, none analysed, only the affected components present. Grouping by state would give one group, so the vulnerability axis groups by severity."
+  },
+  "vex-out-of-schema": {
+    "asserts": {
+      "components": 0,
+      "vulnerabilities": 4
+    },
+    "file": "vex-out-of-schema.cdx.json",
+    "why": "Values the CycloneDX schema forbids and real VEX carries (POC-11): an OpenVEX state (`under_investigation`), an OpenVEX justification (`vulnerable_code_not_present`), and severities in capitals. DELIBERATELY SCHEMA-INVALID \u2014 validate-schema.py requires it to fail validation. lsxbom must load it, show each value as written, and rank MEDIUM with medium."
+  },
+  "vex-refs": {
+    "asserts": {
+      "components": 2,
+      "vulnerabilities": 9
+    },
+    "file": "vex-refs.cdx.json",
+    "why": "One vulnerability per way an `affects` reference can resolve (ADR-0009 section 2): a local bom-ref; a purl that IS a component's bom-ref; a purl with no version that names no component; a BOM-Link back into this very document; the same link at a different version; a BOM-Link to a document not supplied; a string that names nothing. Plus one vulnerability with no `affects` at all, as 49 real documents have (POC-11), and one naming the SAME component twice \u2014 by bom-ref and by a BOM-Link \u2014 which must still be listed once."
+  },
+  "vex-shared-ids": {
+    "asserts": {
+      "components": 3,
+      "vulnerabilities": 8
+    },
+    "file": "vex-shared-ids.cdx.json",
+    "why": "Records that SHARE a vulnerability id within one document \u2014 2,169 of 3,294 real public records do (POC-11), because a publisher may write one record per affected artifact. One id on two versions of a package and on a third component; one id recorded twice against the same component; one id that is unique; one id on two purls that name no component, as real VEX feeds write them. Shown by id alone they are identical rows."
+  },
   "vex-standalone": {
     "asserts": {
       "components": 0,
@@ -222,6 +262,14 @@
     },
     "file": "vex-standalone.cdx.json",
     "why": "A standalone VEX: vulnerability records and NO components. CycloneDX carries VEX either embedded in a BOM or standalone, where the document asserts which vulnerabilities affect a product described ELSEWHERE. 25 of 137 public corpus documents are this shape (POC-10), and every one of them was identified as an SBOM and drawn as an empty component list."
+  },
+  "vex-uniform": {
+    "asserts": {
+      "components": 1,
+      "vulnerabilities": 3
+    },
+    "file": "vex-uniform.cdx.json",
+    "why": "Every vulnerability in the same state AND the same severity, so neither axis splits the document. 128 of 169 real public documents measured are like this (POC-11). The view must open on the vulnerabilities, with no grouping column holding a single group."
   },
   "xml-no-metadata": {
     "asserts": {

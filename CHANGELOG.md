@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The `browse` header pushed its path line off the screen at 80 columns.** The header is two rows,
+  and a first line that wrapped took the second: an OBOM's identity alone is 58 characters, so
+  `showing: dependencies` beside it already wrapped. The identity is now trimmed to fit — never the
+  direction, which changes with every flip and must stay visible.
 - **`check-corpora.sh` saved GitHub's `404` responses as documents.** A path containing `?` or
   `%` was sent as a query string, the error body was written where the document belonged, and the
   run skipped it as "not a BOM" — a download failure reported as a property of the corpus, the
@@ -89,6 +93,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The vulnerability records in a document can be browsed** — `v` in `browse` switches between
+  the component axis and a vulnerability axis (ADR-0009), and switching back returns you to where
+  you were. The first column groups by analysis state when the states divide the document, by
+  severity when they do not, and not at all when neither divides it — measured on 169 real public
+  documents, 128 split on neither, and a column holding one group is not an axis. From a
+  vulnerability you reach what it affects, and from a component what affects it; `⇥` flips between
+  the two. Every `affects` reference is shown in one of five states — resolved, names a package,
+  linked but not loaded, linked at another version, names nothing — and the status bar reports how
+  many resolved, as coverage does for the dependency graph. Values the schema forbids but real VEX
+  carries (OpenVEX states and justifications, severities in capitals) are shown as written and
+  said to be so; `MEDIUM` ranks with `medium`. A vulnerability id is not a key — 2,169 of 3,294 real
+  records share theirs with another record in the same document — so a row whose id repeats in its
+  column also names what the record affects, and a row too long for its column keeps the id whole
+  and trims the rest. A component's detail now summarises the
+  vulnerabilities that affect it, on either axis. `ls` and `tree` are unchanged.
+- `testdata/validate-schema.py` can name a fixture that must be **invalid**, with the reason it
+  exists. The gate fails if such a fixture validates — its reason has gone — or no longer exists, so
+  the list cannot become a place to hide a broken file. `vex-out-of-schema` is the first entry.
 - **A VEX corpus in `scripts/check-corpora.sh`** (`--corpus vex`): 207 documents from seven
   publishers — Liquibase's VEX feed, Apache Camel's four project VEX files (Dependency-Track 4.10.1),
   EvergreenImageRegistry, Softing Industrial (Dependency-Track 4.13 and 4.14), the Moderne Backpatch

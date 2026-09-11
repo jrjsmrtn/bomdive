@@ -79,6 +79,12 @@ Values outside the schema's own enums, checked against the schema file rather th
 | EvergreenImageRegistry | severity `MEDIUM`, `NONE`, `HIGH`, `UNKNOWN`, `LOW`, `CRITICAL` | 61, 48, 48, 7, 4, 3 |
 | Liquibase | justification `vulnerable_code_not_present` — valid in none of 1.5, 1.6, 1.7 | 42 |
 
+**A vulnerability id is not a key.** 2,169 of the 3,294 records share their id with another record
+in the same document: the Moderne feed 1,958 of 2,057, because it writes one record per affected
+artifact; Apache Camel 117 of 249; Liquibase 94 of 686; the other sources none. Found by dogfooding
+the column view, which showed four identical `CVE-2015-2080` rows in one column. The same lesson as
+component names, where `bom-ref` is the only reliable key.
+
 Softing Industrial and the Moderne feed state no reuse terms. By the maintainer's decision they are
 fetched for local testing only, never committed or redistributed.
 

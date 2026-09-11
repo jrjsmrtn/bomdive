@@ -37,6 +37,17 @@ def fetch(cache: pathlib.Path, filename: str) -> dict:
     return json.loads(data)
 
 
+# Fixtures that must FAIL validation, each with the reason it exists. A fixture is only
+# here because real documents carry what the schema forbids and lsxbom must cope with
+# it. The gate fails if one of these VALIDATES — its reason has gone — and if one no
+# longer exists, so the list cannot rot into a place to hide a broken file.
+EXPECTED_INVALID = {
+    "vex-out-of-schema.cdx.json":
+        "OpenVEX states and justifications and capitalised severities, as measured in "
+        "real public VEX (POC-11); lsxbom must show them as written",
+}
+
+
 def main():
     here = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path(__file__).parent
     cache = here / ".schema-cache"
@@ -62,12 +73,23 @@ def main():
     registry = Registry().with_resources(resources)
 
     bad = 0
+    names = {f.name for f in fixtures}
+    for missing in sorted(set(EXPECTED_INVALID) - names):
+        bad += 1
+        print(f"  STALE EXEMPTION {missing}: listed as expected-invalid but no such fixture")
     for f in fixtures:
         doc = json.loads(f.read_text())
         ver = doc.get("specVersion")
         schema = fetch(cache, f"bom-{ver}.schema.json")
         validator = Draft7Validator(schema, registry=registry)
         errors = sorted(validator.iter_errors(doc), key=lambda e: list(e.path))
+        if f.name in EXPECTED_INVALID:
+            if errors:
+                print(f"  invalid {f.name} (spec {ver}) — EXPECTED: {EXPECTED_INVALID[f.name]}")
+            else:
+                bad += 1
+                print(f"  UNEXPECTEDLY VALID {f.name}: its exemption no longer holds — remove it")
+            continue
         if errors:
             bad += 1
             print(f"  INVALID {f.name} (spec {ver}):")
@@ -76,7 +98,9 @@ def main():
                 print(f"      {loc}: {e.message[:110]}")
         else:
             print(f"  valid   {f.name} (spec {ver})")
-    print(f"{len(fixtures) - bad}/{len(fixtures)} fixtures valid against their own schema")
+    expected = len(EXPECTED_INVALID)
+    print(f"{len(fixtures) - expected - bad}/{len(fixtures) - expected} fixtures valid against their "
+          f"own schema; {expected} deliberately invalid, and invalid")
     return 1 if bad else 0
 
 

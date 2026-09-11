@@ -179,6 +179,7 @@ def first_column(vulns):
 def by_source(root):
     enums = schema_enums()
     totals = collections.Counter()
+    shared_ids = {}
     print("\n== BY SOURCE")
     for src in sorted(os.listdir(root)):
         docs = []
@@ -218,10 +219,17 @@ def by_source(root):
                     for r in v.get("ratings") or []:
                         if r.get("severity") and r["severity"] not in enums["severity"]:
                             bad[f"severity={r['severity']}"] += 1
+            # Records sharing an id with another record in the SAME document: a column
+            # that shows only the id draws them as identical rows.
+            ids = collections.Counter(v.get("id") or "" for v in vulns)
+            dup = sum(n for i, n in ids.items() if n > 1)
+            totals["records sharing their id in-document"] += dup
+            shared_ids[src] = shared_ids.get(src, 0) + dup
             acc, amd = first_column(vulns)
             axis_acc[acc] += 1
             axis_amd[amd] += 1
             totals["documents with vulnerabilities"] += 1
+            totals["vulnerability records"] += len(vulns)
             totals["accepted rule: one group"] += acc.endswith(":1")
             totals["amended rule: splits"] += int(amd.split(":")[1]) >= 2
             totals["amended rule: splits on neither axis"] += int(amd.split(":")[1]) < 2
@@ -235,6 +243,8 @@ def by_source(root):
         print(f"    first column, accepted rule    : {dict(axis_acc.most_common())}  "
               f"(one group — no axis — in {one_group} of {len(docs)})")
         print(f"    first column, amended rule     : {dict(axis_amd.most_common())}")
+        print(f"    records sharing their id       : {shared_ids.get(src, 0)} of "
+              f"{sum(len(d['vulnerabilities']) for d in docs)} (with another record in the same document)")
     if totals:
         print("\n== ACROSS ALL SOURCES")
         for k, v in totals.items():
