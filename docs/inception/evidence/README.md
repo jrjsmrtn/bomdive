@@ -88,11 +88,12 @@ and the output is a personal inventory. The **shape it exposed** is a committed 
 | `poc10-empty-documents-2026-09-11.md` | **40 of 137** public corpus documents carry no `components` — 25 standalone VEX, 14 metadata-only, 1 services-only. All were identified as "SBOM" and drawn as an empty pane. The VEX discrimination rule, and why it keys on the absence of components rather than the presence of vulnerabilities |
 | `poc10-documents-without-components.py` | Runnable over any corpus directory. Counts documents, not identifiers |
 
-## POC-11 — can a standalone VEX be navigated?
+## POC-11 — can a VEX be navigated?
 
 | File | What it is |
 |---|---|
-| `poc11-vex-navigability.py` | Whether the 25 corpus VEX documents have the shape the column view needs — something to group by, something to descend into — and whether their `affects[].ref` references resolve: **76 of 76** local refs, **79 of 80** BOM-Links into another corpus document. The evidence behind [ADR-0009](../../adr/0009-browse-a-standalone-vex.md) |
+| `poc11-vex-navigability-2026-09-11.md` | Two worlds that do not overlap. The **25 public use cases** are standalone VEX with analysis states, mostly unrated, and 79 of 80 BOM-Links resolving across documents. **Nine Dependency-Track 5.1.0 exports** are embedded VEX — only the affected components, up to 1,505 vulnerabilities and 1,134 on one component, every one rated and none analysed, no BOM-Links. Recorded as shape only; the exports are private. The evidence behind [ADR-0009](../../adr/0009-browse-a-standalone-vex.md) and its revised section 1 |
+| `poc11-vex-navigability.py` | Measures standalone and embedded VEX separately, over any corpus directory. Counts only, never identifiers |
 
 ## Re-running
 

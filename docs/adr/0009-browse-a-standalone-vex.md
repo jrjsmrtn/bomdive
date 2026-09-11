@@ -1,17 +1,19 @@
-# 9. Browse a standalone VEX, and follow its links into the BOM it describes
+# 9. Browse the vulnerability records in a CycloneDX document
 
 Date: 2026-09-11
 
 ## Status
 
-**Proposed.** Two decisions are open, and they belong to the maintainer — `CLAUDE.md` makes
-traversal semantics human-led:
+**Proposed.** Two decisions belonged to the maintainer — `CLAUDE.md` makes traversal semantics
+human-led — and **both were settled on 2026-09-11, as recommended**:
 
-- **[A]** whether lsxbom browses records other than components at all;
-- **[B]** how a second, linked document is loaded.
+- **[A]** lsxbom browses records other than components, starting with vulnerabilities: **yes**;
+- **[B]** a linked document is loaded when it is **named on the command line**.
 
-Each has a recommendation below. This ADR becomes Accepted when both are settled **and**
-precondition **[C]** is met.
+**[C] was carried out, and it changed the design.** The one tool within reach, Dependency-Track
+5.1.0, does not produce a standalone VEX: its export is VEX **embedded** in an SBOM. Section 1 was
+revised for that, as [C] required. **This ADR becomes Accepted when the maintainer accepts the
+revised section 1.**
 
 Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 [ADR-0007](0007-column-view-open-questions.md). It reverses nothing in either.
@@ -69,6 +71,38 @@ adopted — category → component → properties.
 carries `metadata.tools`. They were written to *illustrate* VEX. What a generator actually emits
 is unmeasured. The shape above is the specification's intent, not observed practice. See **[C]**.
 
+### Measured again, on tool output
+
+Precondition [C] was carried out on 2026-09-11. Nine VEX exports from a Dependency-Track 5.1.0
+instance were measured with the same script. They were exported read-only from a private portfolio,
+with a key whose team holds only `VIEW_PORTFOLIO` and `VULNERABILITY_ANALYSIS_READ`. Only their
+shape is recorded: no document, name or identifier is committed.
+
+| | Use cases (public corpora) | Tool output (Dependency-Track 5.1.0) |
+|---|---|---|
+| shape | standalone — no components | **embedded** — components *and* vulnerabilities |
+| documents | 25 | 9 (a tenth export failed server-side, HTTP 500, twice) |
+| vulnerabilities per document | 1–19 | **3–1,505** |
+| `affects[]` per vulnerability | 0–3 | 1–2 |
+| most vulnerabilities on one target | 19 | **1,134** |
+| `analysis.state` | four states across 112 vulnerabilities | **none** — all 3,560 carry no analysis |
+| most severe rating | 86 of 112 unrated or `none` | **every one rated**: high 1,584, medium 1,577, critical 257, low 102, unknown 40 |
+| references | 76 local, 80 BOM-Link | 3,672 local, **no BOM-Links** |
+| components | — | **only the affected ones**: 183 of 183, in all 9 documents |
+| `dependencies` graph | none | none |
+
+What this changes:
+
+- **Tools produce embedded VEX.** A standalone VEX has so far appeared only in illustrative use
+  cases.
+- **On untriaged tool output the analysis-state axis is degenerate** — one group of up to 1,505
+  entries. Nothing in that portfolio had been triaged. A triaged one would carry states, but none
+  has been measured.
+- **Severity is complete exactly where analysis is absent**, and absent exactly where analysis is
+  present. Neither axis serves both worlds alone.
+- **Cross-document links appear only in the use cases.**
+- **One component can carry 1,134 vulnerabilities.**
+
 ### Scope
 
 The SPARK analysis excludes **vulnerability lookup** — matching components against a vulnerability
@@ -85,9 +119,9 @@ document". That is decision **[A]**.
 
 ## Decision
 
-### [A] OPEN — browse records other than components, starting with vulnerabilities
+### [A] SETTLED — browse records other than components, starting with vulnerabilities
 
-**Recommendation: yes.**
+**Decided 2026-09-11: yes**, as recommended. The reasoning, as proposed:
 
 - Without it, 25 of 137 corpus documents open on an empty pane. The correctness obligations exist
   to stop exactly that: a view that shows nothing reads as a tool that failed.
@@ -99,25 +133,57 @@ further record type — services, attestations, definitions — will ask for the
 **vulnerabilities only**. Each further type must meet an evidence bar and get its own decision; see
 *Not in this ADR*.
 
-### 1. The columns — proposed, if [A] is accepted
+### 1. The columns — revised after [C]
+
+One view, two shapes. The document decides which applies.
+
+**A standalone VEX** — vulnerabilities, no components:
 
 | Column | Lists | Each entry shows |
 |---|---|---|
-| 1 | the analysis states present in the document | the state and its count |
-| 2 | the vulnerabilities in the selected state | `id`, for example `CVE-2021-44228` |
+| 1 | the groups — see *The first column* below | the group and its count |
+| 2 | the vulnerabilities in the selected group | `id`, for example `CVE-2021-44228` |
 | 3 | what the selected vulnerability affects | the target's name if resolved, otherwise the ref |
 | detail | the fields of the selection | see below |
 
-- **States are discovered from the document, not hardcoded** — the rule POC-7 set for categories.
-  They are sorted alphabetically, as categories are, which puts `exploitable` first.
-- **A vulnerability with no `analysis` goes in its own group, `(no analysis)`, listed last.** It
-  makes no claim either way, so counting it as `not_affected` would put words in the document's
-  mouth.
-- **The detail pane** for a vulnerability shows `id`, `source`, `ratings` (severity, score,
-  method), `cwes`, `description`, `detail`, `recommendation`, the `analysis` (state, justification,
-  response, detail) and how many entries it affects. For an affected entry it shows the ref, how
-  it resolved (section 2), the listed `versions` with their status, and — when resolved — the
-  component's own detail.
+**VEX embedded in an SBOM** — components and vulnerabilities, the shape tools produce. The view
+opens on the SBOM as it does today, and adds the vulnerability axis in both directions, inside the
+one document:
+
+- **from a component, descend to the vulnerabilities that affect it.** That answers "which of my
+  components are exploitable?", which this ADR had deferred behind [B]. For embedded VEX it needs
+  nothing but the document.
+- **from the grouped vulnerabilities, descend to what each affects**, as in the standalone view.
+
+Switching between the component axis and the vulnerability axis needs its own key. `⇥` already
+reverses dependency edges, which is a different operation. The binding is an implementation detail
+and gets reviewed like any other.
+
+**The first column groups by `analysis.state` when any vulnerability in the document carries
+one, and by most severe rating otherwise.**
+
+- Analysis states are the answer a VEX exists to give, so they win whenever they are present.
+- On untriaged tool output they are absent from all 3,560 measured vulnerabilities. Grouping by
+  them there yields one group of up to 1,505 entries — the degenerate axis lsxbom already refuses
+  for OBOM categories.
+- Every one of those 3,560 vulnerabilities is rated, so severity is a complete axis there. The use
+  cases are the opposite: 86 of their 112 vulnerabilities are unrated or `none`.
+- The view says which axis it chose, and `?` explains why.
+
+Both axes are discovered from the document, not hardcoded — the rule POC-7 set for categories.
+States sort alphabetically, as categories do. Severities follow the schema's own order, most severe
+first: `critical`, `high`, `medium`, `low`, `info`, `none`, `unknown`. A vulnerability that cannot be placed goes in a group of its own, listed last:
+`(no analysis)` or `(no rating)`. Counting it as `not_affected` or `low` would put words in the
+document's mouth.
+
+**Scale.** One column must hold up to 1,505 vulnerabilities, and one component's list up to 1,134.
+The column view already lists the 4,889 components of a measured OBOM, and `/` filters any column.
+
+**The detail pane** for a vulnerability shows `id`, `source`, `ratings` (severity, score, method),
+`cwes`, `description`, `detail`, `recommendation`, the `analysis` (state, justification, response,
+detail) and how many entries it affects. For an affected entry it shows the ref, how it resolved
+(section 2), the listed `versions` with their status, and — when resolved — the component's own
+detail.
 
 ### 2. A reference that does not resolve is shown, never dropped
 
@@ -138,7 +204,7 @@ is correct; lsxbom was just not given the document it points to.
 Showing only the resolved half without saying so would render a partial answer as complete, which
 `CLAUDE.md` forbids.
 
-### [B] OPEN — how a linked document is loaded
+### [B] SETTLED — how a linked document is loaded
 
 80 of the 156 `affects` references in the corpus are BOM-Links. They resolve only if lsxbom has the
 target document.
@@ -149,7 +215,7 @@ target document.
 | (b) discovered | lsxbom searches the VEX's directory for the linked `serialNumber` | no need to know the file | reads files nobody named; the result depends on what happens to be in the directory; slow on a large one |
 | (c) both | (a), plus (b) behind a flag | — | two mechanisms to test and explain |
 
-**Recommendation: (a).** Discovery can be added later behind a flag without changing (a). The
+**Decided 2026-09-11: (a), named on the command line**, as recommended. Discovery can be added later behind a flag without changing (a). The
 reverse is not true: once a tool reads unnamed files by default, it cannot easily stop. Under (a),
 a BOM-Link to a document that was not supplied shows as *linked, not loaded* and names the serial
 number, so the user learns which file to add.
@@ -157,11 +223,17 @@ number, so the user learns which file to add.
 **Identity:** a document matches a BOM-Link by `serialNumber` **and** `version`, exactly as the
 link encodes them. The same serial at a different version is not a match.
 
-### [C] Precondition — measure one VEX that a tool produced
+### [C] Precondition — measure a VEX that a tool produced: carried out 2026-09-11
 
-Before building, obtain at least one standalone VEX **emitted by a tool**, not written as an
-example, and run POC-11 on it. If its shape differs from the use cases — for example no `analysis`,
-or `affects` with hundreds of entries — revisit section 1 before building it.
+**Met in purpose, not in letter.** [C] asked for a *standalone* VEX from a tool. The one tool
+within reach does not produce one: a Dependency-Track 5.1.0 VEX export is VEX embedded in an SBOM.
+Nine exports were measured, above. Their shape differs from the use cases on both axes [C] named —
+no `analysis`, and a single target with 1,134 vulnerabilities — so, as [C] required, section 1 was
+revised before anything was built.
+
+⚠ **Still unmeasured: a standalone VEX from a tool, and a triaged portfolio.** Every export came
+from one untriaged portfolio, so the analysis-state axis has only ever been seen in illustrative
+use cases.
 
 ### 3. What this ADR does not change
 
@@ -174,14 +246,14 @@ or `affects` with hundreds of entries — revisit section 1 before building it.
   follow-up and needs its own decision.
 - **Direction (ADR-0007):** forward is state → vulnerability → affected. **Reverse — from a
   component to the VEX statements about it — answers the question a BOM reader most wants
-  answered: which of my components are exploitable?** It needs both documents loaded, so it
-  depends on [B]. It is proposed as the first follow-up, not as part of this change.
+  answered: which of my components are exploitable?** For a standalone VEX it needs both
+  documents loaded, so it depends on [B] and follows later. For embedded VEX — the shape tools
+  produce — it needs only the document, and it is part of section 1.
 
 ## Not in this ADR, and what would bring each in
 
 | Record type | Evidence today | Trigger for its own decision |
 |---|---|---|
-| VEX embedded in an SBOM | 0 samples | a first real sample. The same view should apply |
 | services (SaaSBOM) | 1 sample, nesting depth 2 | a second sample, produced by a tool |
 | attestations (`declarations`) | 1 sample, which lsxbom cannot load (CycloneDX/cyclonedx-go#275) | the upstream fix |
 | definitions | 0 samples | any sample |
@@ -191,6 +263,7 @@ or `affects` with hundreds of entries — revisit section 1 before building it.
 **Positive**
 
 - The 25 corpus VEX documents stop opening on an empty pane.
+- The VEX that tools actually produce becomes browsable, by component and by vulnerability.
 - lsxbom can answer a question no current command answers: which components a VEX statement is
   about, across documents.
 - The four resolution states and the count keep the correctness obligations. Nothing partial is
@@ -208,12 +281,13 @@ or `affects` with hundreds of entries — revisit section 1 before building it.
 
 **Risk**
 
-- The design is shaped by illustrative documents, not tool output. **[C]** exists to catch that
-  before anything is built.
+- The analysis-state axis rests on illustrative documents only: every tool export measured was
+  untriaged. Falling back to severity is what keeps the view useful if that never changes.
 
 ## References
 
-- POC-11 — `docs/inception/evidence/poc11-vex-navigability.py`
+- POC-11 — `docs/inception/evidence/poc11-vex-navigability.py` and
+  `docs/inception/evidence/poc11-vex-navigability-2026-09-11.md`
 - POC-10 — `docs/inception/evidence/poc10-empty-documents-2026-09-11.md`
 - CycloneDX BOM-Link — <https://cyclonedx.org/capabilities/bomlink/>, cited by the schema's own
   description of `bomLinkElementType`

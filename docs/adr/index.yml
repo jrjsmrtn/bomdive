@@ -57,7 +57,7 @@ project:
     date: 2026-09-10
   - id: 9
     file: 0009-browse-a-standalone-vex.md
-    title: Browse a standalone VEX, and follow its links into the BOM it describes
+    title: Browse the vulnerability records in a CycloneDX document
     purpose: HOW TO RENDER
     status: Proposed
     date: 2026-09-11
