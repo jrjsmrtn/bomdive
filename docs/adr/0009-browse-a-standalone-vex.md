@@ -25,6 +25,9 @@ document; and a link whose serial number and version two different documents cla
 ambiguous* — a sixth resolution state, because measurement showed serial numbers are not reliable
 identities.
 
+**[D] proposed on 2026-09-11, awaiting the maintainer**: what naming a *directory* on the command
+line means. It extends [B], which settled that linked documents are named there.
+
 Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 [ADR-0007](0007-column-view-open-questions.md). It reverses nothing in either.
 
@@ -311,6 +314,64 @@ as fact.
   documents this ADR exists for. In CISA case 8 the VEX and both product BOMs list no components, so
   none of the three files could be opened, even though every one of the VEX's links resolves to a
   product BOM's subject.
+
+### [D] PROPOSED — a directory named on the command line
+
+A directory names its documents all at once. That changes the set of documents that links resolve
+against, which [B] settled as "the files named", so it gets its own decision rather than slipping in
+as argument handling.
+
+**Proposal:**
+
+- **A directory stands for the CycloneDX documents directly inside it**: one level, as `ls DIR`
+  lists them, sorted by name, at the position where the directory was named. Directories and files
+  can be mixed, as in `lsxbom browse exports/ product.cdx.json`. A file reached twice is loaded once.
+- **Membership is decided by content, not by extension**, as `Load` already decides: JSON or XML
+  from the first byte, then `bomFormat`.
+- **A file that is not CycloneDX is counted, not shown as a row, and never dropped silently.** Real
+  directories hold other files: `testdata/` holds 46 files, and 5 of them are not CycloneDX (its
+  README, three scripts and its manifest). `?` on the files column names each one with the reason `Load` gives. **A
+  CycloneDX document that fails to load gets a row** that cannot be opened, and its detail shows the
+  error. Hiding it would render a partial set as complete.
+- **A file named explicitly still fails hard**, as today. The user asked for that file.
+- **Not recursive.** Sub-directories are counted like skipped files. Recursion, by a flag or as a
+  Finder-style directory column, is a later decision, because it widens the problem below.
+- **The header says where the set came from**, for example `66 documents from examples/`.
+
+**What it costs: the set becomes incidental.** Named files are a set the user asserts belongs
+together; a directory is whatever happens to be in it. Measured with
+`poc11-vex-navigability.py --directory .corpora-cache/examples`:
+
+| | |
+|---|---|
+| documents | 66, all CycloneDX |
+| serial-and-version pairs with different content under them | 6 |
+| BOM-Link references | 80 |
+| … target present, one content: resolve as before | 16 |
+| … **claimed by documents with different content: *linked, ambiguous*** | **64** |
+| … no document at that serial and version | 0 |
+| documents with an ambiguous link | 4, one of them holding 57 of the 64 |
+
+So opening that directory turns most of its links ambiguous. CISA case 8's links are unaffected and
+still resolve. This is correct under [B]: lsxbom does not guess between documents that claim the same
+identity. But the same link reads differently depending on its neighbours. **Proposed: accept it and
+make it visible.** The header names the directory, and an ambiguous link's detail already lists
+every candidate file. The vulnerability axis also spans every document in the directory, which makes
+it a view of the whole corpus.
+
+⚠ A first ad-hoc count of this reported **0** ambiguous links. It compared the link's bare UUID
+with the `urn:uuid:`-prefixed `serialNumber`, so nothing could match. The script prints how many
+link targets are present at all as the control that exposes that mistake. Here it is 80 of 80.
+
+| Option | How | Against | |
+|---|---|---|---|
+| **(a) flat** | the documents directly in the directory | links resolve against neighbours nobody chose | **proposed** |
+| (b) recursive | every document below it | a whole corpus tree becomes one set: more collisions, and a slow start on a large tree | later, behind a flag |
+| (c) directory column | sub-directories become descendable rows | links still need every document loaded up front, so it is (b) with a different view | later |
+| (d) search path | the directory only supplies link targets, loaded when a named file links into it | this is [B]'s option (b), discovery, which [B] deferred behind a flag | not this decision |
+
+[B]'s argument for naming, that a tool which reads unnamed files by default cannot easily stop,
+does not apply: the user names the directory, and nothing is read unless they do.
 
 ### [C] Precondition — measure a VEX that a tool produced: carried out 2026-09-11
 

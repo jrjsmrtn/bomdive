@@ -38,6 +38,12 @@ different documents cannot be resolved without guessing.
 
     python3 ... --links .corpora-cache .corpora-cache-vex
 
+With --directory DIR it measures what `lsxbom browse DIR` would resolve against (ADR-0009
+[D]): the files directly in DIR as ONE set, and how many BOM-Links would read *linked,
+ambiguous* because documents with different content claim their target.
+
+    python3 ... --directory .corpora-cache/examples
+
 <corpus-dir> holds one sub-directory per source, each holding *.json documents.
 """
 import collections
@@ -320,7 +326,124 @@ def links(roots):
     return 0
 
 
+def xml_root(raw):
+    """(namespace-qualified tag, attributes) of an XML document's root element, or None.
+
+    Reads with expat and stops AT the root element: nothing past it is parsed. Any DOCTYPE is
+    refused outright — CycloneDX needs none, and with no DTD there are no entities, so neither
+    external-entity nor entity-expansion attacks have anything to work with. The corpora are
+    fetched from the internet, so this is untrusted input. Stdlib ElementTree parses the whole
+    document and accepts internal DTDs, which is why it is not used here.
+    """
+    from xml.parsers import expat
+
+    class Reached(Exception):
+        pass
+
+    root = {}
+
+    def refuse_dtd(*_):
+        raise ValueError("DTD refused")
+
+    def start(tag, attrs):
+        root["tag"], root["attrs"] = tag, attrs
+        raise Reached
+
+    p = expat.ParserCreate(namespace_separator=" ")
+    p.StartDoctypeDeclHandler = refuse_dtd
+    p.StartElementHandler = start
+    try:
+        p.Parse(raw, True)
+    except Reached:
+        return root["tag"], root["attrs"]
+    except (expat.ExpatError, ValueError):
+        return None
+    return None
+
+
+def directory(root):
+    """What `lsxbom browse DIR` would resolve against: the files DIRECTLY in DIR, as one set.
+
+    Named files are a set the user asserted belongs together; a directory is whatever happens
+    to be in it. This measures what that costs: how many BOM-Links land on a (serial, version)
+    pair that documents with DIFFERENT content claim, and so read *linked, ambiguous*.
+
+    The serial is compared without its `urn:uuid:` prefix, because a BOM-Link carries the bare
+    UUID. A first ad-hoc count compared them with the prefix on one side, matched nothing, and
+    reported 0 ambiguous links; the count of links whose target is present at all is printed
+    as the control that exposes that mistake.
+
+    CycloneDX XML counts as a member, because lsxbom's Load reads it: a first version parsed
+    JSON only and counted testdata's two XML fixtures as rejected. An XML document's serial
+    and version are read from its root element, so it can be a link TARGET; links are read
+    from JSON documents only, since no XML VEX has been measured.
+    """
+    import hashlib
+    docs, rejected = [], 0
+    for path in sorted(glob.glob(os.path.join(root, "*"))):
+        if not os.path.isfile(path):
+            continue
+        raw = open(path, "rb").read()
+        digest = hashlib.sha256(raw).hexdigest()
+        if raw.lstrip(b"\xef\xbb\xbf \t\r\n").startswith(b"<"):
+            found = xml_root(raw)
+            if not found or not found[0].startswith("http://cyclonedx.org/schema/bom/"):
+                rejected += 1
+                continue
+            docs.append((digest, {"serialNumber": found[1].get("serialNumber"),
+                                  "version": found[1].get("version", "1")}))
+            continue
+        try:
+            d = json.loads(raw)
+        except Exception:
+            rejected += 1
+            continue
+        if not (isinstance(d, dict) and d.get("bomFormat") == "CycloneDX"):
+            rejected += 1
+            continue
+        docs.append((digest, d))
+    claims = collections.defaultdict(set)  # (serial, version) -> {sha256}
+    for digest, d in docs:
+        if d.get("serialNumber"):
+            key = (d["serialNumber"].removeprefix("urn:uuid:").lower(), str(d.get("version")))
+            claims[key].add(digest)
+    outcome, per_doc = collections.Counter(), []
+    for _, d in docs:
+        ambiguous = 0
+        for v in d.get("vulnerabilities") or []:
+            for a in v.get("affects") or []:
+                ref = a.get("ref", "")
+                if not ref.startswith("urn:cdx:"):
+                    continue
+                serial, _, version = ref[len("urn:cdx:"):].partition("#")[0].partition("/")
+                found = claims.get((serial.lower(), version), set())
+                outcome["BOM-Link refs"] += 1
+                if not found:
+                    outcome["no document at that serial and version"] += 1
+                elif len(found) > 1:
+                    outcome["AMBIGUOUS — claimed by documents with different content"] += 1
+                    ambiguous += 1
+                else:
+                    outcome["target present, one content"] += 1
+        if ambiguous:
+            per_doc.append(ambiguous)
+    shared = sum(1 for c in claims.values() if len(c) > 1)
+    print(f"files directly in the directory : {len(docs) + rejected}")
+    print(f"  CycloneDX, would load         : {len(docs)}")
+    print(f"  rejected (not JSON/CycloneDX) : {rejected}")
+    print(f"(serial, version) pairs with different content under them: {shared}")
+    for k in ("BOM-Link refs", "target present, one content",
+              "AMBIGUOUS — claimed by documents with different content",
+              "no document at that serial and version"):
+        print(f"  {k:<58s}: {outcome[k]}")
+    print(f"documents with an ambiguous link: {len(per_doc)}; most from one document: "
+          f"{max(per_doc, default=0)}")
+    return 0
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--links":
         sys.exit(links(sys.argv[2:]))
+    if len(sys.argv) > 2 and sys.argv[1] == "--directory":
+        sys.exit(directory(sys.argv[2]))
     sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else ".corpora-cache"))

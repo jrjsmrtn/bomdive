@@ -109,6 +109,22 @@ A BOM-Link names its target by serial number and version alone. Measured across 
 So a serial number is not a reliable identity. ADR-0009 collapses byte-identical copies into one
 document and calls a pair claimed by different documents *linked, ambiguous*.
 
+### A directory as one set
+
+For ADR-0009 [D]: what `lsxbom browse DIR` would resolve against, taking the files directly in DIR
+as one set (`--directory .corpora-cache/examples`). The directory holds 66 documents, all CycloneDX.
+Of its 80 BOM-Links, **64 land on a serial-and-version pair claimed by documents with different
+content**, 16 resolve to a single document, and 0 find nothing. Four documents hold the ambiguous
+links, one of them 57 of the 64.
+
+The control: `--directory testdata` finds the fixtures' planted conflict (`link-sbom` against
+`link-sbom-other`), with 4 ambiguous links, all from `link-vex`. It reports a second pair too: the
+two XML fixtures share one serial, and no link points at it. It counts 5 of the directory's 46
+files as not CycloneDX: its README, three scripts and its manifest. Its two CycloneDX XML fixtures
+count as members, because lsxbom reads XML; a first version of the mode parsed JSON only and
+counted them as rejected. It reads an XML root with expat and refuses any DTD, and a planted
+entity-expansion document is rejected.
+
 ## What it means for the design
 
 - ~~**Tools produce embedded VEX.** The standalone shape ADR-0009 was first written around appears
@@ -137,6 +153,8 @@ python3 docs/inception/evidence/poc11-vex-navigability.py <dir>           # any 
 scripts/check-corpora.sh --corpus vex                                    # fetch the third set
 python3 docs/inception/evidence/poc11-vex-navigability.py .corpora-cache-vex  # the third set, by source
 python3 docs/inception/evidence/poc11-vex-navigability.py --links .corpora-cache .corpora-cache-vex  # serial conflicts
+python3 docs/inception/evidence/poc11-vex-navigability.py --directory .corpora-cache/examples     # a directory as one set
+python3 docs/inception/evidence/poc11-vex-navigability.py --directory testdata                   # control: one planted conflict
 ```
 
 The tool-output column is not re-runnable from a committed file, by design: it needs a portfolio
