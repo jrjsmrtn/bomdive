@@ -916,3 +916,21 @@ func TestTheHeaderFollowsTheFileUnderTheCursor(t *testing.T) {
 		t.Errorf("? does not explain the files column: %q", ax)
 	}
 }
+
+// A document with no components opens on what it carries, and ? says why rather than
+// leaving the reader to guess what the leftmost column is.
+func TestTheAxisExplainsADocumentWithNoComponents(t *testing.T) {
+	for _, c := range []struct{ fixture, want string }{
+		{"vex-standalone", "its vulnerability records"},
+		{"metadata-only", "its subject"},
+	} {
+		g, err := bom.Load(filepath.Join("..", "..", "testdata", c.fixture+".cdx.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		u := newUI(g, c.fixture)
+		if ax := u.axisText(); !strings.Contains(ax, c.want) {
+			t.Errorf("%s: ? explains %q, want it to name %q", c.fixture, ax, c.want)
+		}
+	}
+}

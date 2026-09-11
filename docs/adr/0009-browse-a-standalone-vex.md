@@ -305,6 +305,12 @@ as fact.
   the files are named in. Each record's detail names the file it came from.
 - A `bom-ref` is unique only within its own document, so across documents a component is
   identified by its document **and** its `bom-ref`.
+- **A document with no components opens on what it does carry**: its vulnerability records, else
+  its subject (`metadata.component`), else nothing, and then its file has no arrow. *Corrected the
+  same day*: "its usual first column" had been the component list, which is empty for exactly the
+  documents this ADR exists for. In CISA case 8 the VEX and both product BOMs list no components, so
+  none of the three files could be opened, even though every one of the VEX's links resolves to a
+  product BOM's subject.
 
 ### [C] Precondition — measure a VEX that a tool produced: carried out 2026-09-11
 

@@ -70,6 +70,11 @@ const (
 
 func isEntry(n bom.Node, kind string) bool { return n.Ref == "" && n.Type == kind }
 
+// isVulnRow reports a row the vulnerability axis owns: a group, a record, or a reference.
+func isVulnRow(n bom.Node) bool {
+	return isEntry(n, typeVuln) || isEntry(n, typeRef) || isEntry(n, typeGroup)
+}
+
 // GroupVulnerabilities applies ADR-0009's amended rule. A column holding one group is
 // not an axis, so: analysis state if it gives two or more groups, otherwise severity
 // if IT does, otherwise no grouping at all — the principle HasCategories applies to

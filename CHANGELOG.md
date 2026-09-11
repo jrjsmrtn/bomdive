@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Named files with no components could not be opened in `browse`.** A file opened on its
+  component list, which is empty for a standalone VEX and for a product BOM that only names its
+  product, so CISA case 8's three files all showed no arrow. A document with no components now opens
+  on its vulnerability records, else its subject, and `?` says which. A record row now behaves the
+  same in the component view as on the vulnerability axis: it descends to what it affects and shows
+  its own detail.
 - **The `browse` header pushed its path line off the screen at 80 columns.** The header is two rows,
   and a first line that wrapped took the second: an OBOM's identity alone is 58 characters, so
   `showing: dependencies` beside it already wrapped. The identity is now trimmed to fit — never the

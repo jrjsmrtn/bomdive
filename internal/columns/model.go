@@ -158,6 +158,12 @@ const (
 	AxisFlat
 	// AxisFiles: the documents named, when there are two or more.
 	AxisFiles
+	// AxisRecords: the document's vulnerability records, because it lists no
+	// components — a standalone VEX.
+	AxisRecords
+	// AxisSubject: the document's subject, because it lists no components and no
+	// records — a product BOM that only names its product.
+	AxisSubject
 )
 
 // Axis reports which entry column this session got.
@@ -168,11 +174,26 @@ func (m *Model) Axis() Axis {
 	return docAxis(m.set.Doc(0))
 }
 
+// A document with no components opens on what it DOES carry — the order ExplainEmpty
+// already gives: its vulnerability records, else its subject, else nothing. Opening on
+// an empty component list made every file in a real session a dead end: CISA case 8's
+// VEX and both its product BOMs list no components, so none could be descended into,
+// though the VEX's links resolve to the products' subjects.
+
 // DocAxis is the first column the current document gets on its own — what descending
 // into its file opens.
 func (m *Model) DocAxis() Axis { return docAxis(m.Graph()) }
 
 func docAxis(g *bom.Graph) Axis {
+	if g.Contents().Components == 0 {
+		if len(g.Vulnerabilities()) > 0 {
+			return AxisRecords
+		}
+		if _, ok := g.Subject(); ok {
+			return AxisSubject
+		}
+		return AxisFlat
+	}
 	switch {
 	case byCategoryOf(g):
 		return AxisCategories
@@ -190,7 +211,7 @@ func (m *Model) entryColumn() Column {
 	if m.multi() {
 		return m.filesColumn()
 	}
-	return entryColumnOf(m.set.Doc(0))
+	return m.entryColumnOf(m.set.Doc(0))
 }
 
 // filesColumn lists the documents named, in the order given, each with its kind.
@@ -210,8 +231,13 @@ func fileLabel(g *bom.Graph) string {
 	return name + " — " + string(g.Identity().Kind)
 }
 
-func entryColumnOf(g *bom.Graph) Column {
+func (m *Model) entryColumnOf(g *bom.Graph) Column {
 	switch docAxis(g) {
+	case AxisRecords:
+		return Column{Title: "vulnerabilities", Entries: m.vulnNodes(g.Vulnerabilities())}
+	case AxisSubject:
+		subject, _ := g.Subject()
+		return Column{Title: "subject", Entries: []bom.Node{subject}}
 	case AxisFlat:
 		return Column{Title: "components", Entries: g.Components()}
 	case AxisCategories:
@@ -297,14 +323,16 @@ func (m *Model) Left() bool {
 // on every repaint. TestDescendableAgreesWithChildrenOf ties it to childrenOf, which
 // is the honest way to keep a fast path from drifting from the slow one it mirrors.
 func (m *Model) Descendable(n bom.Node) bool {
-	if m.mode == ModeVulnerabilities {
+	// Vulnerability, group and reference rows descend the same way on either axis: a
+	// standalone VEX's file opens on its records in the component view too.
+	if m.mode == ModeVulnerabilities || isVulnRow(n) {
 		return m.vulnDescendable(n)
 	}
 	switch {
 	case isEntry(n, typeFile):
-		// A VEX file inventories nothing, so it opens on nothing — and says so by
-		// carrying no arrow, rather than descending into an empty pane.
-		return len(entryColumnOf(m.graphOf(n)).Entries) > 0
+		// A file with nothing to show — no components, records or subject — carries no
+		// arrow rather than descending into an empty pane.
+		return len(m.entryColumnOf(m.graphOf(n)).Entries) > 0
 	case isEntry(n, typeCategory):
 		// A category entry exists only because entryColumn found members for it.
 		return true
@@ -316,12 +344,12 @@ func (m *Model) Descendable(n bom.Node) bool {
 }
 
 func (m *Model) childrenOf(n bom.Node) []bom.Node {
-	if m.mode == ModeVulnerabilities {
+	if m.mode == ModeVulnerabilities || isVulnRow(n) {
 		return m.vulnChildren(n)
 	}
 	switch {
 	case isEntry(n, typeFile):
-		return entryColumnOf(m.graphOf(n)).Entries
+		return m.entryColumnOf(m.graphOf(n)).Entries
 	case isEntry(n, typeCategory):
 		return m.graphOf(n).Categories()[n.Category]
 	case m.dir == Reverse:
@@ -385,10 +413,8 @@ func (m *Model) Detail() []KV {
 	if !ok {
 		return nil
 	}
-	if m.mode == ModeVulnerabilities {
-		if kv, handled := m.vulnDetail(sel); handled {
-			return kv
-		}
+	if kv, handled := m.vulnDetail(sel); handled {
+		return kv
 	}
 	g := m.graphOf(sel)
 	switch {

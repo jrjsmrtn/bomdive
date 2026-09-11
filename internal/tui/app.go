@@ -758,6 +758,14 @@ func (u *ui) axisText() string {
 		return "the leftmost column lists `cdx:osquery:category` values, because this document " +
 			"declares no dependency graph. That is the axis it does give you — descend into a " +
 			"category to see its components."
+	case columns.AxisRecords:
+		return "this document lists no components, so the leftmost column shows what it does " +
+			"carry: its vulnerability records. Descend into one to see what it affects; v groups " +
+			"them."
+	case columns.AxisSubject:
+		return "this document lists no components and no vulnerability records, so the leftmost " +
+			"column shows its subject — the product it describes. Its detail shows any " +
+			"vulnerabilities other documents attribute to it."
 	case columns.AxisFlat:
 		return "the leftmost column lists every component flat. With no relations declared there " +
 			"is nothing to descend into, and no categories to group by either."

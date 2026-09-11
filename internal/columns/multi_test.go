@@ -38,7 +38,7 @@ func TestAFilesColumnOnlyWithSeveralDocuments(t *testing.T) {
 }
 
 // Descending into a file opens its usual first column; a VEX inventories nothing, so
-// its file carries no arrow rather than opening an empty pane.
+// its file opens on its vulnerability records instead.
 func TestDescendingAFileOpensItsFirstColumn(t *testing.T) {
 	m := openSet(t, "link-sbom", "link-vex")
 	if !m.Right() {
@@ -49,10 +49,11 @@ func TestDescendingAFileOpensItsFirstColumn(t *testing.T) {
 	}
 	m.Left()
 	m.Down()
-	vex, _ := m.Active().Selected()
-	if m.Descendable(vex) || m.Right() {
-		t.Error("the VEX file, which inventories nothing, is descendable")
+	// The VEX lists no components, so its file opens on its vulnerability records.
+	if !m.Right() || len(m.Active().Entries) != 5 || !isEntry(m.Active().Entries[0], typeVuln) {
+		t.Fatalf("the VEX file opened on %v, want its 5 records", rowNames(m.Active().Entries))
 	}
+	m.Left()
 	if !strings.HasSuffix(m.Graph().Path(), "link-vex.cdx.json") {
 		t.Errorf("the current document is %q, want the VEX under the cursor", m.Graph().Path())
 	}
@@ -149,5 +150,61 @@ func TestDescendableAgreesAcrossDocuments(t *testing.T) {
 				level = next
 			}
 		}
+	}
+}
+
+// A file with no components opens on what it DOES carry — records, else its subject,
+// else nothing. Opening on the empty component list made every file of CISA case 8 a
+// dead end: its VEX and both product BOMs list no components.
+func TestAFileWithNoComponentsOpensOnWhatItCarries(t *testing.T) {
+	m := openSet(t, "vex-standalone", "metadata-only", "attestation-only")
+	want := []struct {
+		title string
+		rows  string
+	}{
+		{"vulnerabilities", "CVE-2020-25649"}, // a standalone VEX: its records
+		{"subject", "just-a-name"},            // a product BOM naming only its product
+		{"", ""},                              // neither: no arrow, nothing to open
+	}
+	files := m.Columns()[0].Entries
+	for i, w := range want {
+		f := files[i]
+		if got := m.Descendable(f); got != (w.title != "") {
+			t.Errorf("%s: descendable = %v", f.Name, got)
+			continue
+		}
+		if w.title == "" {
+			continue
+		}
+		c := m.entryColumnOf(m.graphOf(f))
+		if c.Title != w.title || strings.Join(rowNames(c.Entries), " ") != w.rows {
+			t.Errorf("%s opens on %q %v, want %q %s", f.Name, c.Title, rowNames(c.Entries), w.title, w.rows)
+		}
+	}
+}
+
+// From a product BOM's subject, the detail shows what other files' links attribute to it.
+func TestASubjectShowsTheVulnerabilitiesLinkedToIt(t *testing.T) {
+	m := openSet(t, "link-vex", "link-sbom")
+	subject, ok := m.Set().Doc(1).Subject()
+	if !ok {
+		t.Fatal("link-sbom declares no subject")
+	}
+	if got := detailValue(m.vulnSummary(subject), "vulnerabilities"); got != "1 — most severe: high" {
+		t.Errorf("subject's vulnerabilities = %q, want the one link-vex attributes to it", got)
+	}
+}
+
+// In the component view, a record row descends to what it affects — the same as on
+// the vulnerability axis — and its detail is the record's.
+func TestARecordRowWorksInTheComponentView(t *testing.T) {
+	m := openSet(t, "link-vex", "link-sbom")
+	m.Right() // into the VEX file: its records
+	selectByName(t, m, "CVE-2024-6001")
+	if kv := m.Detail(); detailValue(kv, "id") != "CVE-2024-6001" {
+		t.Errorf("detail of a record row in the component view = %v", kv)
+	}
+	if !m.Right() || strings.Join(rowNames(m.Active().Entries), " ") != "a" {
+		t.Errorf("CVE-2024-6001 -> %v, want component a", rowNames(m.Active().Entries))
 	}
 }

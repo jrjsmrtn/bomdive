@@ -187,3 +187,13 @@ func (g *Graph) Serial() string { return g.serial }
 
 // Version is the document's version.
 func (g *Graph) Version() int { return g.version }
+
+// Subject is the document's declared root — the thing it describes — when it declares
+// one with a bom-ref. It is what a document with no inventory still has to show, and
+// what BOM-Links into a product BOM point at.
+//
+// A subject with no bom-ref is not offered: nothing can link to it, and a row with an
+// empty Ref is what marks a synthetic row. target already refuses it.
+func (g *Graph) Subject() (Node, bool) {
+	return g.target(g.id.RootRef)
+}
