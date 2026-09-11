@@ -109,7 +109,32 @@ func New(g *bom.Graph) *Model {
 // Set exposes every loaded document.
 func (m *Model) Set() *bom.Set { return m.set }
 
-func (m *Model) multi() bool { return m.set.Len() > 1 }
+// multi: the files column is shown when it has two or more rows — documents, or
+// CycloneDX files that failed to load, which are rows too (ADR-0009 [D]).
+func (m *Model) multi() bool { return len(m.set.Members()) > 1 }
+
+// typeUnloaded is a files-column row for a CycloneDX file that failed to load. It has
+// no document behind it, so its Doc is -1 and nothing may call graphOf on it.
+const typeUnloaded = "unloaded file"
+
+// Unloaded is the file under the cursor in the files column when it failed to load.
+// There is no document to describe, so the header, status bar and ? say so instead of
+// describing another one.
+func (m *Model) Unloaded() (bom.Member, bool) {
+	if m.mode != ModeComponents || !m.multi() {
+		return bom.Member{}, false
+	}
+	sel, ok := m.cols[0].Selected()
+	if !ok || !isEntry(sel, typeUnloaded) {
+		return bom.Member{}, false
+	}
+	return m.memberOf(sel), true
+}
+
+func (m *Model) memberOf(n bom.Node) bom.Member {
+	i, _ := strconv.Atoi(n.Category)
+	return m.set.Members()[i]
+}
 
 // Graph is the document the view is currently describing: the file under the cursor
 // in the files column, or the document of the selected row. The header, coverage and
@@ -121,7 +146,7 @@ func (m *Model) currentDoc() int {
 	if m.mode == ModeComponents && m.multi() {
 		col = &m.cols[0]
 	}
-	if sel, ok := col.Selected(); ok {
+	if sel, ok := col.Selected(); ok && sel.Doc >= 0 {
 		return sel.Doc
 	}
 	return 0
@@ -216,11 +241,51 @@ func (m *Model) entryColumn() Column {
 
 // filesColumn lists the documents named, in the order given, each with its kind.
 func (m *Model) filesColumn() Column {
-	entries := make([]bom.Node, 0, m.set.Len())
-	for i, g := range m.set.Docs() {
-		entries = append(entries, bom.Node{Type: typeFile, Doc: i, Category: strconv.Itoa(i), Name: fileLabel(g)})
+	members := m.set.Members()
+	entries := make([]bom.Node, 0, len(members))
+	for i, mem := range members {
+		if mem.Err != nil {
+			entries = append(entries, bom.Node{Type: typeUnloaded, Doc: -1, Category: strconv.Itoa(i),
+				Name: filepath.Base(mem.Path) + " — not loaded"})
+			continue
+		}
+		g := m.set.Doc(mem.Doc)
+		entries = append(entries, bom.Node{Type: typeFile, Doc: mem.Doc, Category: strconv.Itoa(mem.Doc), Name: fileLabel(g)})
 	}
-	return Column{Title: "files", Entries: entries}
+	return Column{Title: m.filesTitle(), Entries: entries}
+}
+
+// filesTitle says where the set came from when a directory was named (ADR-0009 [D]).
+// A directory's contents are a set nobody chose file by file, and a reader needs to
+// know that before trusting a link that reads ambiguous.
+func (m *Model) filesTitle() string {
+	dirs := m.set.Directories()
+	if len(dirs) == 0 {
+		return "files"
+	}
+	named, failed := 0, 0
+	for _, mem := range m.set.Members() {
+		if mem.Err != nil {
+			failed++
+		} else if mem.Named {
+			named++
+		}
+	}
+	noun := "documents"
+	if m.set.Len() == 1 {
+		noun = "document"
+	}
+	t := fmt.Sprintf("%d %s from %s", m.set.Len(), noun, strings.Join(dirs, ", "))
+	if named > 0 {
+		t += fmt.Sprintf(" and %d named", named)
+	}
+	if failed > 0 {
+		t += fmt.Sprintf(", %d not loaded", failed)
+	}
+	if n := len(m.set.Skipped()); n > 0 {
+		t += fmt.Sprintf(", %d skipped", n)
+	}
+	return t
 }
 
 func fileLabel(g *bom.Graph) string {
@@ -323,6 +388,9 @@ func (m *Model) Left() bool {
 // on every repaint. TestDescendableAgreesWithChildrenOf ties it to childrenOf, which
 // is the honest way to keep a fast path from drifting from the slow one it mirrors.
 func (m *Model) Descendable(n bom.Node) bool {
+	if isEntry(n, typeUnloaded) {
+		return false
+	}
 	// Vulnerability, group and reference rows descend the same way on either axis: a
 	// standalone VEX's file opens on its records in the component view too.
 	if m.mode == ModeVulnerabilities || isVulnRow(n) {
@@ -344,6 +412,9 @@ func (m *Model) Descendable(n bom.Node) bool {
 }
 
 func (m *Model) childrenOf(n bom.Node) []bom.Node {
+	if isEntry(n, typeUnloaded) {
+		return nil
+	}
 	if m.mode == ModeVulnerabilities || isVulnRow(n) {
 		return m.vulnChildren(n)
 	}
@@ -415,6 +486,14 @@ func (m *Model) Detail() []KV {
 	}
 	if kv, handled := m.vulnDetail(sel); handled {
 		return kv
+	}
+	if isEntry(sel, typeUnloaded) {
+		mem := m.memberOf(sel)
+		return []KV{
+			{"file", mem.Path},
+			{"not loaded", mem.Reason()},
+			{"note", "a CycloneDX document that could not be loaded — listed so the set is not mistaken for complete"},
+		}
 	}
 	g := m.graphOf(sel)
 	switch {

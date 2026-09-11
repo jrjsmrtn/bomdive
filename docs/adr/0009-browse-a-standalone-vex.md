@@ -25,8 +25,8 @@ document; and a link whose serial number and version two different documents cla
 ambiguous* — a sixth resolution state, because measurement showed serial numbers are not reliable
 identities.
 
-**[D] proposed on 2026-09-11, awaiting the maintainer**: what naming a *directory* on the command
-line means. It extends [B], which settled that linked documents are named there.
+**[D] settled on 2026-09-11** by the maintainer, as proposed: what naming a *directory* on the
+command line means. It extends [B], which settled that linked documents are named there.
 
 Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 [ADR-0007](0007-column-view-open-questions.md). It reverses nothing in either.
@@ -315,13 +315,22 @@ as fact.
   none of the three files could be opened, even though every one of the VEX's links resolves to a
   product BOM's subject.
 
-### [D] PROPOSED — a directory named on the command line
+### [D] SETTLED — a directory named on the command line
 
 A directory names its documents all at once. That changes the set of documents that links resolve
 against, which [B] settled as "the files named", so it gets its own decision rather than slipping in
 as argument handling.
 
-**Proposal:**
+**Decided 2026-09-11: (a), as proposed.** Two points were settled while building it:
+
+- **The source is the files column's title**, for example `66 documents from examples/, 5 skipped`,
+  not the two-line header. The header's first line already has to fit the identity and the
+  direction at 80 columns, and the column title sits directly above the files it describes.
+- **A file that is both named and inside a named directory counts as named.** If the directory
+  reached it first and it failed, it is loaded again and fails hard. The first version applied
+  "loaded once" to it, which silently ignored the explicit request.
+
+**As proposed:**
 
 - **A directory stands for the CycloneDX documents directly inside it**: one level, as `ls DIR`
   lists them, sorted by name, at the position where the directory was named. Directories and files

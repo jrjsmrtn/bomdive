@@ -8,6 +8,7 @@ package tui
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -547,6 +548,13 @@ func (u *ui) headerText() string {
 	if path == "" {
 		path = "[darkgray](nothing selected)[-]"
 	}
+	if mem, ok := u.model.Unloaded(); ok {
+		line := "not loaded: " + mem.Reason()
+		if u.width > 0 {
+			line = truncHead(line, u.width-1)
+		}
+		return fmt.Sprintf("[red]%s[-]\n[darkgray]path:[-] %s", tview.Escape(line), path)
+	}
 	// The first line must FIT. The header is exactly two rows, so a first line that
 	// wrapped pushed the path line off the screen: at 80 columns an OBOM's identity
 	// plus "showing: dependencies" was already 82 characters. The identity is trimmed
@@ -631,6 +639,12 @@ func (u *ui) statusText() string {
 	if u.model.Mode() == columns.ModeVulnerabilities {
 		return u.vulnStatusText()
 	}
+	// A file that failed to load has no coverage to report; showing another document's
+	// would describe the wrong file.
+	if _, ok := u.model.Unloaded(); ok {
+		return "[red]not loaded[-]  [darkgray]↑↓ nav  [-][white]?[-][darkgray]why [-]" +
+			"[white]H[-][darkgray]keys q quit[-]"
+	}
 	c := u.model.Graph().Coverage()
 
 	// One label per state, and RED reserved for the one state that is a defect in
@@ -673,6 +687,14 @@ func (u *ui) statusText() string {
 func (u *ui) explainText() string {
 	if u.model.Mode() == columns.ModeVulnerabilities {
 		return u.vulnExplainText()
+	}
+	if mem, ok := u.model.Unloaded(); ok {
+		return fmt.Sprintf("[red]not loaded[-]\n[darkgray]%s[-]\n\n%s\n\n"+
+			"This file is, or says it is, a CycloneDX document, and it could not be read. It is "+
+			"listed rather than skipped: a set that silently lost a document would show its links "+
+			"as linked, not loaded, and never say why.\n\n[darkgray]this view[-]  %s\n\n"+
+			"[darkgray]press H for the keys.[-]\n",
+			tview.Escape(mem.Path), tview.Escape(mem.Reason()), u.axisText())
 	}
 	g := u.model.Graph()
 	c := g.Coverage()
@@ -739,10 +761,45 @@ func (u *ui) helpText() string {
 //
 // One line per case, unwrapped: the pane wraps, and hard-wrapping inside text that
 // is wrapped again produces a ragged column with orphaned fragments.
+// filesAxisText says where the files came from, and names every file left out and why
+// (ADR-0009 [D]). A skipped file is not a row, so this is the one place to find it.
+func (u *ui) filesAxisText() string {
+	s := u.model.Set()
+	var b strings.Builder
+	if dirs := s.Directories(); len(dirs) > 0 {
+		fmt.Fprintf(&b, "the leftmost column lists the CycloneDX documents directly inside %s, "+
+			"one level deep and sorted by name, and any file named beside it. BOM-Links resolve "+
+			"among all of them, so a link reads differently depending on what else is in the "+
+			"directory: one whose target two documents with different content claim reads "+
+			"linked, ambiguous. ", tview.Escape(strings.Join(dirs, ", ")))
+	} else {
+		fmt.Fprintf(&b, "the leftmost column lists the %d documents named on the command line, "+
+			"in the order given. BOM-Links resolve among all of them. ", s.Len())
+	}
+	b.WriteString("Descend into one to open it, and v shows every document's vulnerabilities.")
+	failed := 0
+	for _, m := range s.Members() {
+		if m.Err != nil {
+			failed++
+		}
+	}
+	if failed > 0 {
+		fmt.Fprintf(&b, "\n\n[red]%d file(s) not loaded[-]: each is a row marked \"not loaded\", "+
+			"and its detail says why.", failed)
+	}
+	if sk := s.Skipped(); len(sk) > 0 {
+		fmt.Fprintf(&b, "\n\n[yellow]%d file(s) skipped[-], because they are not CycloneDX documents:", len(sk))
+		for _, x := range sk {
+			fmt.Fprintf(&b, "\n  %s — %s", tview.Escape(filepath.Base(x.Path)), tview.Escape(x.Reason))
+		}
+	}
+	return b.String()
+}
+
 // sourceText is the file the explanation is about: the one argument, or — with several
 // named — the document under the cursor, since that is what the rest of `?` describes.
 func (u *ui) sourceText() string {
-	if u.model.Set().Len() > 1 {
+	if len(u.model.Set().Members()) > 1 {
 		return u.model.Graph().Path()
 	}
 	return u.source
@@ -751,9 +808,7 @@ func (u *ui) sourceText() string {
 func (u *ui) axisText() string {
 	switch u.model.Axis() {
 	case columns.AxisFiles:
-		return fmt.Sprintf("the leftmost column lists the %d documents named on the command line, "+
-			"in the order given. Descend into one to open it. BOM-Links resolve among all of them, "+
-			"and v shows every document's vulnerabilities.", u.model.Set().Len())
+		return u.filesAxisText()
 	case columns.AxisCategories:
 		return "the leftmost column lists `cdx:osquery:category` values, because this document " +
 			"declares no dependency graph. That is the axis it does give you — descend into a " +

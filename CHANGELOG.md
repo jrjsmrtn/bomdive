@@ -99,6 +99,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`browse` takes a directory** (ADR-0009 [D]): `lsxbom browse examples/` loads the CycloneDX
+  documents directly inside it, one level deep and sorted by name, and can be mixed with named
+  files. Membership is decided by content, not by extension. A file that is not CycloneDX is
+  skipped, counted in the files column's title, and named with its reason by `?`. A CycloneDX file
+  that fails to load is a row marked *not loaded* that cannot be opened. On it, the header, status
+  bar, detail and `?` say why, instead of describing another document. A file named on its own
+  still fails hard, even when a named directory also holds it. The title says where the set came
+  from, for example `66 documents from examples/`. A directory is a set nobody chose file by file:
+  in that one, 64 of 80 BOM-Links read *linked, ambiguous*, which `?` explains.
 - **`browse` takes several documents, and follows BOM-Links between them** (ADR-0009 [B]):
   `lsxbom browse app.vex.json app.cdx.json`. With two or more named, the leftmost column lists the
   files, each with its kind, and the header, coverage and `?` describe the file under the cursor;

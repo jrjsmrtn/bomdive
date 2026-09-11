@@ -12,7 +12,7 @@ import (
 
 func (a *app) browseCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "browse <bom.json> [<linked.json> ...]",
+		Use:   "browse <bom.json|dir> [<linked.json|dir> ...]",
 		Short: "Navigate the BOM in a Finder-style column view",
 		Long: "Opens a Miller-column view: each column lists the children of the selection\n" +
 			"in the column to its left, so the chain of columns IS the dependency path.\n\n" +
@@ -22,10 +22,13 @@ func (a *app) browseCmd() *cobra.Command {
 			"categories instead, because descending dependencies there shows nothing.\n\n" +
 			"Name several documents to follow BOM-Links between them — a VEX and the SBOM it\n" +
 			"describes, say. The leftmost column then lists the files, and v shows every\n" +
-			"document's vulnerabilities.",
+			"document's vulnerabilities.\n\n" +
+			"Name a directory to load the CycloneDX documents directly inside it. A file that\n" +
+			"is not CycloneDX is skipped and listed by ?; one that is and fails to load is\n" +
+			"shown as a row saying why. A file named on its own must load.",
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			set, err := bom.LoadSet(args)
+			set, err := bom.LoadArgs(args)
 			if err != nil {
 				return err
 			}
@@ -35,7 +38,7 @@ func (a *app) browseCmd() *cobra.Command {
 			if !term.IsTerminal(int(os.Stdout.Fd())) {
 				return errors.New("browse needs an interactive terminal; use `ls` or `tree` in a pipeline")
 			}
-			return tui.Run(g, args[0])
+			return tui.Run(g, g.Path())
 		},
 	}
 }

@@ -17,6 +17,12 @@ type Set struct {
 	// built here rather than per graph because a link can point into a document
 	// loaded after the one holding it.
 	affected map[NodeKey][]VulnKey
+	// members are the files column's rows: every loaded document and every CycloneDX
+	// file that failed to load, in the order reached. skipped are the files in a named
+	// directory that are not CycloneDX; dirs are the directories named. ADR-0009 [D].
+	members []Member
+	skipped []Skipped
+	dirs    []string
 }
 
 // NodeKey identifies a component across documents: a bom-ref is unique only within
@@ -41,6 +47,9 @@ func NewSet(gs ...*Graph) *Set {
 		for k := range g.vulns {
 			g.vulns[k].Doc = i
 		}
+	}
+	for i, g := range gs {
+		s.members = append(s.members, Member{Path: g.path, Doc: i, Named: true})
 	}
 	s.reindex()
 	return s

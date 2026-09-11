@@ -222,13 +222,18 @@ func Load(path string) (*Graph, error) {
 
 	format, r, err := detectFormat(bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", path, err)
+		return nil, fmt.Errorf("%s: %w", path, notCycloneDX{err})
 	}
 
 	var doc cdx.BOM
 	// The decoder resolves the SPEC version from the document itself; only the
 	// ENCODING has to be chosen here.
 	if err := cdx.NewBOMDecoder(r, format).Decode(&doc); err != nil {
+		// A document that says it is CycloneDX and fails is a FAILED load; anything
+		// else that fails to decode as one is simply not CycloneDX (ADR-0009 [D]).
+		if !claimsCycloneDX(raw, format) {
+			err = notCycloneDX{err}
+		}
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 	// A document that parses but is not a BOM would otherwise render as an empty
@@ -254,12 +259,12 @@ func Load(path string) (*Graph, error) {
 func checkIsBOM(doc *cdx.BOM, format cdx.BOMFileFormat) error {
 	if format == cdx.BOMFileFormatXML {
 		if !strings.Contains(doc.XMLNS, "cyclonedx.org/schema/bom") {
-			return fmt.Errorf("not a CycloneDX document (xmlns=%q)", doc.XMLNS)
+			return notCycloneDX{fmt.Errorf("not a CycloneDX document (xmlns=%q)", doc.XMLNS)}
 		}
 		return nil
 	}
 	if doc.BOMFormat != "CycloneDX" {
-		return fmt.Errorf("not a CycloneDX document (bomFormat=%q)", doc.BOMFormat)
+		return notCycloneDX{fmt.Errorf("not a CycloneDX document (bomFormat=%q)", doc.BOMFormat)}
 	}
 	if doc.SpecVersion == 0 {
 		return fmt.Errorf("no specVersion")
