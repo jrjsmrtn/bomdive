@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-17
+
 ### Changed
 
 - **Renamed from `lsxbom` to `bomdive`** ([ADR-0010](docs/adr/0010-rename-the-tool-to-bomdive.md)).
@@ -276,3 +278,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2026-09-17 — see ADR-0010; this entry records what was checked at the time.)
 
 [Unreleased]: https://github.com/jrjsmrtn/bomdive/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jrjsmrtn/bomdive/releases/tag/v0.1.0
