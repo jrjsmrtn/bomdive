@@ -1,12 +1,14 @@
 # bomdive
 
+[![CI](https://github.com/jrjsmrtn/bomdive/actions/workflows/ci.yml/badge.svg)](https://github.com/jrjsmrtn/bomdive/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/jrjsmrtn/bomdive/badge)](https://scorecard.dev/viewer/?uri=github.com/jrjsmrtn/bomdive)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![REUSE status](https://api.reuse.software/badge/github.com/jrjsmrtn/bomdive)](https://api.reuse.software/info/github.com/jrjsmrtn/bomdive)
+
 Read a CycloneDX document at the terminal — an **SBOM, OBOM or HBOM**, and the **VEX** records
 carried inside one or shipped beside it — with the muscle memory of `ls(1)` and `tree(1)`, plus
 **Miller columns** (the column browser macOS Finder made familiar). **JSON and XML, spec
 1.0–1.7.**
-
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![REUSE status](https://api.reuse.software/badge/github.com/jrjsmrtn/bomdive)](https://api.reuse.software/info/github.com/jrjsmrtn/bomdive)
 
 > **Status**: bootstrapped 2026-09-10 as `lsxbom`, renamed `bomdive` on 2026-09-17
 > ([ADR-0010](docs/adr/0010-rename-the-tool-to-bomdive.md)). `ls`, `tree` and `browse` work:
