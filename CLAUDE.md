@@ -1,7 +1,8 @@
 # bomdive
 
-A Go CLI that reads CycloneDX xBOM JSON — SBOM, OBOM, HBOM — and navigates it with the muscle
-memory of `ls(1)` and `tree(1)`.
+A Go CLI that reads a CycloneDX document — SBOM, OBOM, HBOM, and the VEX records inside or
+beside one — and navigates it with the muscle memory of `ls(1)` and `tree(1)`, plus Miller
+columns.
 
 ## Project Context
 
@@ -11,7 +12,9 @@ memory of `ls(1)` and `tree(1)`.
   `tview` for the column view, `godog` for BDD)
 - **License**: Not set (Private profile, unpublished)
 - **Tier**: t1
-- **Distribution profile**: Private (ships-artifacts: no)
+- **Distribution profile**: Private (ships-artifacts: **yes** since 2026-09-17 —
+  [ADR-0012](docs/adr/0012-ship-signed-release-artifacts.md); the first signed release is the
+  next tag, since the pipeline cannot run while the repository is private)
 
 ## Project Tier
 
@@ -154,6 +157,12 @@ go test ./...
 # commits since it, and the commit itself — plus -dirty when built from modified sources.
 go build -ldflags "-X main.version=$(git describe --tags --dirty --always)" \
   -o ~/.local/bin/bomdive ./cmd/bomdive
+
+# What the release workflow does, runnable locally before trusting a tag with it. It builds four
+# platforms, an SBOM per binary from the BINARY (not the tree), and the checksums:
+python3 -c "import yaml;d=yaml.safe_load(open('.github/workflows/release.yml'));\
+print(''.join(s['run'] for s in d['jobs']['release']['steps'] if s.get('name','').startswith(('build every','every SBOM','checksums'))))" \
+  | GITHUB_REF_NAME=v0.0.0-probe bash
 python3 scripts/check-pglite-trigger.py --self-test   # prove the watcher can fail
 python3 docs/inception/evidence/bom-graph-shape.py <bom.json>   # re-measure graph shape
 

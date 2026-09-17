@@ -17,9 +17,10 @@ import (
 func (a *app) browseCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "browse <bom.json|dir> [<linked.json|dir> ...]",
-		Short: "Navigate the BOM in a Finder-style column view",
-		Long: "Opens a Miller-column view: each column lists the children of the selection\n" +
-			"in the column to its left, so the chain of columns IS the dependency path.\n\n" +
+		Short: "Navigate the document in Miller columns",
+		Long: "Opens a Miller-column view — the column browser macOS Finder made familiar.\n" +
+			"Each column lists the children of the selection in the column to its left, so\n" +
+			"the chain of columns IS the dependency path.\n\n" +
 			"Press Tab to flip the whole view between dependencies and dependents — the\n" +
 			"reverse edge answers \"what pulled this in?\", which is the question a BOM\n" +
 			"reader usually brings. A BOM with no dependency graph opens on its osquery\n" +

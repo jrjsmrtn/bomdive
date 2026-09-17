@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Signed release artifacts on every `v*` tag** ([ADR-0012](docs/adr/0012-ship-signed-release-artifacts.md)):
+  four archives (`linux`/`darwin` × `amd64`/`arm64`), an SBOM per artifact catalogued from the
+  **binary**, `checksums.txt`, SLSA L2 provenance via GitHub attestation, and one keyless cosign
+  signature over the checksums. **Every signature is verified in the same run** — `cosign
+  verify-blob` with the certificate identity pinned to this repository's release workflow, and
+  `gh attestation verify` against a published archive — because a signature no consumer could
+  verify is worse than none. CI asserts each SBOM catalogued the artifact and not the repository:
+  no `pkg:github` purls, and `pkg:golang/stdlib` present. The build, SBOM and checksum steps were
+  dry-run locally first — four archives, 15 components each, and the extracted `darwin/arm64`
+  binary reported its tag and read a fixture. An `-rc`, `-alpha` or `-beta` tag publishes as a
+  **prerelease**, so a trial run cannot become the release that download links point at.
+- **OpenSSF Scorecard**, weekly and on pushes to `main`, publishing results. A monitor rather than
+  a target: `Code-Review` cannot pass with one maintainer, and `Packaging` has nothing to report.
+- The release, Scorecard, CodeQL upload and dependency-review jobs are all gated on
+  `!github.event.repository.private`, so they self-activate at the public flip. Keyless signing
+  would otherwise write this repository's name to the public Rekor log while it is private.
+
 ## [0.1.0] - 2026-09-17
 
 ### Changed

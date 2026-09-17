@@ -1,7 +1,9 @@
 # bomdive
 
-Read a CycloneDX xBOM — SBOM, OBOM, HBOM — at the terminal, with the muscle memory of `ls(1)`
-and `tree(1)`, plus a Finder-style column view. **JSON and XML, spec 1.0–1.7.**
+Read a CycloneDX document at the terminal — an **SBOM, OBOM or HBOM**, and the **VEX** records
+carried inside one or shipped beside it — with the muscle memory of `ls(1)` and `tree(1)`, plus
+**Miller columns** (the column browser macOS Finder made familiar). **JSON and XML, spec
+1.0–1.7.**
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![REUSE status](https://api.reuse.software/badge/github.com/jrjsmrtn/bomdive)](https://api.reuse.software/info/github.com/jrjsmrtn/bomdive)
@@ -36,7 +38,7 @@ bomdive ls app.cdx.json                  # the components, flat
 bomdive ls --by-category obom.cdx.json   # an OBOM has no graph: group by osquery category
 bomdive tree app.cdx.json                # the dependency graph, with coverage reported
 bomdive tree --json app.cdx.json         # the same answer for a pipeline
-bomdive browse app.cdx.json              # the Finder-style column view
+bomdive browse app.cdx.json              # Miller columns
 bomdive browse app.cdx.json app.vex.json # follow BOM-Links between documents; v for vulnerabilities
 bomdive browse exports/                  # every CycloneDX document in one directory
 ```
@@ -63,7 +65,7 @@ actually bring to a BOM: **what pulled this in?**
 - Not a corpus database. Cross-BOM questions are answered today by the `duckdb` and `lbug` CLIs
   against the files on disk.
 
-A Finder-style **column view** is the second renderer over the same model
+**Miller columns** are the second renderer over the same model
 ([ADR-0006](docs/adr/0006-column-view-as-a-first-class-renderer.md)), reached with `bomdive browse`.
 It carries a vulnerability axis for the VEX records a CycloneDX document may hold, and follows
 BOM-Links between the documents — or the one directory — you name

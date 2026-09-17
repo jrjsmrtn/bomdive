@@ -48,7 +48,7 @@ func Run(version string, args []string, stdout, stderr io.Writer) int {
 
 	root := &cobra.Command{
 		Use:   "bomdive",
-		Short: "Read a CycloneDX xBOM at the terminal",
+		Short: "Read a CycloneDX document at the terminal",
 		Long: "bomdive reads a CycloneDX xBOM — SBOM, OBOM, HBOM — and navigates it with the\n" +
 			"muscle memory of ls(1) and tree(1).\n\n" +
 			"It is not a BOM generator, query tool, scanner, signer or converter.",
