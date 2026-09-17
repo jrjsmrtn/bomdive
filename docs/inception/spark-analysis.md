@@ -148,11 +148,20 @@ works; `tree` is the one that pays off when a graph exists. The original framing
 | [`kubernetes-sigs/bom`](https://github.com/kubernetes-sigs/bom) | Go | `document outline` is exactly the structure-rendering idea, and it works | **SPDX**, not CycloneDX | Wrong format; also a generator, which we are not |
 | `jq` / `gojq` | C / Go | Universal, precise | You must hold the schema in your head; renders nothing | The status quo we are replacing |
 | Browser visualisers | JS | Good graph rendering | Wrong medium — BOMs arrive in pipelines and over ssh | Not terminal-native |
+| [`safedep/xbom`](https://github.com/safedep/xbom) | **Go**, Apache-2.0 | Generates xBOMs from source by static analysis, enriching them with AI, SaaS and crypto facts; installs as `xbom` from a Homebrew tap | A generator — `xbom generate --dir … --bom …`; no reading or navigation surface | **The other half of the problem.** It writes BOMs; this reads them |
 
 **Differentiation, stated plainly**: the query half of this space is occupied, in Go, by the
 CycloneDX org itself. **The graph-navigation half is empty.** That must be the core of the tool,
 not a veneer over a query engine — otherwise the honest recommendation to a user is "use
 sbom-utility".
+
+⚠ **This survey missed `safedep/xbom`, and a name search found it.** It has existed since mid-2025,
+with releases through 2026-01, and was found on **2026-09-17** only because `xbom` was being
+considered as this tool's name (ADR-0010). Nine days of the survey standing meant nothing here:
+looking for *viewers* did not surface a *generator*, even one holding the exact name and subject.
+It changes no conclusion — a generator does not occupy the navigation niche — but it is the second
+adjacent tool this survey learned about by accident rather than by sweeping, after `cdxi`. A
+landscape sweep should search the obvious **names**, not only the capability.
 
 ### Technology options
 
@@ -329,6 +338,10 @@ behaviour is detectable rather than assumed stable.
 - **`lsxbom` is free** — absent from `PATH`, MacPorts, `man -w`, and GitHub repository search (0
   results). Checked 2026-09-10, under the name the project carried then; `bomdive` was checked the
   same way on 2026-09-17 (ADR-0010).
+- **`xbom` is NOT free** — `safedep/xbom` (Apache-2.0, Go, releases to v0.0.3) installs that exact
+  command and generates BOMs. Measured 2026-09-17, which is why this tool is `bomdive` and not
+  `xbom`; `bill` was measured and rejected the same day, being taken on npm, PyPI and crates.io.
+  Trademarks, forges beyond GitHub and Codeberg, and domain registration were **not** checked.
 - **CycloneDX dependency graphs are DAGs with cycles in practice** — measured above, twice, and
   cross-checked with `jq` independently of the analysis script.
 - **The declared root is frequently not in the graph** — measured in both syft BOMs.
