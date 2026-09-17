@@ -1,0 +1,109 @@
+# Gates that must pass on every push, running the same commands as
+# .lefthook/pre-push/gates.sh where they can run: a CI that checks something else is a CI that
+# lets a local pass mean nothing.
+#
+# Two local gates are absent and cannot be added: check-adr-index.py and check-doc-links.py live
+# in the maintainer's portfolio workspace, one copy shared by many repositories, so they are not
+# in this tree. They stay a pre-push gate only. The schema validation of the fixtures is absent
+# for a different reason — it fetches the CycloneDX schemas — and runs in conformance.yml.
+#
+# Every action is pinned to a commit SHA, not a tag — a tag is mutable and a supply-chain tool
+# that trusts one is not making its own argument.
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (build toolchain)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # The BUILD version: the current line, never the floor. Building at the floor ships the
+          # least-patched runtime, which for a supply-chain tool would then be recorded in its own
+          # BOM. See docs/reference/quality-configuration.md.
+          go-version: '1.27.x'
+          check-latest: true
+      - run: go version
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then echo "$unformatted"; exit 1; fi
+      - run: go vet ./...
+      - run: go build ./...
+      - run: go test ./...
+      - name: coverage floor
+        run: ./scripts/check-coverage.sh
+
+  floor:
+    name: floor (the compatibility claim)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # Exactly the `go` directive in go.mod, so the claim "this is the oldest Go you need" is
+          # verified rather than aspirational.
+          go-version-file: go.mod
+      - run: go version
+      - run: go build ./...
+      - run: go test ./...
+      # No vulnerability scanning here on purpose: an older toolchain has older advisories by
+      # definition, which is a reason not to SHIP it, not a reason to stop supporting it.
+
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+      - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  repo-checks:
+    name: repo checkers (offline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: fixtures contain what the manifest claims
+        run: python3 testdata/verify.py
+      - name: BDD audience traceability, both directions
+        run: python3 scripts/check-audience-tags.py
+      - name: every evidence reference names a file that exists
+        run: python3 scripts/check-evidence-refs.py
+
+  reuse:
+    name: reuse lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
+
+  dependency-review:
+    name: dependency review
+    runs-on: ubuntu-latest
+    # Needs GitHub Advanced Security on a private repository and errors without it, so it
+    # self-activates when the repository goes public rather than waiting on someone to remember.
+    if: github.event_name == 'pull_request' && !github.event.repository.private
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          # The shipped binary links Apache-2.0, MIT and BSD-3 only. Copyleft arriving in a new
+          # dependency is a decision, not a detail, so it fails the PR and gets read.
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0, LGPL-3.0

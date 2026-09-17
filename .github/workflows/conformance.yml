@@ -1,0 +1,28 @@
+# The CycloneDX specification's own corpus: ~500 documents fetched from the spec repository.
+#
+# NOT on every push, deliberately. The script's own header says it needs the network, and a gate
+# that fails because a fetch failed teaches people to ignore gates. Weekly, and on demand.
+name: Conformance
+
+on:
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    name: specification corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+      - run: ./scripts/check-conformance.sh
+      # Also network-bound: it fetches each fixture's own CycloneDX schema, and fails loudly
+      # offline rather than skipping — so it belongs here and not in ci.yml.
+      - run: python3 testdata/validate-schema.py

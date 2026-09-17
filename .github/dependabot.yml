@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  # The actions above are SHA-pinned, so nothing but a commit here moves them. Dependabot is what
+  # tells you a pin has fallen behind; without it a pinned action is a frozen one.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

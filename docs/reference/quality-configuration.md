@@ -11,7 +11,24 @@ Single source of truth for quality settings. Where a value is declared in a file
 | **Build** | current toolchain | developer machine / CI | what binaries are actually built with |
 | **Inherited** | Go 1.25+ | `cyclonedx-go` v0.12.0+ | a floor the dependency forces, not one chosen |
 
-Recorded at bootstrap: `go.mod` floor `1.27.1`, build `go1.27.1`.
+Recorded at bootstrap: `go.mod` floor `1.27.1`, build `go1.27.1`. **The floor has moved twice
+since** — down to `1.25`, then up to `1.26.0` — so read `go.mod`, not this line; it is kept as the
+event, not as the current value. ⚠ It read as the current floor until 2026-09-17, when writing CI
+forced the question of which version each job should select.
+
+**Where each version is selected, and why it reads what it reads** (`.github/workflows/`):
+
+| Call site | Selects | Why |
+|---|---|---|
+| `ci.yml` job `test` | `go-version: '1.27.x'`, `check-latest: true` | the BUILD line: current, patched, what artifacts would be built with |
+| `ci.yml` job `floor` | `go-version-file: go.mod` | verifies the compatibility claim at exactly the declared floor |
+| `ci.yml` job `govulncheck` | `1.27.x` | scanning belongs on the build version; the floor has old advisories by definition |
+| `codeql.yml`, `conformance.yml` | `1.27.x` | analysis and the specification corpus run against what ships |
+
+A new Go major line arrives by a commit here, never by `latest`: patch releases within `1.27.x`
+still arrive, which is how a runtime fix reaches the build, but nothing changes what ships without
+a review. Nothing automates the major bump — dependency bots do not manage CI toolchain lines —
+so it is a periodic, deliberate act whose failure mode is silence.
 
 **Build with the current version, never the floor.** The floor states what a consumer needs;
 building at it ships the least-patched runtime — and for a supply-chain tool, publishing a
