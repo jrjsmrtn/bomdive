@@ -204,14 +204,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `runtime/pprof`, no new dependency, no effect on output — and profiles are written even when the
   command fails, which is when they are most wanted.
 
-### Performance
-
-- `Walk` was **O(n²)** on a deep dependency chain: path membership was a linear scan of a slice.
-  With a set it is **41× faster** — 115ms → 2.8ms over a 10k-component BOM with a 10k-deep spine.
-  Reproducible benchmarks (`BenchmarkLoad10k`, `BenchmarkWalk10k`) and a budget test now guard it.
-
-### Added
-
 - **`bomdive browse`** — the Finder-style column view. Each column lists the children of the
   selection to its left, so the chain of columns *is* the dependency path. Tab flips the whole view
   between dependencies and dependents; `/` filters a column; a BOM with no dependency graph opens on
@@ -269,6 +261,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `testdata/verify.py`, which asserts each fixture *contains* what its manifest claims, and
   `testdata/validate-schema.py`, which validates each against its own official CycloneDX
   schema across 1.4–1.7.
+
+### Performance
+
+- `Walk` was **O(n²)** on a deep dependency chain: path membership was a linear scan of a slice.
+  With a set it is **41× faster** — 115ms → 2.8ms over a 10k-component BOM with a 10k-deep spine.
+  Reproducible benchmarks (`BenchmarkLoad10k`, `BenchmarkWalk10k`) and a budget test now guard it.
 
 ### Notes
 
