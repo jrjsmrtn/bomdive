@@ -54,7 +54,7 @@ rather than correct. This is a decision, is documented in `--help`, and is fixtu
 ### Coverage is a correctness guarantee, not a flag
 
 `tree` reports reached / total on every invocation, in **both** the human rendering and
-`--output json`. A clean three-node tree for a nine-thousand-component BOM, with nothing saying
+`--json` (written `--output json` in this ADR until 2026-09-17: the flag shipped shorter, and the documentation said otherwise for nine days). A clean three-node tree for a nine-thousand-component BOM, with nothing saying
 most of it is not in the graph, is worse than `jq` — it is confidently wrong. This is not
 `--verbose` material.
 

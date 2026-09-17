@@ -43,7 +43,7 @@ with it; only this note and the finding below record what was checked under whic
 | Stakeholder | Role | Needs | Influence | Engagement |
 |---|---|---|---|---|
 | Supply-chain engineer at a terminal | Reads a BOM someone else generated | Answer "what is in here, and what pulled it in?" without a browser or a jq incantation | **High** (is the author) | Dogfooding — this is the development environment |
-| CI/pipeline author | Wires BOM inspection into a gate | Stable, parseable output; meaningful exit codes | Medium | Via `--output json` contract |
+| CI/pipeline author | Wires BOM inspection into a gate | Stable, parseable output; meaningful exit codes | Medium | Via the `--json` contract |
 | Auditor / reviewer | Spot-checks a released BOM | Faithful rendering; no silent omission | Medium | Via correctness guarantees, below |
 
 ### Secondary Stakeholders (Indirect Impact)
@@ -102,7 +102,7 @@ The workaround in practice is jq plus scrolling, or giving up and opening Depend
   `framework`, `device` and `firmware` in real files.
 - Synthetic roots when the BOM declares none (measured to be the common case — see Analysis).
 - A **coverage report**: what fraction of components the dependency graph actually reaches.
-- `--output json` for machine consumers.
+- `--json` for machine consumers.
 
 ⚠ **The `ls`/`tree` split is no longer symmetric, and POC-2 is why.** `ls` is the command that always
 works; `tree` is the one that pays off when a graph exists. The original framing had them as equals.

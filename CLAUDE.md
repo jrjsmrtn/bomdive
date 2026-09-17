@@ -112,7 +112,7 @@ node** — a recursive full-graph walk would have to be rewritten.
 These are guarantees, not niceties, and they are why this tool beats `jq`:
 
 - **Never render a partial graph as complete.** Coverage (reached / total) is reported by `tree`,
-  in both the human and the `--output json` surface.
+  in both the human and the `--json` surface.
 - **A BOM with no `dependencies` is a normal document, not a broken one.** Both surfaces must
   distinguish "this BOM declares no graph" from "this tool found no graph".
 - **A synthetic root is labelled as synthetic.**

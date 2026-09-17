@@ -56,7 +56,7 @@ explorer: "dive" already reads as *explore this interactively in a terminal*, wh
 **Two costs, accepted knowingly:**
 
 - **The name advertises the interactive half only.** `ls` is the universal command
-  (`CLAUDE.md`), with a scriptable `--output json` surface, and "dive" says nothing about it.
+  (`CLAUDE.md`), with a scriptable `--json` surface, and "dive" says nothing about it.
   Keeping `bomdive ls` and `bomdive tree` as subcommands puts that half in every example. The
   alternative shortlisted name, `cdxls`, had the mirror flaw: it hides the browser.
 - **`bom` is broader than what the tool reads.** It suggests any bill of materials, including

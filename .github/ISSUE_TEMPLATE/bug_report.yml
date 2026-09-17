@@ -1,0 +1,49 @@
+name: Bug report
+description: Something bomdive read, rendered or navigated wrongly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never attach a BOM you cannot publish.** This tool reads other people's documents, and
+        most defects found so far came from a document doing something the specification permits.
+        A redacted `bomdive ls --json` excerpt, or a minimal hand-written document that reproduces
+        it, is what helps most.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `bomdive --version`
+      placeholder: bomdive version v0.1.0-5-ga90bd77
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      render: shell
+      placeholder: bomdive tree --json app.cdx.json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: document
+    attributes:
+      label: The document, or its shape
+      description: >
+        A minimal reproducer, or the shape: component count, whether `dependencies` is absent or
+        empty, spec version, generator, and whether the declared root appears in `components`.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface
+      options: [ls, tree, browse, "--json output", more than one]
+    validations:
+      required: true
