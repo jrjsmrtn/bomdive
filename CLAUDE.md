@@ -35,7 +35,8 @@ Tier-specific artifacts:
 **Deliberately not adopted at t1** — decisions, not oversights: Diátaxis `docs/` tree (nothing to
 sort yet — though `docs/reference/` has grown organically), C4 model (a single binary reading a
 file does not earn one), sprint cadence (one contributor, no deadline), `SECURITY.md` (Private
-profile), `LICENSE`, `.github/` (no GitHub remote).
+profile), `LICENSE`, `.github/` — a private GitHub remote exists since 2026-09-17, but no
+workflow is wired, and CI belongs with the Private → Public decision rather than before it.
 
 ⚠ **A roadmap was adopted at t1 anyway**, which `bootstrap-project` lists as a t2 artifact. Taken
 deliberately: real phases existed and needed recording, and adopting a whole tier to get one
@@ -57,8 +58,21 @@ Promotion triggers being watched:
 
 ## Status
 
-Bootstrapped 2026-09-10. No code yet. The SPARK analysis is complete and its measurements are
-reproducible; see the evidence directory rather than trusting any number quoted in prose.
+Bootstrapped 2026-09-10 as `lsxbom`, and **renamed to `bomdive` on 2026-09-17**
+([ADR-0010](docs/adr/0010-rename-the-tool-to-bomdive.md)): `xbom` was measured unavailable, since
+`safedep/xbom` installs that command and generates BOMs, which this tool deliberately does not.
+
+Phases 1, 2 and 2b are implemented — `ls`, `tree` and `browse`, the column view, the OBOM category
+axis, and the vulnerability axis over one document, several named documents, or a named directory.
+Phase 3 (corpus questions) is not started, and Private → Public is open. **Read
+`docs/roadmap/roadmap.md` for what is done**; this paragraph goes stale and the checkboxes do not.
+
+**Remotes exist since 2026-09-17** — a private-server `origin` and a **private** GitHub repository,
+both with `develop` and `main`; URLs are in `CLAUDE.local.md`. The project was local-only before
+that, which is why nothing recorded a remote for it.
+
+The SPARK analysis' measurements are reproducible: see the evidence directory rather than trusting
+any number quoted in prose.
 
 ## What this is, and what it is not
 

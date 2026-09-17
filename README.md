@@ -3,9 +3,13 @@
 Read a CycloneDX xBOM — SBOM, OBOM, HBOM — at the terminal, with the muscle memory of `ls(1)`
 and `tree(1)`, plus a Finder-style column view. **JSON and XML, spec 1.0–1.7.**
 
-> **Status**: bootstrapped 2026-09-10, no code yet. See
-> [`docs/inception/spark-analysis.md`](docs/inception/spark-analysis.md) for the design and the
-> measurements behind it. This file quotes no counts or percentages — run the evidence scripts.
+> **Status**: bootstrapped 2026-09-10 as `lsxbom`, renamed `bomdive` on 2026-09-17
+> ([ADR-0010](docs/adr/0010-rename-the-tool-to-bomdive.md)). `ls`, `tree` and `browse` work:
+> Phases 1, 2 and 2b are done, Phase 3 is not started, and the project is private and unpublished
+> — see [`docs/roadmap/roadmap.md`](docs/roadmap/roadmap.md), which is the source of what is
+> implemented. Design and the measurements behind it:
+> [`docs/inception/spark-analysis.md`](docs/inception/spark-analysis.md). This file quotes no counts
+> or percentages — run the evidence scripts.
 
 ## Why
 
@@ -25,9 +29,12 @@ actually bring to a BOM: **what pulled this in?**
 - Not a corpus database. Cross-BOM questions are answered today by the `duckdb` and `lbug` CLIs
   against the files on disk.
 
-A Finder-style **column view** is planned as a second renderer over the same model
-([ADR-0006](docs/adr/0006-column-view-as-a-first-class-renderer.md)); `ls` and `tree` stay, because
-pipelines need non-interactive output.
+A Finder-style **column view** is the second renderer over the same model
+([ADR-0006](docs/adr/0006-column-view-as-a-first-class-renderer.md)), reached with `bomdive browse`.
+It carries a vulnerability axis for the VEX records a CycloneDX document may hold, and follows
+BOM-Links between the documents — or the one directory — you name
+([ADR-0009](docs/adr/0009-browse-a-standalone-vex.md)). `ls` and `tree` stay, because pipelines need
+non-interactive output.
 
 ## Design in one paragraph
 
