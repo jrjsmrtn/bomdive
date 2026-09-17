@@ -96,7 +96,7 @@ AI-assisted contributions are permitted and need no disclosure; you sign off, an
 to explain every line under review.
 
 Security reports: [`SECURITY.md`](SECURITY.md) — use GitHub's private vulnerability reporting, not
-a public issue.
+a public issue. Conduct: [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 ## License
 

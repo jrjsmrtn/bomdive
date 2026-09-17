@@ -15,9 +15,20 @@ If that is unavailable to you, email **jrjsmrtn@gmail.com** with `bomdive securi
 Please do not open a public issue for a vulnerability until it is fixed and released.
 
 **What to expect**: an acknowledgement within 7 days, an assessment within 14, and a fix released
-as soon as one exists. This is a single-maintainer project with no service-level agreement — those
-are intentions, not guarantees. If you have had no reply in 14 days, assume the mail went astray
-and try the private advisory route.
+as soon as one exists. Those are intentions, not guarantees.
+
+**What a single maintainer means here**, said plainly so you can plan around it:
+
+- **There is no security team and no second contact.** One person reads the advisory, and if that
+  person is on holiday, nothing moves until they are back. If you have had no reply in 14 days,
+  assume the message went astray: try the other route above, or open a public issue that asks for
+  contact **without describing the vulnerability**.
+- **No embargo list, no pre-notification of downstreams.** There is nobody to notify and no
+  infrastructure to do it with. A fix lands in a release, and the advisory is published with it.
+- **A CVE can still be issued.** GitHub is a CNA, so a private advisory here can request one — ask
+  if you want it, and say what name and affiliation you want in the credit.
+- **If you need a guaranteed response time, this is not the project to depend on for that.** It is
+  a tool with one unpaid maintainer, and pretending otherwise would be the dishonest answer.
 
 Coordinated disclosure is preferred. Tell us the timeline you intend to publish on, and if a fix
 is going to take longer than that, we will say so rather than go quiet.

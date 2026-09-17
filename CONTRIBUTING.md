@@ -8,6 +8,9 @@ SPDX-License-Identifier: Apache-2.0
 Thanks for considering it. This is a small project with one maintainer, so the fastest path is
 usually an issue before a pull request — not ceremony, just so nobody builds something twice.
 
+Participating here means keeping to the [Code of Conduct](CODE_OF_CONDUCT.md), which is short and
+says who reads a report.
+
 ## Inbound terms: the Developer Certificate of Origin
 
 Contributions arrive under the **[DCO 1.1](https://developercertificate.org/)**, the same licence

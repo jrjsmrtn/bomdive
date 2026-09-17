@@ -1,85 +1,55 @@
+<!--
+SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+SPDX-License-Identifier: Apache-2.0
+-->
 
-# Contributor Covenant Code of Conduct
+# Code of Conduct
 
-## Our Pledge
+**bomdive has one maintainer.** This document says what is expected, who to tell, and what will
+happen — at the scale this project actually is, rather than describing a committee that does not
+exist.
 
-We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
+## What is expected
 
-We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
+Be civil and be specific. Disagree about the code, the measurements or the design as sharply as
+you like: *"this coverage number is wrong and here is the document that proves it"* is welcome, and
+the evidence scripts exist so that arguments can be settled by re-running something rather than by
+who insists hardest.
 
-## Our Standards
+Not welcome, and the list is short because it is not the interesting part: harassment of any kind,
+personal or demographic attacks, sexual attention or imagery, deliberate intimidation, publishing
+someone's private information, and persistent disruption after being asked to stop.
 
-Examples of behavior that contributes to a positive environment for our community include:
+The bar applies to issues, pull requests, commit messages and code review — every space this
+project occupies, and any place you are speaking for it.
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience
-* Focusing on what is best not just for us as individuals, but for the overall community
+## Reporting
 
-Examples of unacceptable behavior include:
+Email **jrjsmrtn@gmail.com**. One person reads it: there is no committee, no rota, no separate
+appeals body, and no promise of a reply within any particular window. What you get is a reading by
+someone who cares about being fair, and discretion about your identity.
 
-* The use of sexualized language or imagery, and sexual attention or advances of any kind
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or email address, without their explicit permission
-* Other conduct which could reasonably be considered inappropriate in a professional setting
+**If your report concerns the maintainer**, there is no internal route that would not be the
+subject judging himself. Use
+[GitHub's own reporting](https://docs.github.com/en/communities/maintaining-your-safety-on-github/reporting-abuse-or-spam),
+which is independent of this project.
 
-## Enforcement Responsibilities
+## What will happen
 
-Community leaders are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful.
+Proportionate to what happened, and stated honestly for a project of this size: usually a private
+word asking for a change in behaviour; where that fails or the conduct is severe, having comments
+or contributions removed, and being blocked from the repository. There is no graduated ladder of
+committees behind that, and pretending otherwise would be the dishonest part.
 
-Community leaders have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct, and will communicate reasons for moderation decisions when appropriate.
+## Attribution, and why this is not the Contributor Covenant
 
-## Scope
-
-This Code of Conduct applies within all community spaces, and also applies when an individual is officially representing the community in public spaces. Examples of representing our community include using an official e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event.
-
-## Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at jrjsmrtn@gmail.com. All complaints will be reviewed and investigated promptly and fairly.
-
-All community leaders are obligated to respect the privacy and security of the reporter of any incident.
-
-## Enforcement Guidelines
-
-Community leaders will follow these Community Impact Guidelines in determining the consequences for any action they deem in violation of this Code of Conduct:
-
-### 1. Correction
-
-**Community Impact**: Use of inappropriate language or other behavior deemed unprofessional or unwelcome in the community.
-
-**Consequence**: A private, written warning from community leaders, providing clarity around the nature of the violation and an explanation of why the behavior was inappropriate. A public apology may be requested.
-
-### 2. Warning
-
-**Community Impact**: A violation through a single incident or series of actions.
-
-**Consequence**: A warning with consequences for continued behavior. No interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, for a specified period of time. This includes avoiding interactions in community spaces as well as external channels like social media. Violating these terms may lead to a temporary or permanent ban.
-
-### 3. Temporary Ban
-
-**Community Impact**: A serious violation of community standards, including sustained inappropriate behavior.
-
-**Consequence**: A temporary ban from any sort of interaction or public communication with the community for a specified period of time. No public or private interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, is allowed during this period. Violating these terms may lead to a permanent ban.
-
-### 4. Permanent Ban
-
-**Community Impact**: Demonstrating a pattern of violation of community standards, including sustained inappropriate behavior, harassment of an individual, or aggression toward or disparagement of classes of individuals.
-
-**Consequence**: A permanent ban from any sort of public interaction within the community.
-
-## Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 2.1, available at [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
-
-Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcement ladder][Mozilla CoC].
-
-For answers to common questions about this code of conduct, see the FAQ at [https://www.contributor-covenant.org/faq][FAQ]. Translations are available at [https://www.contributor-covenant.org/translations][translations].
-
-[homepage]: https://www.contributor-covenant.org
-[v2.1]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
-[Mozilla CoC]: https://github.com/mozilla/diversity
-[FAQ]: https://www.contributor-covenant.org/faq
-[translations]: https://www.contributor-covenant.org/translations
-
+The expectations above are the ones the
+[Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) sets,
+and the enforcement thinking is borrowed from it and from
+[Mozilla's enforcement ladder](https://github.com/mozilla/diversity). This document is written
+rather than copied for a specific reason: on 2026-09-17 the Covenant's own site stated a licence
+for its *source* (the Hippocratic License 3.0, © Organization for Ethical Source) and none for the
+*text*, and this repository is REUSE-compliant — every file carries a licence it can stand behind.
+Vendoring 85 lines under a guessed licence is not something a supply-chain tool should do while
+arguing that provenance matters. If the Covenant states terms for the text, adopting it verbatim
+becomes the better answer.

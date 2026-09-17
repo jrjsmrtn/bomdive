@@ -17,6 +17,11 @@ jobs:
   analyze:
     name: analyze (go)
     runs-on: ubuntu-latest
+    # Code scanning UPLOAD needs GitHub Advanced Security on a private repository: the first run
+    # on 2026-09-17 analysed 21 of 38 Go files successfully and then failed with "Resource not
+    # accessible by integration" when posting the SARIF. Gated so it self-activates at the public
+    # flip rather than failing every push until then.
+    if: ${{ !github.event.repository.private }}
     permissions:
       security-events: write
       contents: read
