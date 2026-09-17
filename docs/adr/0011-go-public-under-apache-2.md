@@ -9,10 +9,9 @@ Date: 2026-09-17
 
 ## Status
 
-**Proposed** on 2026-09-17. The flip itself is the maintainer's, and `CLAUDE.md` makes it so:
+**Accepted**, and carried out on 2026-09-17: the maintainer flipped the repository to public.
 Private → Public is an axis of its own, running through the `public-release` gate and needing this
-record. Nothing in this ADR makes the repository public; it states the decision being asked for
-and what has been done to earn it.
+record, which was written and read before the flip rather than after it.
 
 Supersedes the *Private → Public* promotion trigger in `CLAUDE.md`, which named the gate and
 deferred the argument. Depends on nothing; [ADR-0010](0010-rename-the-tool-to-bomdive.md) settled
@@ -55,6 +54,7 @@ Settled in the preparation, each with its own record:
 | Work organization | **tracker stays thin** | the roadmap already says what is open; a seeded tracker is surface to keep in sync, and there is one contributor |
 | Branch protection | **required status checks on `main`, no required reviews** | CI must pass before `main` moves; requiring a review would mean approving one's own PR or bypassing as admin, and protection routinely bypassed teaches nothing |
 | Participation | **Issues only** | the issue forms are written and scope-checked; Discussions with no traffic reads as abandoned, and can open the day a question arrives that is not a defect |
+| Published branches | **`develop` and `main`; `feature/*` stays local** | publishing only `main` was considered and declined: it would delay every commit to release cadence, leave CI and CodeQL blind until after a release, give contributors no branch to target against `CONTRIBUTING.md`, and make the repository look dormant between tags — while hiding nothing, since `main` is fast-forwarded and ends up carrying the same commits |
 
 **What stays private, and must:** the BOM corpora. `.corpora-cache*` is git-ignored, every
 measurement script takes the corpus directory as an argument and emits counts rather than
@@ -106,7 +106,33 @@ assuming a clean run.
 Branch protection is the fourth: on a private repository it needs a paid plan, so it is applied
 after the flip, not before.
 
+## What the flip taught, measured immediately after
+
+- **GitHub reads the community files from the DEFAULT branch.** Every one of them —
+  `LICENSE` included — had been committed on `develop`, so the first public view of the repository
+  reported `health: 28%` and **no licence at all**, which reads as *all rights reserved*: the exact
+  opposite of publishing under Apache-2.0. Fast-forwarding `main` fixed it to 100%. This is a
+  consequence of ADR-0002's "`main` advances at releases" that nothing had anticipated, and it
+  means **the default branch must carry the licence and the workflows before the flip**, not at the
+  next release. A tag on the old `main` would also have run no release workflow, because the file
+  did not exist at that commit.
+- **The gated controls work.** CodeQL and Scorecard both reported `success` on the first public
+  push, having been `skipped` while private.
+- **OpenSSF Scorecard: 6.4/10** on the first run. Ten out of ten for License, Security-Policy,
+  Token-Permissions, SAST, Vulnerabilities, Dangerous-Workflow, Binary-Artifacts and
+  Dependency-Update-Tool. `Pinned-Dependencies` scored **8**, correctly: CI ran
+  `govulncheck@latest`, an unpinned tool reading this code — now pinned. `Branch-Protection` scored
+  0 because it was measured minutes before protection was applied. `Code-Review` (one maintainer),
+  `Fuzzing` and `CII-Best-Practices` are 0 and will stay so until each is addressed on its own
+  terms; `Signed-Releases` and `Packaging` are not applicable until a release ships artifacts.
+- **Branch protection**, applied once public: five required status checks on `main`, no required
+  reviews, no force pushes, no deletions, admins not enforced so the maintainer can still
+  fast-forward at a release.
+- **Dependabot opened its first pull request within minutes** (tcell 2.8.1 → 2.13.10), which is the
+  dependency-update tool doing exactly what it is for, and the first PR this project has ever had.
+
 ## Open
 
-- **The flip itself**, which is the maintainer's to make, and this record exists to be read first.
-- Repository description and topics — cosmetic, and done with the flip.
+- The OpenSSF Best Practices badge, and fuzzing — both recorded in the roadmap rather than here.
+- Whether `Code-Review` is worth addressing at all with one maintainer, or is a check to accept a
+  zero on.

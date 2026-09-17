@@ -12,7 +12,8 @@ columns.
   `tview` for the column view, `godog` for BDD)
 - **License**: Not set (Private profile, unpublished)
 - **Tier**: t1
-- **Distribution profile**: Private (ships-artifacts: **yes** since 2026-09-17 —
+- **Distribution profile**: **Public since 2026-09-17**
+  ([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)) (ships-artifacts: **yes** —
   [ADR-0012](docs/adr/0012-ship-signed-release-artifacts.md); the first signed release is the
   next tag, since the pipeline cannot run while the repository is private)
 

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The repository is public**, under Apache-2.0
+  ([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)). `develop` and `main` are both published;
+  `feature/*` stays local. Branch protection on `main`: five required status checks, no required
+  reviews. CodeQL, Scorecard and dependency review self-activated at the flip, as designed.
+- **`govulncheck` is pinned** to v1.8.0 in CI instead of `@latest`. OpenSSF Scorecard scored
+  `Pinned-Dependencies` 8/10 on the first public run and was right to: an unpinned tool that
+  downloads itself and then reads this code is the shape this project argues against.
+
 ### Added
 
 - **Signed release artifacts on every `v*` tag** ([ADR-0012](docs/adr/0012-ship-signed-release-artifacts.md)):

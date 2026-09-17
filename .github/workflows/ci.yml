@@ -72,7 +72,10 @@ jobs:
         with:
           go-version: '1.27.x'
           check-latest: true
-      - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      # Pinned, not @latest: an unpinned tool that downloads itself and then reads your code is
+      # precisely the shape this project argues against, and OpenSSF Scorecard scored
+      # Pinned-Dependencies 8/10 for it on the first public run. Dependabot moves the pin.
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 
   repo-checks:
     name: repo checkers (offline)
