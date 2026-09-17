@@ -133,7 +133,11 @@ Follows the [AI-Assisted Project Orchestration patterns](https://github.com/jrjs
 - **Versioning**: semantic, patch-level during development (0.1.x)
 - **Commits**: Conventional Commits. A commit message MUST NOT claim more than the commit contains
   — re-read it against `git diff --cached`, not against intent
-- **Git workflow**: gitflow (`main`/`develop`), matching the `ansible-bom` sibling
+- **Git workflow**: gitflow (`main`/`develop`/`feature/*`), matching the `ansible-bom` sibling
+  ([ADR-0002](docs/adr/0002-adopt-development-best-practices.md)). Work lands on `develop`;
+  **`main` advances at releases**, which is where the tag belongs. Fast-forwarding `main`
+  between releases is not part of the workflow — it happened three times by hand on
+  2026-09-17, which is why this now says so
 - **Testing**: table-driven Go tests over committed BOM fixtures, including the **cyclic** ones,
   plus **BDD with Gherkin** (godog) for the user-facing contract ([ADR-0008](docs/adr/0008-adopt-bdd-and-align-audiences.md)).
   ⚠ BDD describes the contract; **correctness is proven by mutation testing over the unit tests** —
