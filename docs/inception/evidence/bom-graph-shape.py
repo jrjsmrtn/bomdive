@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Measure the graph shape of a CycloneDX BOM: is it a tree, a DAG, or flat?"""
 import json, sys
 from collections import defaultdict, deque

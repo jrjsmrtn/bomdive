@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Generate the bomdive fixture corpus.
 
 Every fixture isolates ONE shape the traversal core must handle, and each is small

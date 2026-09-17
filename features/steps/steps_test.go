@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Package steps holds the godog step definitions.
 //
 // The steps drive the CLI through cli.Run with in-memory streams — the same path

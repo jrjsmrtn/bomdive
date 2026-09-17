@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Assert every fixture actually contains the shape its manifest claims.
 
 WHY THIS EXISTS. A fixture named `cycle-direct` that contains no cycle tests nothing,

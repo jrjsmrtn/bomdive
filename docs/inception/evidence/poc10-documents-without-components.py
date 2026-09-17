@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """How many BOMs carry no `components` at all, and what do they carry instead?
 
 WHY. bomdive identified every such document as an "SBOM" and drew an empty component

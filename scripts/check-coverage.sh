@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Enforce the coverage floor ADR-0002 states.
 #
 # WHY THIS EXISTS. The ADR promised ">80% for the traversal and rendering

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Every BDD scenario must trace to an audience the registry defines.
 
 WHY THIS EXISTS. The audience registry says traceability is "enforced". This

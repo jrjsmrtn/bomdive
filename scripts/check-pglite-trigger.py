@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Has the PGlite+AGE watch trigger fired?
 
 Condition 1 of docs/roadmap/watched-pglite-age.md: a Go PGlite binding that is

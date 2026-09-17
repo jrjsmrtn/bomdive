@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """How many BOMs declare a root that drives the graph but is absent from `components`?
 
 WHY. metadata.component is the SUBJECT of a document, not a member of its inventory, so it

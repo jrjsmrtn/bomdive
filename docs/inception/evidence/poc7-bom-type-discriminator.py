@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Which kind of xBOM is this, and can the tool tell without guessing?
 
 bomdive must decide whether `tree` is even meaningful before it renders anything, and

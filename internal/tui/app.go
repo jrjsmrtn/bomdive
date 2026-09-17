@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Package tui draws the Miller-column view.
 //
 // It is a THIN painting layer. Every decision — what a column contains, where the

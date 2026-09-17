@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Package columns is the Miller-column view's model: the column chain, the cursor,
 // the direction mode and the detail pane.
 //

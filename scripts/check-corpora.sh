@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Run bomdive over BOMs written by other people, by other tools, for other reasons.
 #
 # WHY, SEPARATELY FROM check-conformance.sh. That script asks whether we honour the

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Pre-push gates. Each check FAILS on a missing tool rather than passing quietly —
 # a gate that silently skips is worse than no gate, because it reports success.
 set -uo pipefail

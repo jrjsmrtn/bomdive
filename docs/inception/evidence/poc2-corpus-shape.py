@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """POC-2: measure OBOM/HBOM/image-SBOM graph shape.
 
 Usage: poc2-corpus-shape.py <out.json> <corpus-dir>

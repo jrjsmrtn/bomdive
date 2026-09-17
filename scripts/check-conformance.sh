@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Run bomdive against the CycloneDX specification's own conformance corpus.
 #
 # The spec repository carries tools/src/test/resources/<version>/ with 359

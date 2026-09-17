@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Every evidence file the docs name must exist, and every evidence file must be named.
 
 WHY THIS EXISTS. CLAUDE.md promises "every quantitative claim has a re-runnable script in

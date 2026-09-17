@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Package bom loads a CycloneDX document and exposes it as a navigable graph.
 //
 // The traversal API is deliberately ONE LEVEL AT A TIME from an arbitrary node

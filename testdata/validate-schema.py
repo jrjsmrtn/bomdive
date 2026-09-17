@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Validate every fixture against the OFFICIAL CycloneDX JSON schema for its own specVersion.
 
 WHY NOT cdx-validate. The installed cdx-validate refuses spec 1.4 and 1.5 outright —

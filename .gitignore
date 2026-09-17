@@ -24,6 +24,8 @@ go.work.sum
 
 # BOM scan artifacts (generated; commit only a deliberate release BOM)
 *.cdx.json
+# cdxgen's default output name, which no *.cdx.* pattern catches:
+/bom.json
 *.cdx.xml
 *.spdx.json
 !testdata/**/*.cdx.json
@@ -46,3 +48,4 @@ testdata/.schema-cache/
 .conformance-cache/
 .corpora-cache/
 .corpora-cache-vex/
+*.local.*
