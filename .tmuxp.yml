@@ -1,4 +1,4 @@
-session_name: lsxbom
+session_name: bomdive
 
 windows:
   - window_name: shell
@@ -10,23 +10,18 @@ windows:
 
   - window_name: code
     layout: even-horizontal
-    focus: true
     options:
       automatic-rename: false
     panes:
       - $EDITOR .
 
   - window_name: chat
-    layout: main-vertical
+    layout: main-horizontal
+    focus: true
     options:
       automatic-rename: false
+      main-pane-height: "66%"
     panes:
       - jam chat
+      - blank
 
-  - window_name: commit
-    layout: main-vertical
-    options:
-      automatic-rename: false
-    panes:
-      - >
-        [ -d .git ] && [ -n "$(command -v lazygit)" ] && lazygit || git status
