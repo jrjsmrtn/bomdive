@@ -4,7 +4,9 @@ Date: 2026-09-10
 
 ## Status
 
-Accepted
+Accepted. **Amended 2026-09-17**: section 3 now says what moves each branch — see
+[ADR-0010](0010-rename-the-tool-to-bomdive.md) for the rename that produced the commits which
+exposed the gap.
 
 ## Context
 
@@ -43,6 +45,13 @@ and `tree` are proven against the full fixture corpus and the CLI surface has st
 
 Gitflow — `main`, `develop`, `feature/*` — matching the `ansible-bom` sibling.
 Conventional Commits.
+
+**What moves each branch** — amended 2026-09-17, because naming the branches settled nothing:
+work lands on `develop`, and **`main` advances at a release**, which is where the annotated tag
+goes. Fast-forwarding `main` between releases is not part of the workflow. It was done three times
+by hand on 2026-09-17, once per documentation commit, until the pattern was noticed — and the
+suggestion that followed, to flatten the two branches into one, was **refused**: gitflow is this
+ADR's decision, and one busy afternoon is not evidence against it.
 
 **A commit message MUST NOT claim more than the commit contains.** Re-read it against
 `git diff --cached`, not against intent. The risk is highest when the message is generated,
