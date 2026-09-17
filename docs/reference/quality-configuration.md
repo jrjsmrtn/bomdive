@@ -145,7 +145,7 @@ and the mutations as the actual test of the tests.
 ## Conformance: testing against documents we did not write
 
 Every committed fixture is **synthetic** — deliberately, so each isolates one shape. That leaves a
-blind spot: nothing tested lsxbom against a BOM somebody else authored.
+blind spot: nothing tested bomdive against a BOM somebody else authored.
 
 The CycloneDX specification repository carries its own conformance corpus at
 `tools/src/test/resources/<version>/` — **359 `valid-*.json` and 141 `invalid-*.json`**,
@@ -163,7 +163,7 @@ Apache-2.0. A *negative* corpus is the valuable half, because it exercises the r
 | `valid-*` | **MUST parse.** A viewer that cannot open a conformant BOM is broken |
 | `invalid-*` | **Not required to be rejected** — reported, never gated |
 
-lsxbom is a viewer, not a validator; `cdx-validate` and `sbom-utility` own that. Refusing to show a
+bomdive is a viewer, not a validator; `cdx-validate` and `sbom-utility` own that. Refusing to show a
 slightly-malformed document would be unhelpful, the way `ls` still lists a directory containing a
 corrupt entry. What would be dishonest is *claiming* a document is valid, and we never do.
 
@@ -171,14 +171,14 @@ corrupt entry. What would be dishonest is *claiming* a document is valid, and we
 spec itself calls valid — fails because `cyclonedx-go` v0.12.0 cannot decode
 `declarations.evidence[].data[].classification`. Reproduced against the library directly, so it is
 not ours; related open issue **CycloneDX/cyclonedx-go#275**. Note the *shape* of the failure: the
-whole BOM is rejected over a section lsxbom never reads.
+whole BOM is rejected over a section bomdive never reads.
 
 ⚠ **The known-failure allowlist names a cause per entry**, and cannot absorb our own regressions:
 planting a parser break made 34 documents fail as **unexplained** and the check exited 1.
 
 ## Real-world corpora: surviving documents we did not write
 
-`scripts/check-corpora.sh` runs lsxbom over BOMs written by other people, by other tools, for other
+`scripts/check-corpora.sh` runs bomdive over BOMs written by other people, by other tools, for other
 reasons. It asks a **different question** from the conformance check: that one asks whether we
 honour the specification, this one whether we survive reality.
 
@@ -202,7 +202,7 @@ not passing vacuously.
 and `%` — is reported as `EMPTY FILE — a fetch failure, not a parse failure`, and fails the run.
 
 ⚠ **Four bugs in this script, all of the same kind: I assumed what the corpus was instead of
-checking.** Each is recorded because each produced a *confident wrong answer* about lsxbom.
+checking.** Each is recorded because each produced a *confident wrong answer* about bomdive.
 
 | Symptom | Actual cause |
 |---|---|
@@ -227,7 +227,7 @@ deep chain — surfaced only by accident. A profiler would have said so in one c
 **On a real BOM**, since the interesting inputs are real files:
 
 ```bash
-lsxbom tree --cpuprofile cpu.prof --memprofile mem.prof bom.cdx.json
+bomdive tree --cpuprofile cpu.prof --memprofile mem.prof bom.cdx.json
 go tool pprof -top -nodecount=15 cpu.prof
 go tool pprof -http=: cpu.prof          # flame graph in a browser
 ```

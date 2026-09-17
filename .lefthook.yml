@@ -1,4 +1,4 @@
-# Two-stage gates for lsxbom. Install with: lefthook install
+# Two-stage gates for bomdive. Install with: lefthook install
 #
 # PRE-PUSH USES `scripts:`, NOT `commands:`, DELIBERATELY.
 # lefthook derives a pre-push file set from `@{push}`, which git resolves per *branch*,

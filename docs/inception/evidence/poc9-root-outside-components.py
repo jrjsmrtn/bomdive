@@ -2,7 +2,7 @@
 """How many BOMs declare a root that drives the graph but is absent from `components`?
 
 WHY. metadata.component is the SUBJECT of a document, not a member of its inventory, so it
-is routinely absent from `components` while still driving `dependencies`. lsxbom's Node()
+is routinely absent from `components` while still driving `dependencies`. bomdive's Node()
 synthesised such a root (POC-8) but resolve() read the component map directly, so every
 direct dependency of that root reported NO dependents. This measures the reach.
 

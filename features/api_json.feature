@@ -1,6 +1,6 @@
 @audience:A5
 Feature: Machine-readable output
-  As an SBOM toolchain consuming lsxbom in a pipeline
+  As an SBOM toolchain consuming bomdive in a pipeline
   I want the same caveats the human surface carries
   So that I cannot mistake a sparse graph for a complete one
 

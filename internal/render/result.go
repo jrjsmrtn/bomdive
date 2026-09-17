@@ -7,7 +7,7 @@
 // handed rather than something it must remember to fetch.
 package render
 
-import "github.com/jrjsmrtn/lsxbom/internal/bom"
+import "github.com/jrjsmrtn/bomdive/internal/bom"
 
 // Entry is one line of output.
 type Entry struct {
@@ -122,7 +122,7 @@ func entryOf(g *bom.Graph, n bom.Node) Entry {
 // mandatory caveats rather than assembling them by hand.
 //
 // The graph-state note is attached HERE, not per command. It used to be written
-// out by the tree renderer alone, so `lsxbom ls` and the column view printed a bare
+// out by the tree renderer alone, so `bomdive ls` and the column view printed a bare
 // 0% with nothing to distinguish "the document says there are no relations" from
 // "the document says nothing" from "relations exist and miss most components".
 // Attaching it at construction is the same argument that put Coverage in this type:

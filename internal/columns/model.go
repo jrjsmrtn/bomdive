@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 // Direction is which way the whole view faces (ADR-0007).

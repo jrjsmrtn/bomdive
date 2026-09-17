@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-lsxbom must read CycloneDX JSON, walk a dependency DAG of ~10⁴ nodes, and render it at a terminal.
+bomdive must read CycloneDX JSON, walk a dependency DAG of ~10⁴ nodes, and render it at a terminal.
 Requirements:
 
 - **A single self-contained binary** — the tool is used over ssh and in pipelines.

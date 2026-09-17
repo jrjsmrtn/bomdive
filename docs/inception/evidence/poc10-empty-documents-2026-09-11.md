@@ -67,7 +67,7 @@ OBOM. `TestRootTypeOutranksTheVEXRule` pins that ordering in both directions.
 ## What is deliberately NOT done
 
 Navigating vulnerabilities or services. The SPARK analysis puts vulnerability *lookup* out of scope
-and nothing here changes that — `lsxbom` still lists components only. What changed is that it now
+and nothing here changes that — `bomdive` still lists components only. What changed is that it now
 **says so**: an empty component list is explained by naming what the document carries instead,
 which is the difference between *"this tool does not cover that"* and *"this tool is broken"*.
 
@@ -94,7 +94,7 @@ any mismatch.
 
 | kind | payload, with no components | evidence |
 |---|---|---|
-| **attestation** | `declarations` only — CycloneDX Attestations | **one** sample: the specification's own `valid-attestation-1.6.json`. lsxbom **cannot load it** — `cyclonedx-go` fails on `declarations.evidence[].data[].classification` (CycloneDX/cyclonedx-go#275) — so the committed fixture avoids that field |
+| **attestation** | `declarations` only — CycloneDX Attestations | **one** sample: the specification's own `valid-attestation-1.6.json`. bomdive **cannot load it** — `cyclonedx-go` fails on `declarations.evidence[].data[].classification` (CycloneDX/cyclonedx-go#275) — so the committed fixture avoids that field |
 | **definitions** | `definitions` only — standards others attest against | **none** in any corpus, the specification's suite included. Recognised from the schema alone |
 
 Both say `not a bill of materials` on the first line. When a document carries more than one of
@@ -106,5 +106,5 @@ these payloads, the best-evidenced reading wins: VEX, then attestation, then def
 scripts/check-corpora.sh                                                   # populate the cache
 python3 docs/inception/evidence/poc10-documents-without-components.py      # the table above
 python3 docs/inception/evidence/poc10-documents-without-components.py .corpora-cache \
-    --check-labels ~/.local/bin/lsxbom                                   # 25 of 25, or exit 1
+    --check-labels ~/.local/bin/bomdive                                   # 25 of 25, or exit 1
 ```

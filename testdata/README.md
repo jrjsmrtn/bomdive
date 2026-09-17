@@ -40,7 +40,7 @@ The installed `cdx-validate` refuses two of the versions in this corpus:
 Unsupported CycloneDX specVersion '1.4'. Supported versions are 1.6, 1.7, 2.0.
 ```
 
-`cyclonedx-go` covers **1.0–1.7**, so lsxbom must handle versions that validator will not check.
+`cyclonedx-go` covers **1.0–1.7**, so bomdive must handle versions that validator will not check.
 `validate-schema.py` fetches the official schema for each fixture's own `specVersion` from the
 CycloneDX specification repository instead, and all 19 fixtures — 1.4 and 1.5 included — are valid
 against it.

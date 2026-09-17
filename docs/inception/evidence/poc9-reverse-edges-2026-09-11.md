@@ -43,7 +43,7 @@ each reported no dependent at all.
 ## What was affected, and what was not
 
 - **`Parents` / `HasParents`** — the bug. Reverse navigation could never reach the root, and
-  `lsxbom ls --from X --reverse` omitted it.
+  `bomdive ls --from X --reverse` omitted it.
 - **`Children` / forward `tree`** — unaffected: the root appears there as a *source*, and its
   targets are ordinary components.
 - **`Roots()`** — unaffected. Its in-degree-0 fallback only runs when the declared root does *not*

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 // groupKeys returns nil for no groups, so a table can say "nil" and mean "none" —

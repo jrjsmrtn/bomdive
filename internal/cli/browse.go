@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
-	"github.com/jrjsmrtn/lsxbom/internal/tui"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/tui"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

@@ -1,7 +1,7 @@
-# Architecture Decision Records — lsxbom
+# Architecture Decision Records — bomdive
 #
 # YAML is safe inside docs/adr/: Structurizr's !adrs importer processes *.md only.
-# ADR-0004 is NOT Operations here — lsxbom is a Development-category project, so
+# ADR-0004 is NOT Operations here — bomdive is a Development-category project, so
 # that slot carries the first project-specific decision instead (see ADR-0001).
 
 foundational:
@@ -61,3 +61,9 @@ project:
     purpose: HOW TO RENDER
     status: Accepted
     date: 2026-09-11
+  - id: 10
+    file: 0010-rename-the-tool-to-bomdive.md
+    title: Rename the tool to bomdive
+    purpose: WHAT IT IS CALLED
+    status: Accepted
+    date: 2026-09-17

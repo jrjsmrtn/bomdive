@@ -31,7 +31,7 @@ against the BOM files as they sit on disk, with nothing to keep in sync.
 
 ## Decision
 
-**The default binary links no engine.** `lsxbom` builds with `CGO_ENABLED=0`, stays pure Go,
+**The default binary links no engine.** `bomdive` builds with `CGO_ENABLED=0`, stays pure Go,
 and cross-compiles for free. Engines are **opt-in build tags**:
 
 | Build | Links |

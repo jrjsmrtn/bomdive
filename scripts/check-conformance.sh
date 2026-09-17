@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run lsxbom against the CycloneDX specification's own conformance corpus.
+# Run bomdive against the CycloneDX specification's own conformance corpus.
 #
 # The spec repository carries tools/src/test/resources/<version>/ with 359
 # valid-*.json and 141 invalid-*.json documents — a POSITIVE and NEGATIVE corpus,
@@ -9,7 +9,7 @@
 # WHAT IS ASSERTED, AND WHAT DELIBERATELY IS NOT:
 #
 #   valid-*    MUST parse. A viewer that cannot open a conformant BOM is broken.
-#   invalid-*  are NOT required to be rejected. lsxbom is a viewer, not a
+#   invalid-*  are NOT required to be rejected. bomdive is a viewer, not a
 #              validator — cdx-validate and sbom-utility own that, and refusing to
 #              show a slightly-malformed document would be unhelpful, the way `ls`
 #              still lists a directory with a corrupt entry. We never CLAIM a
@@ -33,10 +33,10 @@ while [ $# -gt 0 ]; do
 done
 
 CACHE=".conformance-cache/$VERSION"
-BIN="$(mktemp -d)/lsxbom"; trap 'rm -rf "$(dirname "$BIN")"' EXIT
+BIN="$(mktemp -d)/bomdive"; trap 'rm -rf "$(dirname "$BIN")"' EXIT
 
 command -v gh >/dev/null 2>&1 || { echo "✗ gh not found — cannot fetch the corpus" >&2; exit 2; }
-go build -o "$BIN" ./cmd/lsxbom || { echo "✗ build failed" >&2; exit 1; }
+go build -o "$BIN" ./cmd/bomdive || { echo "✗ build failed" >&2; exit 1; }
 
 if [ "$REFRESH" -eq 1 ] || [ ! -d "$CACHE" ]; then
     mkdir -p "$CACHE"
@@ -85,5 +85,5 @@ for f in "${invalid[@]}"; do
 done
 
 echo "conformance $VERSION: ${pass}/${#valid[@]} valid parsed, $known known-upstream, $fail unexplained"
-echo "  (of ${#invalid[@]} invalid documents, $rejected rejected — reported, not gated: lsxbom is a viewer, not a validator)"
+echo "  (of ${#invalid[@]} invalid documents, $rejected rejected — reported, not gated: bomdive is a viewer, not a validator)"
 [ $fail -eq 0 ]

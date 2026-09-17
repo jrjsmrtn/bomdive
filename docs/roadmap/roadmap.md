@@ -1,4 +1,4 @@
-# lsxbom Roadmap
+# bomdive Roadmap
 
 ## Vision
 
@@ -31,7 +31,7 @@ decisions already recorded, so this phase is implementation rather than design.
 and no output can present a partial graph as complete.
 
 ### Phase 2 — The column view
-**Target**: v0.2.x · **Status**: **implemented** — `lsxbom browse`. Model in `internal/columns` (95.2%), drawing in `internal/tui` (78.5%), driven headlessly on a tcell simulation screen
+**Target**: v0.2.x · **Status**: **implemented** — `bomdive browse`. Model in `internal/columns` (95.2%), drawing in `internal/tui` (78.5%), driven headlessly on a tcell simulation screen
 
 Miller columns ([ADR-0006](../adr/0006-column-view-as-a-first-class-renderer.md)) — the renderer
 that spans both the graph and no-graph cases.

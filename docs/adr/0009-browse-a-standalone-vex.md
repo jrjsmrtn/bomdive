@@ -7,7 +7,7 @@ Date: 2026-09-11
 **Accepted** on 2026-09-11. Two decisions belonged to the maintainer — `CLAUDE.md` makes traversal semantics
 human-led — and **both were settled on 2026-09-11, as recommended**:
 
-- **[A]** lsxbom browses records other than components, starting with vulnerabilities: **yes**;
+- **[A]** bomdive browses records other than components, starting with vulnerabilities: **yes**;
 - **[B]** a linked document is loaded when it is **named on the command line**.
 
 **[C] was carried out, and it changed the design.** The one tool within reach, Dependency-Track
@@ -35,7 +35,7 @@ Extends [ADR-0006](0006-column-view-as-a-first-class-renderer.md) and
 
 ### What happens today
 
-lsxbom navigates components. A standalone VEX has none: it is a CycloneDX document, but not a bill
+bomdive navigates components. A standalone VEX has none: it is a CycloneDX document, but not a bill
 of materials. Since `8667317` it is labelled correctly and explains why it shows nothing. It still
 shows nothing — `browse` opens on an empty column.
 
@@ -120,7 +120,7 @@ What this changes:
 ### Measured a third time: real VEX from public publishers
 
 After acceptance, a corpus of real VEX was found and adopted into `scripts/check-corpora.sh` as its
-`vex` corpus: 207 documents from seven publishers, every one loaded by lsxbom. Of those, 169 carry
+`vex` corpus: 207 documents from seven publishers, every one loaded by bomdive. Of those, 169 carry
 vulnerabilities. Measured with `docs/inception/evidence/poc11-vex-navigability.py`:
 
 | Source | Licence | Generator | Shape | Vulnerabilities | Analysis | References |
@@ -144,7 +144,7 @@ What it settles:
   123 `vulnerable_code_not_present_execute_path` justifications — neither is a CycloneDX value — and
   severities in capitals: `MEDIUM` 61, `NONE` 48, `HIGH` 48, `UNKNOWN` 7, `LOW` 4, `CRITICAL` 3.
   Liquibase carries `vulnerable_code_not_present` 42 times, which is not a CycloneDX justification
-  in 1.5, 1.6 or 1.7. They look like OpenVEX values carried into CycloneDX. lsxbom loads every one
+  in 1.5, 1.6 or 1.7. They look like OpenVEX values carried into CycloneDX. bomdive loads every one
   of these documents.
 - **A vulnerability id is not a key.** 2,169 of the 3,294 records share their id with another in
   the same document — the Moderne feed writes one record per affected artifact, 1,958 of 2,057. A
@@ -165,7 +165,7 @@ database. The roadmap excludes **scanning**. This ADR proposes neither. It reads
 records that are already written in a file the user supplies, with no database and no network.
 That is navigation, which is what this tool is for.
 
-It is also not a query feature. `CLAUDE.md` says lsxbom is not a query tool, and that a `query`
+It is also not a query feature. `CLAUDE.md` says bomdive is not a query tool, and that a `query`
 headline would mean the project should stop. Grouping by `analysis.state` is `ls`-shaped, like
 `--by-category`. There is no expression language.
 
@@ -181,9 +181,9 @@ document". That is decision **[A]**.
 - Without it, 25 of 137 corpus documents open on an empty pane. The correctness obligations exist
   to stop exactly that: a view that shows nothing reads as a tool that failed.
 - The measured shape fits the column model. It needs no new interaction.
-- The links resolve, so the value continues into the BOMs lsxbom already navigates.
+- The links resolve, so the value continues into the BOMs bomdive already navigates.
 
-**Against:** this is the first time lsxbom shows something that is not a component, and each
+**Against:** this is the first time bomdive shows something that is not a component, and each
 further record type — services, attestations, definitions — will ask for the same. This ADR admits
 **vulnerabilities only**. Each further type must meet an evidence bar and get its own decision; see
 *Not in this ADR*.
@@ -259,11 +259,11 @@ This matches ADR-0004's treatment of a dangling `dependsOn`. Every affected entr
 | **resolved** | names a `bom-ref` in this document, or in a linked document that was loaded — including a document's own subject, its `metadata.component`, whether or not that drives a dependency graph |
 | **linked, not loaded** | a BOM-Link whose target document was not supplied. Not an error: the VEX correctly points elsewhere |
 | **linked, version differs** | the target's `serialNumber` was supplied, at a different `version`. Not resolved — the view does not guess |
-| **linked, ambiguous** | the serial and version are claimed by two or more named documents with different content. Not resolved: lsxbom will not guess, and the detail names every candidate file |\n| **names nothing** | a local ref with no match, or a loaded target without that `bom-ref`. Dangling. 1 of 80 in the corpus |
+| **linked, ambiguous** | the serial and version are claimed by two or more named documents with different content. Not resolved: bomdive will not guess, and the detail names every candidate file |\n| **names nothing** | a local ref with no match, or a loaded target without that `bom-ref`. Dangling. 1 of 80 in the corpus |
 | **names a package** | a purl that names no `bom-ref` in the documents loaded. It identifies a *package*, not a missing component: all 686 of Liquibase's references have this form, and none carries a version. Not dangling. Matching it against a component in a named BOM is a later decision, because a purl without a version can match many |
 
 *Linked, not loaded* is deliberately separate from *names nothing*. In the first case the document
-is correct; lsxbom was just not given the document it points to.
+is correct; bomdive was just not given the document it points to.
 
 **A resolution count is reported, as coverage is** — for example `affects: 79 of 80 resolved`.
 Showing only the resolved half without saying so would render a partial answer as complete, which
@@ -271,13 +271,13 @@ Showing only the resolved half without saying so would render a partial answer a
 
 ### [B] SETTLED — how a linked document is loaded
 
-80 of the 156 `affects` references in the corpus are BOM-Links. They resolve only if lsxbom has the
+80 of the 156 `affects` references in the corpus are BOM-Links. They resolve only if bomdive has the
 target document.
 
 | Option | How | For | Against |
 |---|---|---|---|
-| **(a) named** | `lsxbom browse app.vex.json app.cdx.json` loads every argument; links resolve among them | explicit; reads only files the user named; deterministic | the user must know which BOM a VEX points to |
-| (b) discovered | lsxbom searches the VEX's directory for the linked `serialNumber` | no need to know the file | reads files nobody named; the result depends on what happens to be in the directory; slow on a large one |
+| **(a) named** | `bomdive browse app.vex.json app.cdx.json` loads every argument; links resolve among them | explicit; reads only files the user named; deterministic | the user must know which BOM a VEX points to |
+| (b) discovered | bomdive searches the VEX's directory for the linked `serialNumber` | no need to know the file | reads files nobody named; the result depends on what happens to be in the directory; slow on a large one |
 | (c) both | (a), plus (b) behind a flag | — | two mechanisms to test and explain |
 
 **Decided 2026-09-11: (a), named on the command line**, as recommended. Discovery can be added later behind a flag without changing (a). The
@@ -303,7 +303,7 @@ as fact.
   descending into one opens its usual first column. The header, coverage and `?` describe the file
   you are in. **One document: nothing changes** — a column of one entry is not an axis, the rule
   section 1 applies to grouping.
-- **The vulnerability axis spans every named document**, so `lsxbom browse app.cdx.json
+- **The vulnerability axis spans every named document**, so `bomdive browse app.cdx.json
   app.vex.json` answers which of the SBOM's components the VEX says are exploitable, whichever order
   the files are named in. Each record's detail names the file it came from.
 - A `bom-ref` is unique only within its own document, so across documents a component is
@@ -334,7 +334,7 @@ as argument handling.
 
 - **A directory stands for the CycloneDX documents directly inside it**: one level, as `ls DIR`
   lists them, sorted by name, at the position where the directory was named. Directories and files
-  can be mixed, as in `lsxbom browse exports/ product.cdx.json`. A file reached twice is loaded once.
+  can be mixed, as in `bomdive browse exports/ product.cdx.json`. A file reached twice is loaded once.
 - **Membership is decided by content, not by extension**, as `Load` already decides: JSON or XML
   from the first byte, then `bomFormat`.
 - **A file that is not CycloneDX is counted, not shown as a row, and never dropped silently.** Real
@@ -362,7 +362,7 @@ together; a directory is whatever happens to be in it. Measured with
 | documents with an ambiguous link | 4, one of them holding 57 of the 64 |
 
 So opening that directory turns most of its links ambiguous. CISA case 8's links are unaffected and
-still resolve. This is correct under [B]: lsxbom does not guess between documents that claim the same
+still resolve. This is correct under [B]: bomdive does not guess between documents that claim the same
 identity. But the same link reads differently depending on its neighbours. **Proposed: accept it and
 make it visible.** The header names the directory, and an ambiguous link's detail already lists
 every candidate file. The vulnerability axis also spans every document in the directory, which makes
@@ -414,7 +414,7 @@ three analysis groups per document. See *Measured a third time*.
 | Record type | Evidence today | Trigger for its own decision |
 |---|---|---|
 | services (SaaSBOM) | 1 sample, nesting depth 2 | a second sample, produced by a tool |
-| attestations (`declarations`) | 1 sample, which lsxbom cannot load (CycloneDX/cyclonedx-go#275) | the upstream fix |
+| attestations (`declarations`) | 1 sample, which bomdive cannot load (CycloneDX/cyclonedx-go#275) | the upstream fix |
 | definitions | 0 samples | any sample |
 
 ## Consequences
@@ -423,14 +423,14 @@ three analysis groups per document. See *Measured a third time*.
 
 - The 25 corpus VEX documents stop opening on an empty pane.
 - The VEX that tools actually produce becomes browsable, by component and by vulnerability.
-- lsxbom can answer a question no current command answers: which components a VEX statement is
+- bomdive can answer a question no current command answers: which components a VEX statement is
   about, across documents.
 - The four resolution states and the count keep the correctness obligations. Nothing partial is
   rendered as complete.
 
 **Negative**
 
-- lsxbom reads more than one document for the first time. That brings cross-document identity
+- bomdive reads more than one document for the first time. That brings cross-document identity
   (`serialNumber` + `version`), argument handling for several files, and a new kind of failure: a
   linked file at the wrong version.
 - The column model must generalise beyond components. Every view feature — filter, detail, the

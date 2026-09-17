@@ -151,7 +151,7 @@ func TestErrorsGoToStderrNotStdout(t *testing.T) {
 	if out != "" {
 		t.Errorf("stdout polluted on error: %q", out)
 	}
-	if !strings.Contains(errOut, "lsxbom:") {
+	if !strings.Contains(errOut, "bomdive:") {
 		t.Errorf("stderr lacks the error: %q", errOut)
 	}
 }

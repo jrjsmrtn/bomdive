@@ -36,7 +36,7 @@
       "cycles_found": 1
     },
     "file": "cycle-semantics.cdx.json",
-    "why": "THE fixture ADR-0004 rests on. x -> y -> x, plus a host-like entry point. Cypher relationship-uniqueness reports x as reachable from x (x->y->x is two distinct edges); node-uniqueness does not. Both were reproduced against real engines. lsxbom picks node-uniqueness; this fixture pins that choice."
+    "why": "THE fixture ADR-0004 rests on. x -> y -> x, plus a host-like entry point. Cypher relationship-uniqueness reports x as reachable from x (x->y->x is two distinct edges); node-uniqueness does not. Both were reproduced against real engines. bomdive picks node-uniqueness; this fixture pins that choice."
   },
   "dangling-ref": {
     "asserts": {
@@ -218,7 +218,7 @@
       "vulnerabilities": 0
     },
     "file": "services-only.cdx.json",
-    "why": "A document carrying services and no components \u2014 the SaaSBOM shape. lsxbom navigates components, so it has nothing to list here and must SAY so rather than drawing an empty pane."
+    "why": "A document carrying services and no components \u2014 the SaaSBOM shape. bomdive navigates components, so it has nothing to list here and must SAY so rather than drawing an empty pane."
   },
   "spec-14": {
     "asserts": {
@@ -272,7 +272,7 @@
       "vulnerabilities": 4
     },
     "file": "vex-out-of-schema.cdx.json",
-    "why": "Values the CycloneDX schema forbids and real VEX carries (POC-11): an OpenVEX state (`under_investigation`), an OpenVEX justification (`vulnerable_code_not_present`), and severities in capitals. DELIBERATELY SCHEMA-INVALID \u2014 validate-schema.py requires it to fail validation. lsxbom must load it, show each value as written, and rank MEDIUM with medium."
+    "why": "Values the CycloneDX schema forbids and real VEX carries (POC-11): an OpenVEX state (`under_investigation`), an OpenVEX justification (`vulnerable_code_not_present`), and severities in capitals. DELIBERATELY SCHEMA-INVALID \u2014 validate-schema.py requires it to fail validation. bomdive must load it, show each value as written, and rank MEDIUM with medium."
   },
   "vex-refs": {
     "asserts": {

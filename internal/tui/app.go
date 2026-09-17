@@ -14,8 +14,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
-	"github.com/jrjsmrtn/lsxbom/internal/columns"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/columns"
 	"github.com/rivo/tview"
 )
 

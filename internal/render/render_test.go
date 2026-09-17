@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 func load(t *testing.T, name string) *bom.Graph {
@@ -341,7 +341,7 @@ func TestByCategoryRendersHeadersInText(t *testing.T) {
 // EVERY surface must explain the graph state, not just tree.
 //
 // This is the regression test for the defect that produced it: the absent-versus-
-// empty distinction was written out by the tree renderer alone, so `lsxbom ls` and
+// empty distinction was written out by the tree renderer alone, so `bomdive ls` and
 // the column view printed a bare "0%" that a reader could only read as a fault.
 // The note now comes from render.New, and this asserts both commands carry it into
 // their RENDERED TEXT — not merely into a struct field a renderer may ignore.

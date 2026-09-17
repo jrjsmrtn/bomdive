@@ -1,4 +1,4 @@
-module github.com/jrjsmrtn/lsxbom
+module github.com/jrjsmrtn/bomdive
 
 go 1.26.0
 

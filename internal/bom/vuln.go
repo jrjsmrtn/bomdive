@@ -140,7 +140,7 @@ const (
 	// RefLinkedAmbiguous is a BOM-Link whose serial number and version are claimed by
 	// more than one named document, with different content. Serial numbers are not
 	// reliable identities in practice — 9 such pairs in the public corpora (POC-11) —
-	// so lsxbom names the candidates rather than guessing between them.
+	// so bomdive names the candidates rather than guessing between them.
 	RefLinkedAmbiguous
 )
 
@@ -172,7 +172,7 @@ func (s RefState) Explain() string {
 		return "names a component in this document"
 	case RefLinkedNotLoaded:
 		return "a BOM-Link into another document, which was not supplied — the reference is " +
-			"correct, lsxbom was just not given the document it points to; name it after " +
+			"correct, bomdive was just not given the document it points to; name it after " +
 			"this one on the command line"
 	case RefLinkedVersionDiffers:
 		return "a BOM-Link to this document's serial number at a different version — not " +
@@ -182,7 +182,7 @@ func (s RefState) Explain() string {
 			"missing component, so it is not dangling"
 	case RefLinkedAmbiguous:
 		return "a BOM-Link whose serial number and version are claimed by more than one of " +
-			"the documents named, with different content — lsxbom will not guess which"
+			"the documents named, with different content — bomdive will not guess which"
 	default:
 		return "matches nothing in this document — dangling"
 	}

@@ -9,8 +9,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
-	"github.com/jrjsmrtn/lsxbom/internal/columns"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/columns"
 )
 
 // screenText reads back every cell the app actually painted. This is the only way

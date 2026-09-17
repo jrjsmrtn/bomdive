@@ -3,7 +3,7 @@
 
 WHY NOT cdx-validate. The installed cdx-validate refuses spec 1.4 and 1.5 outright —
 "Unsupported CycloneDX specVersion '1.4'. Supported versions are 1.6, 1.7, 2.0." Since
-cyclonedx-go covers 1.0-1.7, lsxbom must handle versions that validator will not check,
+cyclonedx-go covers 1.0-1.7, bomdive must handle versions that validator will not check,
 so the corpus needs a validator that spans the same range the library does.
 
 Schemas are fetched from the CycloneDX specification repo and cached under
@@ -38,13 +38,13 @@ def fetch(cache: pathlib.Path, filename: str) -> dict:
 
 
 # Fixtures that must FAIL validation, each with the reason it exists. A fixture is only
-# here because real documents carry what the schema forbids and lsxbom must cope with
+# here because real documents carry what the schema forbids and bomdive must cope with
 # it. The gate fails if one of these VALIDATES — its reason has gone — and if one no
 # longer exists, so the list cannot rot into a place to hide a broken file.
 EXPECTED_INVALID = {
     "vex-out-of-schema.cdx.json":
         "OpenVEX states and justifications and capitalised severities, as measured in "
-        "real public VEX (POC-11); lsxbom must show them as written",
+        "real public VEX (POC-11); bomdive must show them as written",
 }
 
 

@@ -9,7 +9,7 @@ Accepted. Amends [ADR-0002](0002-adopt-development-best-practices.md), which is 
 ## Context
 
 The `bootstrap-project` house template makes BDD a default for user-facing projects — Web, GUI,
-TUI, CLI — and lsxbom is two of those. The audience registry had *already* named BDD features
+TUI, CLI — and bomdive is two of those. The audience registry had *already* named BDD features
 (`user-ls`, `user-tree`, `api-json`) that did not exist, so the project carried a stated
 commitment nothing met. That is the same shape as three other promises this project has found
 unenforced: a coverage floor, an evidence-file rule, and a tier trigger.

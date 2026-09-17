@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 // Mode is which records the whole view navigates (ADR-0009). `v` switches it.

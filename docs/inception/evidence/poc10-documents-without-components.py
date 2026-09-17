@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """How many BOMs carry no `components` at all, and what do they carry instead?
 
-WHY. lsxbom identified every such document as an "SBOM" and drew an empty component
+WHY. bomdive identified every such document as an "SBOM" and drew an empty component
 list — "0 of 0 (0%)" over a blank pane, which reads as the tool having failed rather than
 as the document having no inventory. checkIsBOM's own comment calls that shape "the
 confidently-wrong shape this tool exists to avoid"; it was being reached one step later.
@@ -16,7 +16,7 @@ With --check-labels BINARY it also runs `BINARY ls` over every VEX-shaped docume
 counts the ones whose first line is not "VEX", exiting 1 if there are any. That is the
 check which caught the first VEX fix reaching only 19 of 25 documents.
 
-    python3 ... .corpora-cache --check-labels ~/.local/bin/lsxbom
+    python3 ... .corpora-cache --check-labels ~/.local/bin/bomdive
 """
 import collections
 import glob

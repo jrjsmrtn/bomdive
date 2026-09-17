@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 // ListOptions mirrors the ls(1) vocabulary a reader already has.
@@ -57,7 +57,7 @@ func List(g *bom.Graph, source string, opt ListOptions) Result {
 	// command-specific is the suggestion, and only when it would help.
 	if opt.From == "" && !opt.ByCategory && g.Coverage().Edges == 0 && g.HasCategories() {
 		r.Notes = append(r.Notes, "this document has categories: "+
-			"`lsxbom ls --by-category` groups it by cdx:osquery:category")
+			"`bomdive ls --by-category` groups it by cdx:osquery:category")
 	}
 	return r
 }

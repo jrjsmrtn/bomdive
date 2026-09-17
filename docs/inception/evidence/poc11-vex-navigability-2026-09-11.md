@@ -49,7 +49,7 @@ overlap on shape at all.
 Measured after ADR-0009 was accepted, and the reason it was amended. The documents come from the
 `vex` corpus in `scripts/check-corpora.sh`, which fetches them at run time and caches them in
 `.corpora-cache-vex`, apart from the other corpora, so the POC-9 and POC-10 re-runs keep
-reproducing what they recorded. **207 documents from seven publishers; lsxbom loads every one.**
+reproducing what they recorded. **207 documents from seven publishers; bomdive loads every one.**
 169 carry vulnerabilities.
 
 | Source | Licence | Generator | Shape | Vulnerabilities | Analysis | References |
@@ -111,7 +111,7 @@ document and calls a pair claimed by different documents *linked, ambiguous*.
 
 ### A directory as one set
 
-For ADR-0009 [D]: what `lsxbom browse DIR` would resolve against, taking the files directly in DIR
+For ADR-0009 [D]: what `bomdive browse DIR` would resolve against, taking the files directly in DIR
 as one set (`--directory .corpora-cache/examples`). The directory holds 66 documents, all CycloneDX.
 Of its 80 BOM-Links, **64 land on a serial-and-version pair claimed by documents with different
 content**, 16 resolve to a single document, and 0 find nothing. Four documents hold the ambiguous
@@ -121,7 +121,7 @@ The control: `--directory testdata` finds the fixtures' planted conflict (`link-
 `link-sbom-other`), with 4 ambiguous links, all from `link-vex`. It reports a second pair too: the
 two XML fixtures share one serial, and no link points at it. It counts 5 of the directory's 46
 files as not CycloneDX: its README, three scripts and its manifest. Its two CycloneDX XML fixtures
-count as members, because lsxbom reads XML; a first version of the mode parsed JSON only and
+count as members, because bomdive reads XML; a first version of the mode parsed JSON only and
 counted them as rejected. It reads an XML root with expat and refuses any DTD, and a planted
 entity-expansion document is rejected.
 

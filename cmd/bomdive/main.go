@@ -1,10 +1,10 @@
-// Command lsxbom reads a CycloneDX xBOM at the terminal.
+// Command bomdive reads a CycloneDX xBOM at the terminal.
 package main
 
 import (
 	"os"
 
-	"github.com/jrjsmrtn/lsxbom/internal/cli"
+	"github.com/jrjsmrtn/bomdive/internal/cli"
 )
 
 // version is overridden at build time with -ldflags "-X main.version=…".

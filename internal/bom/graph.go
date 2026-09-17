@@ -434,7 +434,7 @@ func payloadOf(doc *cdx.BOM) Contents {
 	return c
 }
 
-// Contents reports what the document carries. Components here is what lsxbom can
+// Contents reports what the document carries. Components here is what bomdive can
 // LIST — components with a bom-ref — not the raw count payloadOf takes.
 func (g *Graph) Contents() Contents {
 	c := g.payload
@@ -444,7 +444,7 @@ func (g *Graph) Contents() Contents {
 
 // ExplainEmpty says why there is nothing to list, and false when there IS.
 //
-// lsxbom navigates COMPONENTS. Saying so, and naming what the document holds
+// bomdive navigates COMPONENTS. Saying so, and naming what the document holds
 // instead, is the difference between "this tool does not cover that" and "this tool
 // is broken" — which is what an unexplained empty pane looks like.
 func (c Contents) ExplainEmpty() (string, bool) {
@@ -458,11 +458,11 @@ func (c Contents) ExplainEmpty() (string, bool) {
 		case KindAttestation:
 			return fmt.Sprintf("%s. It is an attestation — a declarations section carrying "+
 				"%d attestation(s) of conformance to a standard, with the claims and evidence "+
-				"behind them. Nothing is missing here — lsxbom navigates components, and this "+
+				"behind them. Nothing is missing here — bomdive navigates components, and this "+
 				"document has none to navigate.", notABOM, c.Attestations), true
 		case KindDefinitions:
 			return fmt.Sprintf("%s. It DEFINES %d standard(s) — requirements others attest "+
-				"against — rather than describing a product. Nothing is missing here — lsxbom "+
+				"against — rather than describing a product. Nothing is missing here — bomdive "+
 				"navigates components, and this document has none to navigate.",
 				notABOM, c.Standards), true
 		}
@@ -470,16 +470,16 @@ func (c Contents) ExplainEmpty() (string, bool) {
 	switch {
 	case c.Vulnerabilities > 0 && c.Services > 0:
 		return fmt.Sprintf("this document declares NO components: it carries %d vulnerability "+
-			"record(s) and %d service(s). lsxbom navigates components, so there is nothing "+
+			"record(s) and %d service(s). bomdive navigates components, so there is nothing "+
 			"here to list.", c.Vulnerabilities, c.Services), true
 	case c.Vulnerabilities > 0:
 		return fmt.Sprintf("%s and carries %d vulnerability record(s). A standalone VEX "+
 			"asserts which vulnerabilities affect a product described in ANOTHER document. "+
-			"Nothing is missing here — lsxbom navigates components, and this document has "+
+			"Nothing is missing here — bomdive navigates components, and this document has "+
 			"none to navigate.", notABOM, c.Vulnerabilities), true
 	case c.Services > 0:
 		return fmt.Sprintf("this document declares NO components: it carries %d service(s). "+
-			"lsxbom navigates components, not services, so there is nothing here to list.",
+			"bomdive navigates components, not services, so there is nothing here to list.",
 			c.Services), true
 	default:
 		return "this document declares NO components, and no vulnerabilities, services, " +

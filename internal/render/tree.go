@@ -1,6 +1,6 @@
 package render
 
-import "github.com/jrjsmrtn/lsxbom/internal/bom"
+import "github.com/jrjsmrtn/bomdive/internal/bom"
 
 // TreeOptions mirrors tree(1) where the vocabulary carries over.
 type TreeOptions struct {
@@ -64,7 +64,7 @@ func Tree(g *bom.Graph, source string, opt TreeOptions) Result {
 // bucket, which is the degenerate-axis failure the column view had.
 func navigateInstead(g *bom.Graph) string {
 	if g.HasCategories() {
-		return "use `lsxbom ls --by-category` to navigate this document by category"
+		return "use `bomdive ls --by-category` to navigate this document by category"
 	}
-	return "use `lsxbom ls` to list its components"
+	return "use `bomdive ls` to list its components"
 }

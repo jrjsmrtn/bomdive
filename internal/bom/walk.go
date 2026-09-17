@@ -26,7 +26,7 @@ type Visit struct {
 //     x -> y -> x, x IS reachable from itself.
 //   - node-uniqueness: a node may not repeat. x is NOT reachable from itself.
 //
-// lsxbom uses NODE-UNIQUENESS, because for "what does this pull in?" reporting a
+// bomdive uses NODE-UNIQUENESS, because for "what does this pull in?" reporting a
 // component as its own dependency is confusing rather than correct. Both were
 // reproduced against real engines — see docs/inception/evidence/poc6-cycle-semantics.sh.
 //

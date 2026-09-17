@@ -4,7 +4,7 @@
 
 ## Why it is worth watching
 
-It is the only architecture surveyed that could give `lsxbom` **openCypher without cgo and
+It is the only architecture surveyed that could give `bomdive` **openCypher without cgo and
 without losing cross-compilation**. PGlite is Postgres compiled to WebAssembly; a WASM module is
 architecture-neutral, and `wazero` is a zero-dependency **pure-Go** WASM runtime. If the two meet,
 the result is Postgres + Apache AGE + pgvector inside a `CGO_ENABLED=0` binary that still

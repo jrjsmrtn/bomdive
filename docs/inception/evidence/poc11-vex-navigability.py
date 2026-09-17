@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Could a VEX be navigated in the column view, and would its links lead anywhere?
 
-WHY. lsxbom navigates components. Before deciding to browse vulnerability records
+WHY. bomdive navigates components. Before deciding to browse vulnerability records
 (ADR-0009), this measures whether VEX documents have the shape the column view needs —
 something to group by, something to descend into — and whether their `affects[].ref`
 references resolve.
@@ -38,7 +38,7 @@ different documents cannot be resolved without guessing.
 
     python3 ... --links .corpora-cache .corpora-cache-vex
 
-With --directory DIR it measures what `lsxbom browse DIR` would resolve against (ADR-0009
+With --directory DIR it measures what `bomdive browse DIR` would resolve against (ADR-0009
 [D]): the files directly in DIR as ONE set, and how many BOM-Links would read *linked,
 ambiguous* because documents with different content claim their target.
 
@@ -362,7 +362,7 @@ def xml_root(raw):
 
 
 def directory(root):
-    """What `lsxbom browse DIR` would resolve against: the files DIRECTLY in DIR, as one set.
+    """What `bomdive browse DIR` would resolve against: the files DIRECTLY in DIR, as one set.
 
     Named files are a set the user asserted belongs together; a directory is whatever happens
     to be in it. This measures what that costs: how many BOM-Links land on a (serial, version)
@@ -373,7 +373,7 @@ def directory(root):
     reported 0 ambiguous links; the count of links whose target is present at all is printed
     as the control that exposes that mistake.
 
-    CycloneDX XML counts as a member, because lsxbom's Load reads it: a first version parsed
+    CycloneDX XML counts as a member, because bomdive's Load reads it: a first version parsed
     JSON only and counted testdata's two XML fixtures as rejected. An XML document's serial
     and version are read from its root element, so it can be a link TARGET; links are read
     from JSON documents only, since no XML VEX has been measured.

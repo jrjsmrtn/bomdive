@@ -17,7 +17,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"github.com/jrjsmrtn/lsxbom/internal/cli"
+	"github.com/jrjsmrtn/bomdive/internal/cli"
 )
 
 type world struct {
@@ -40,7 +40,7 @@ func (w *world) theBOMFixture(name string) error {
 }
 
 func (w *world) aBOMPathThatDoesNotExist() error {
-	w.bomPath = filepath.Join(os.TempDir(), "lsxbom-no-such-bom.json")
+	w.bomPath = filepath.Join(os.TempDir(), "bomdive-no-such-bom.json")
 	return nil
 }
 

@@ -5,7 +5,7 @@
 #   edge-uniqueness (Cypher's relationship isomorphism): an edge may not repeat, a NODE may.
 #                   x -> y -> x is two distinct edges, so x IS reachable from itself.
 #   node-uniqueness: a node may not repeat. x is NOT reachable from itself.
-# Neither is wrong. lsxbom picks node-uniqueness; this proves the two really differ.
+# Neither is wrong. bomdive picks node-uniqueness; this proves the two really differ.
 #
 # Pure Go, CGO_ENABLED=0. Needs network on first run to fetch modernc.org/sqlite.
 set -euo pipefail

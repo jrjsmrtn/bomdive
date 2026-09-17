@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-lsxbom requires a systematic way to record significant technical decisions. The project began with
+bomdive requires a systematic way to record significant technical decisions. The project began with
 a SPARK analysis whose measurements **overturned the initial design twice**, and that kind of
 reversal is exactly what gets lost between sessions if it is not written down at decision time.
 

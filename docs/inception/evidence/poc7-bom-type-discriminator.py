@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Which kind of xBOM is this, and can the tool tell without guessing?
 
-lsxbom must decide whether `tree` is even meaningful before it renders anything, and
+bomdive must decide whether `tree` is even meaningful before it renders anything, and
 guessing from content is fragile. CycloneDX offers two spec-defined signals that,
 together, discriminated every real BOM measured:
 

@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
-	"github.com/jrjsmrtn/lsxbom/internal/render"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/render"
 	"github.com/spf13/cobra"
 )
 
@@ -43,9 +43,9 @@ func Run(version string, args []string, stdout, stderr io.Writer) int {
 	a := &app{out: stdout, err: stderr}
 
 	root := &cobra.Command{
-		Use:   "lsxbom",
+		Use:   "bomdive",
 		Short: "Read a CycloneDX xBOM at the terminal",
-		Long: "lsxbom reads a CycloneDX xBOM — SBOM, OBOM, HBOM — and navigates it with the\n" +
+		Long: "bomdive reads a CycloneDX xBOM — SBOM, OBOM, HBOM — and navigates it with the\n" +
 			"muscle memory of ls(1) and tree(1).\n\n" +
 			"It is not a BOM generator, query tool, scanner, signer or converter.",
 		Version:       version,
@@ -71,7 +71,7 @@ func Run(version string, args []string, stdout, stderr io.Writer) int {
 		// PostRun does not run when the command fails, so profiles would be lost on
 		// exactly the runs worth profiling.
 		_ = a.stopProfiling()
-		fmt.Fprintln(stderr, "lsxbom:", err)
+		fmt.Fprintln(stderr, "bomdive:", err)
 		return 1
 	}
 	return 0

@@ -10,7 +10,7 @@ anywhere except incidentally, as fixture values in `testdata/generate.py`.
 
 ## The rule: two spec-defined signals, not content sniffing
 
-`lsxbom` must decide whether `tree` is meaningful **before** rendering anything. Guessing from
+`bomdive` must decide whether `tree` is meaningful **before** rendering anything. Guessing from
 content is fragile; CycloneDX already carries the answer.
 
 | Verdict | `metadata.lifecycles[].phase` | `metadata.component.type` | n |

@@ -1,4 +1,4 @@
-# lsxbom
+# bomdive
 
 A Go CLI that reads CycloneDX xBOM JSON — SBOM, OBOM, HBOM — and navigates it with the muscle
 memory of `ls(1)` and `tree(1)`.
@@ -137,7 +137,7 @@ go test ./features/... -v                                      # BDD scenarios
 ./scripts/check-conformance.sh                                # the spec's own corpus
 ./scripts/check-coverage.sh                                   # the 80% floor
 go test ./internal/bom/ -bench . -benchtime 200x -run XXX     # benchmarks
-lsxbom tree --cpuprofile cpu.prof <bom.json>                  # profile a real BOM
+bomdive tree --cpuprofile cpu.prof <bom.json>                  # profile a real BOM
 go tool pprof -top -nodecount=15 cpu.prof
 ```
 

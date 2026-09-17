@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 // Text renders for a human.

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
-	"github.com/jrjsmrtn/lsxbom/internal/columns"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/columns"
 )
 
 // groupLabel is the status bar's word for the grouping — terse, because `?` explains it.

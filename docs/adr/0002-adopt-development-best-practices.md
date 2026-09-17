@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-lsxbom is a small, single-contributor Go CLI at tier t1. Practices are scaled to that: enough to
+bomdive is a small, single-contributor Go CLI at tier t1. Practices are scaled to that: enough to
 keep quality high and make AI-assisted sessions consistent, without ceremony that will be ignored.
 
 This project follows the

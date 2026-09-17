@@ -47,7 +47,7 @@ truncated.
 ⚠ **Cycle semantics are a real fork, not an implementation detail.** For the same fixture,
 Cypher-style **relationship**-uniqueness (an edge may not repeat; a node may) and
 **node**-uniqueness give *different* answers to "what is reachable from x" — both were reproduced
-during analysis. **lsxbom adopts node-uniqueness**, because for the question a BOM reader is
+during analysis. **bomdive adopts node-uniqueness**, because for the question a BOM reader is
 asking — *what does this pull in?* — reporting a component as its own dependency is confusing
 rather than correct. This is a decision, is documented in `--help`, and is fixture-tested.
 

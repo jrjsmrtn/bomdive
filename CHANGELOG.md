@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed from `lsxbom` to `bomdive`** ([ADR-0010](docs/adr/0010-rename-the-tool-to-bomdive.md)).
+  The command, the Go module `github.com/jrjsmrtn/bomdive` and `cmd/bomdive` all change; `ls`,
+  `tree` and `browse` stay as subcommands. `xbom` was measured and rejected: `safedep/xbom` already
+  installs that command and generates BOMs, which this tool deliberately does not. `bomdive` was
+  free on GitHub, Codeberg, npm, PyPI, crates.io, Homebrew core and MacPorts, and is not a command
+  on the development machine. Every record was rewritten to the new name except two passages that
+  say which name was checked on which date.
+
 ### Security
 
 - Bumped `golang.org/x/text` 0.21.0 → 0.39.0 for **GO-2026-5970** (infinite loop on invalid input),
@@ -99,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`browse` takes a directory** (ADR-0009 [D]): `lsxbom browse examples/` loads the CycloneDX
+- **`browse` takes a directory** (ADR-0009 [D]): `bomdive browse examples/` loads the CycloneDX
   documents directly inside it, one level deep and sorted by name, and can be mixed with named
   files. Membership is decided by content, not by extension. A file that is not CycloneDX is
   skipped, counted in the files column's title, and named with its reason by `?`. A CycloneDX file
@@ -109,7 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from, for example `66 documents from examples/`. A directory is a set nobody chose file by file:
   in that one, 64 of 80 BOM-Links read *linked, ambiguous*, which `?` explains.
 - **`browse` takes several documents, and follows BOM-Links between them** (ADR-0009 [B]):
-  `lsxbom browse app.vex.json app.cdx.json`. With two or more named, the leftmost column lists the
+  `bomdive browse app.vex.json app.cdx.json`. With two or more named, the leftmost column lists the
   files, each with its kind, and the header, coverage and `?` describe the file under the cursor;
   with one, nothing changes. `v` shows every document's vulnerabilities, so an SBOM named first
   still answers which of its components a VEX says are exploitable. A BOM-Link resolves by serial
@@ -152,7 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only — it defines standards others attest against). Both were labelled `SBOM` and explained as
   "carries metadata and nothing else", which was false. Their evidence is weaker than VEX's, and is
   stated: attestation rests on **one** sample, the specification's own `valid-attestation-1.6.json`
-  — which lsxbom cannot load, because `cyclonedx-go` fails to decode it (CycloneDX/cyclonedx-go#275)
+  — which bomdive cannot load, because `cyclonedx-go` fails to decode it (CycloneDX/cyclonedx-go#275)
   — and definitions on the **schema alone**, with no sample in any corpus. Fixtures:
   `testdata/attestation-only.cdx.json`, `testdata/definitions-only.cdx.json`. When a document
   carries several payloads and no components, the best-evidenced reading wins: VEX, then
@@ -179,10 +189,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   person in both repositories. A4 moves from Integration to Primary, because a viewer's security
   engineer reads BOMs rather than consuming output.
 - `scripts/check-audience-tags.py` enforcing traceability in both directions.
-- `scripts/check-corpora.sh` — runs lsxbom over 137 real BOMs from `sbom-examples` (CC0-1.0),
+- `scripts/check-corpora.sh` — runs bomdive over 137 real BOMs from `sbom-examples` (CC0-1.0),
   cdxgen and syft. Brings the first **public** OBOM, HBOM, CBOM, SaaSBOM and MBOM documents into the
   test set; POC-7's samples were all private.
-- `scripts/check-conformance.sh` — runs lsxbom against the CycloneDX specification's own
+- `scripts/check-conformance.sh` — runs bomdive against the CycloneDX specification's own
   conformance corpus (359 valid / 141 invalid documents). Found an upstream `cyclonedx-go` defect on
   its first run: a document the spec calls valid fails to decode.
 - `scripts/check-coverage.sh` — a ≥80% floor for every package under `internal/`, wired into the
@@ -200,7 +210,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`lsxbom browse`** — the Finder-style column view. Each column lists the children of the
+- **`bomdive browse`** — the Finder-style column view. Each column lists the children of the
   selection to its left, so the chain of columns *is* the dependency path. Tab flips the whole view
   between dependencies and dependents; `/` filters a column; a BOM with no dependency graph opens on
   its osquery categories. Coverage is on screen, because a TUI is a third surface and the guarantee
@@ -262,6 +272,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed from `lsbom` before the first commit: macOS ships `lsbom(8)` for Installer `.bom`
   files — a collision in the same semantic space. `lsxbom` was verified free in `PATH`, MacPorts,
-  `man`, and GitHub repository search on 2026-09-10.
+  `man`, and GitHub repository search on 2026-09-10. (`lsxbom` was itself renamed to `bomdive` on
+  2026-09-17 — see ADR-0010; this entry records what was checked at the time.)
 
-[Unreleased]: https://github.com/jrjsmrtn/lsxbom/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jrjsmrtn/bomdive/compare/v0.1.0...HEAD

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run lsxbom over BOMs written by other people, by other tools, for other reasons.
+# Run bomdive over BOMs written by other people, by other tools, for other reasons.
 #
 # WHY, SEPARATELY FROM check-conformance.sh. That script asks whether we honour the
 # SPECIFICATION. This one asks whether we survive REALITY: documents shaped by
@@ -51,8 +51,8 @@ while [ $# -gt 0 ]; do
 done
 
 command -v gh >/dev/null 2>&1 || { echo "✗ gh not found — cannot fetch corpora" >&2; exit 2; }
-BIN="$(mktemp -d)/lsxbom"; trap 'rm -rf "$(dirname "$BIN")"' EXIT
-go build -o "$BIN" ./cmd/lsxbom || { echo "✗ build failed" >&2; exit 1; }
+BIN="$(mktemp -d)/bomdive"; trap 'rm -rf "$(dirname "$BIN")"' EXIT
+go build -o "$BIN" ./cmd/bomdive || { echo "✗ build failed" >&2; exit 1; }
 
 # Known failures MUST name a cause, so the list can never quietly absorb our own bugs.
 declare -A KNOWN=(
@@ -134,7 +134,7 @@ run_corpus() { # label dir
         # A corpus directory is not necessarily a corpus of BOMs. cdxgen's test/data
         # holds generator INPUTS — package.json, lockfiles, vcpkg manifests — beside
         # its outputs, and counting those as failures said more about this script's
-        # assumptions than about lsxbom. Identify a BOM rather than assuming one.
+        # assumptions than about bomdive. Identify a BOM rather than assuming one.
         # A BOM identifies itself by bomFormat in JSON and by its namespace in XML.
         if ! grep -qE '"bomFormat"|cyclonedx\.org/schema/bom' "$f" 2>/dev/null; then
             notbom=$((notbom+1)); continue

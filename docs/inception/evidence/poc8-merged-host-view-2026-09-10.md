@@ -54,7 +54,7 @@ plain HBOM except by looking at whether runtime components are present.
 
 ## The bug it found
 
-lsxbom reported **"no roots found to walk from"** on a document carrying 33 edges.
+bomdive reported **"no roots found to walk from"** on a document carrying 33 edges.
 
 The declared root drives the graph but is **not listed in `components`** — legitimate, because
 `metadata.component` is the *subject* of the document rather than a member of its inventory.

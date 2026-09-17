@@ -1,4 +1,4 @@
-# SPARK Analysis — lsxbom
+# SPARK Analysis — bomdive
 
 *Conducted 2026-09-10. Method: SPARK (Stakeholders, Problem, Analysis, Risks, Knowledge).*
 
@@ -27,9 +27,12 @@ muscle memory of `ls(1)` and `tree(1)`.
 
 **Naming note**: the working name was `lsbom`, abandoned because macOS ships `lsbom(8)`
 (`/usr/bin/lsbom`, "list contents of a bom file") for Installer `.bom` files — a collision in the
-same semantic space, on the development platform. `lsxbom` was verified free in `PATH`, in MacPorts,
-as a man page, and on GitHub (0 repositories) on 2026-09-10. The `x` is the literal placeholder the
-landscape bundle defines: *xBOM is not a format — it is the placeholder, written with a literal `x`*.
+same semantic space, on the development platform. It became `lsxbom`, verified free in `PATH`, in
+MacPorts, as a man page, and on GitHub (0 repositories) on 2026-09-10, where the `x` was the literal
+placeholder the landscape bundle defines: *xBOM is not a format — it is the placeholder, written with
+a literal `x`*. **Renamed to `bomdive` on 2026-09-17** — see
+[ADR-0010](../adr/0010-rename-the-tool-to-bomdive.md). The names in this document were rewritten
+with it; only this note and the finding below record what was checked under which name.
 
 ---
 
@@ -82,8 +85,8 @@ The workaround in practice is jq plus scrolling, or giving up and opening Depend
 
 ### Desired future state
 
-`lsxbom ls <ref>` answers "what does this depend on" in one keystroke-length command, and
-`lsxbom tree` renders the whole graph honestly — including the parts the BOM does not contain.
+`bomdive ls <ref>` answers "what does this depend on" in one keystroke-length command, and
+`bomdive tree` renders the whole graph honestly — including the parts the BOM does not contain.
 
 ### Scope boundaries
 
@@ -197,7 +200,7 @@ which is a second, independent reason writing BOMs is out of scope. Never emit a
 ### Upstream Acceptance
 
 **This project depends on no upstream accepting anything**, which is the material difference from
-`ansible-bom` next door, whose v1.0 is gated on `purl-spec#854` landing. `lsxbom` consumes a
+`ansible-bom` next door, whose v1.0 is gated on `purl-spec#854` landing. `bomdive` consumes a
 published spec and a permissively-licensed library; nothing needs to be merged anywhere for it to
 work.
 
@@ -323,7 +326,9 @@ behaviour is detectable rather than assumed stable.
 ### What we know (validated 2026-09-10)
 
 - **`lsbom(8)` exists on macOS** — `/usr/bin/lsbom`, 136,416 bytes. Verified by `man` and `ls -l`.
-- **`lsxbom` is free** — absent from `PATH`, MacPorts, `man -w`, and GitHub repository search (0 results).
+- **`lsxbom` is free** — absent from `PATH`, MacPorts, `man -w`, and GitHub repository search (0
+  results). Checked 2026-09-10, under the name the project carried then; `bomdive` was checked the
+  same way on 2026-09-17 (ADR-0010).
 - **CycloneDX dependency graphs are DAGs with cycles in practice** — measured above, twice, and
   cross-checked with `jq` independently of the analysis script.
 - **The declared root is frequently not in the graph** — measured in both syft BOMs.
@@ -405,7 +410,7 @@ Phase 1 acceptance criteria in the roadmap, not stale entries.
 **Proceed with conditions.**
 
 The empty niche is real and narrow: `sbom-utility` already owns query in the same language under the
-same org, so the *only* defensible reason for `lsxbom` to exist is terminal-native navigation of the
+same org, so the *only* defensible reason for `bomdive` to exist is terminal-native navigation of the
 dependency graph. That is worth building — but the measurements show the graph is sparser, less
 rooted and more cyclic than the `ls`/`tree` metaphor assumes, so the project's real content is
 **handling those honestly**, not the CLI surface.
@@ -443,7 +448,7 @@ document in the corpus.
    as a deliberate deviation without taking the rest of t2; see `CLAUDE.md`.
 2. ~~**Distribution intent.**~~ — **DECIDED: Private, `ships-artifacts: no`.** Public is defensible
    later and runs through the `public-release` gate with its own ADR.
-3. ~~**Does `lsxbom` render an OBOM at all?**~~ — **ANSWERED by POC-2.** It renders one with `ls`,
+3. ~~**Does `bomdive` render an OBOM at all?**~~ — **ANSWERED by POC-2.** It renders one with `ls`,
    never with `tree`. All three types stay in v0.1, because `ls` covers all three; `tree` is scoped
    to BOMs that carry a graph, which in this corpus means container-image SBOMs and directory scans.
    The remaining decision is what `tree` *does* when asked to walk a graphless BOM (see Knowledge gaps).

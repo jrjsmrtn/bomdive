@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/jrjsmrtn/lsxbom/internal/render"
+	"github.com/jrjsmrtn/bomdive/internal/render"
 	"github.com/spf13/cobra"
 )
 

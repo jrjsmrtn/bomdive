@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the lsxbom fixture corpus.
+"""Generate the bomdive fixture corpus.
 
 Every fixture isolates ONE shape the traversal core must handle, and each is small
 enough to reason about by hand. The corpus is generated rather than hand-written so
@@ -159,7 +159,7 @@ fixture(
     "THE fixture ADR-0004 rests on. x -> y -> x, plus a host-like entry point. "
     "Cypher relationship-uniqueness reports x as reachable from x (x->y->x is two "
     "distinct edges); node-uniqueness does not. Both were reproduced against real "
-    "engines. lsxbom picks node-uniqueness; this fixture pins that choice.",
+    "engines. bomdive picks node-uniqueness; this fixture pins that choice.",
     {"cycles_found": 1},
     bom(
         root=lib("entry", ref=r("entry")),
@@ -375,7 +375,7 @@ fixture(
 
 fixture(
     "services-only",
-    "A document carrying services and no components — the SaaSBOM shape. lsxbom "
+    "A document carrying services and no components — the SaaSBOM shape. bomdive "
     "navigates components, so it has nothing to list here and must SAY so rather "
     "than drawing an empty pane.",
     {"components": 0, "services": 2, "vulnerabilities": 0},
@@ -596,7 +596,7 @@ fixture(
     "Values the CycloneDX schema forbids and real VEX carries (POC-11): an OpenVEX state "
     "(`under_investigation`), an OpenVEX justification (`vulnerable_code_not_present`), "
     "and severities in capitals. DELIBERATELY SCHEMA-INVALID — validate-schema.py "
-    "requires it to fail validation. lsxbom must load it, show each value as written, "
+    "requires it to fail validation. bomdive must load it, show each value as written, "
     "and rank MEDIUM with medium.",
     {"components": 0, "vulnerabilities": 4},
     bom(

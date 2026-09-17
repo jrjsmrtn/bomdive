@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jrjsmrtn/lsxbom/internal/bom"
+	"github.com/jrjsmrtn/bomdive/internal/bom"
 )
 
 // openDir builds a directory holding two linked documents, a CycloneDX file that fails
