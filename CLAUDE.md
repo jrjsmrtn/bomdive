@@ -148,6 +148,12 @@ Follows the [AI-Assisted Project Orchestration patterns](https://github.com/jrjs
 ```bash
 go build ./...                 # pure Go, CGO_ENABLED=0, cross-compiles free
 go test ./...
+
+# Install, with the version stamped. `version` in cmd/bomdive is "dev" until -ldflags sets it, so
+# an unstamped binary cannot say which build it is. git describe is the honest value: the tag, the
+# commits since it, and the commit itself — plus -dirty when built from modified sources.
+go build -ldflags "-X main.version=$(git describe --tags --dirty --always)" \
+  -o ~/.local/bin/bomdive ./cmd/bomdive
 python3 scripts/check-pglite-trigger.py --self-test   # prove the watcher can fail
 python3 docs/inception/evidence/bom-graph-shape.py <bom.json>   # re-measure graph shape
 
