@@ -10,14 +10,6 @@ carried inside one or shipped beside it — with the muscle memory of `ls(1)` an
 **Miller columns** (the column browser macOS Finder made familiar). **JSON and XML, spec
 1.0–1.7.**
 
-> **Status**: bootstrapped 2026-09-10 as `lsxbom`, renamed `bomdive` on 2026-09-17
-> ([ADR-0010](docs/adr/0010-rename-the-tool-to-bomdive.md)). `ls`, `tree` and `browse` work:
-> Phases 1, 2 and 2b are done, Phase 3 is not started, and the project is private and unpublished
-> — see [`docs/roadmap/roadmap.md`](docs/roadmap/roadmap.md), which is the source of what is
-> implemented. Design and the measurements behind it:
-> [`docs/inception/spark-analysis.md`](docs/inception/spark-analysis.md). This file quotes no counts
-> or percentages — run the evidence scripts.
-
 ## Installation
 
 ```bash
@@ -85,6 +77,7 @@ graph. Coverage is always reported: a partial graph is never rendered as complet
 
 | | |
 |---|---|
+| What is implemented, and what is not | [`docs/roadmap/roadmap.md`](docs/roadmap/roadmap.md) — the source, rather than a sentence here that goes stale |
 | Design, risks, decisions | [`docs/inception/spark-analysis.md`](docs/inception/spark-analysis.md) |
 | Reproducible measurements | [`docs/inception/evidence/`](docs/inception/evidence/) |
 | Audiences and their artifacts | [`docs/reference/audience-registry.md`](docs/reference/audience-registry.md) |
