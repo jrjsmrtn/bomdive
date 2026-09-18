@@ -27,6 +27,10 @@ if need go; then
     if compgen -G "**/*.go" >/dev/null 2>&1 || [ -n "$(find . -name '*.go' -not -path './.git/*' -print -quit)" ]; then
         run "go build"   go build ./...
         run "go test"    go test ./...
+        # Named separately, though go test ./... already covers it: a scenario failure
+        # should read as "bdd ✗" rather than being buried in a package's test output.
+        # ADR-0008 makes the features the user-facing contract, so they earn their own line.
+        run "bdd"        go test ./features/...
     else
         echo "→ go build/test (no .go files yet — nothing to build)"
     fi

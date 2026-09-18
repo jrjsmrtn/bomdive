@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Gherkin scenarios for `browse`** — eight, tagged to the two audiences who read a BOM at a
+  terminal. They drive the column model rather than `cli.Run`, because `browse` refuses without a
+  terminal by design; what is *drawn* stays covered by `internal/tui` against a simulation screen.
+  Writing them corrected two of my own assumptions: the entry column of a BOM with a declared root
+  is titled `roots`, not `roots (derived)` — that label belongs to a document with none — and
+  `Showing()` reports the traversal direction, not the axis.
+- **`bdd` is its own pre-push gate line.** `go test ./...` already ran the scenarios, so this adds
+  no coverage; it makes a scenario failure read as `bdd ✗` instead of being buried in a package's
+  test output, which matters because ADR-0008 makes the features the user-facing contract.
+
+### Fixed
+
+- **Dependabot targeted `main`.** It defaults to the default branch, so its first pull request
+  aimed at the release branch, bypassing `develop` — which every other change goes through
+  ([ADR-0002](docs/adr/0002-adopt-development-best-practices.md)). Both ecosystems now set
+  `target-branch: develop`.
+
 ## [0.1.1] - 2026-09-18
 
 ### Changed

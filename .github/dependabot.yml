@@ -5,9 +5,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Gitflow: work lands on develop, and main advances at a release (ADR-0002). Dependabot
+    # defaults to the DEFAULT branch, which is main — so its first PR targeted the release branch
+    # directly, bypassing the branch every other change goes through.
+    target-branch: develop
   # The actions above are SHA-pinned, so nothing but a commit here moves them. Dependabot is what
   # tells you a pin has fallen behind; without it a pinned action is a frozen one.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    target-branch: develop

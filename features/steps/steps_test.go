@@ -246,6 +246,9 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Then(`^the JSON field "([^"]*)" is (true|false)$`, w.jsonFieldIsBool)
 	ctx.Then(`^the JSON field "([^"]*)" is (\d+)$`, w.jsonFieldIsNumber)
 	ctx.Then(`^the JSON field "([^"]*)" is an empty list$`, w.jsonFieldIsEmptyList)
+
+	// The column view's steps, which drive the model rather than cli.Run.
+	initializeBrowseSteps(ctx)
 }
 
 func TestFeatures(t *testing.T) {
