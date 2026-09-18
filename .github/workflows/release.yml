@@ -118,7 +118,7 @@ jobs:
           esac
           gh release create "${GITHUB_REF_NAME}" ${pre:+$pre} \
             --title "${GITHUB_REF_NAME}" \
-            --notes "Artifacts are signed with cosign (keyless) and carry SLSA L2 provenance. Verify before use — see CONTRIBUTING.md." \
+            --notes "Artifacts are signed with cosign (keyless) and carry SLSA L2 provenance, and each archive ships its own CycloneDX SBOM. **Verify before running** — the commands are in the README under Installation." \
             dist/*.tar.gz dist/*.cdx.json dist/checksums.txt dist/checksums.txt.sigstore.json
           # Verify the provenance of what was actually published, from the release itself.
           gh attestation verify dist/bomdive_"${GITHUB_REF_NAME}"_linux_amd64.tar.gz \

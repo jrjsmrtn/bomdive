@@ -53,6 +53,12 @@ by hand on 2026-09-17, once per documentation commit, until the pattern was noti
 suggestion that followed, to flatten the two branches into one, was **refused**: gitflow is this
 ADR's decision, and one busy afternoon is not evidence against it.
 
+**Enforced since 2026-09-18**: `main` on GitHub requires five status checks with **admins
+enforced**, so it advances only through a pull request from `develop`. A direct push is refused
+(`GH006`), verified by trying one. Rules that nothing enforces get bypassed by reflex — `main` was
+fast-forwarded by hand three times on 2026-09-17 before this was set. ⚠ GitHub-side only: the
+private-server remote has no protection and would still accept a direct push.
+
 **A commit message MUST NOT claim more than the commit contains.** Re-read it against
 `git diff --cached`, not against intent. The risk is highest when the message is generated,
 because fluent prose about an intended change reads identically whether or not the change landed.

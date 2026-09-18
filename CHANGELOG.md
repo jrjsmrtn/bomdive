@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Fuzz targets for the parser and the BOM-Link resolver, the code that reads documents nobody here
+  wrote. Seeds run with every `go test`; a weekly workflow fuzzes each for 10 minutes. The
+  invariant is proven, not asserted: a planted `InGraph = seen + 1` fails on the first seed.
+
+### Changed
+
+- `main` requires five status checks with admins enforced: it advances by a release PR from
+  `develop`, and a direct push is refused. Verified by attempting one.
+
 ## [0.1.2] - 2026-09-18
 
 ### Changed

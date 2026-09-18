@@ -10,12 +10,14 @@ columns.
 - **Type**: CLI tool
 - **Stack**: Go 1.25+ (`cyclonedx-go` for the model — JSON *and* XML, `cobra` for the CLI,
   `tview` for the column view, `godog` for BDD)
-- **License**: Not set (Private profile, unpublished)
+- **License**: Apache-2.0 since 2026-09-17
+  ([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)); `LICENSE`, `LICENSES/Apache-2.0.txt`
+  and `REUSE.toml`
 - **Tier**: t1
 - **Distribution profile**: **Public since 2026-09-17**
   ([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)) (ships-artifacts: **yes** —
-  [ADR-0012](docs/adr/0012-ship-signed-release-artifacts.md); the first signed release is the
-  next tag, since the pipeline cannot run while the repository is private)
+  [ADR-0012](docs/adr/0012-ship-signed-release-artifacts.md); releases have carried a
+  Sigstore signature bundle since 2026-09-18 — run `gh release list` for which ones)
 
 ## Project Tier
 
@@ -38,9 +40,12 @@ Tier-specific artifacts:
 
 **Deliberately not adopted at t1** — decisions, not oversights: Diátaxis `docs/` tree (nothing to
 sort yet — though `docs/reference/` has grown organically), C4 model (a single binary reading a
-file does not earn one), sprint cadence (one contributor, no deadline), `SECURITY.md` (Private
-profile), `LICENSE`, `.github/` — a private GitHub remote exists since 2026-09-17, but no
-workflow is wired, and CI belongs with the Private → Public decision rather than before it.
+file does not earn one), sprint cadence (one contributor, no deadline).
+
+`SECURITY.md`, `LICENSE`, the community files and CI under `.github/` were held back until the
+Private → Public decision, and **arrived with it on 2026-09-17**
+([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)). Read `.github/workflows/` for what CI
+runs; this file does not list it.
 
 ⚠ **A roadmap was adopted at t1 anyway**, which `bootstrap-project` lists as a t2 artifact. Taken
 deliberately: real phases existed and needed recording, and adopting a whole tier to get one
@@ -56,9 +61,9 @@ Promotion triggers being watched:
   into evidence and reference, which already have homes. A trigger that fires on volume rather than
   on a felt problem is not a trigger. Diátaxis sorts *user-facing* docs, and there are none yet
   because there is no code.
-- **Private → Public** is a separate axis, running through the `public-release` gate and needing
-  its own ADR. Public is *defensible* — the tool is generic and carries no homelab shape — but it
-  is unproven, so it stays private. Precedent: `okf-gate`.
+- **Private → Public** was a separate axis, and it was decided on 2026-09-17 by
+  [ADR-0011](docs/adr/0011-go-public-under-apache-2.md), which supersedes the trigger that stood
+  here. Until then the project was private because it was unproven, with `okf-gate` as precedent.
 
 ## Status
 
@@ -68,10 +73,11 @@ Bootstrapped 2026-09-10 as `lsxbom`, and **renamed to `bomdive` on 2026-09-17**
 
 Phases 1, 2 and 2b are implemented — `ls`, `tree` and `browse`, the column view, the OBOM category
 axis, and the vulnerability axis over one document, several named documents, or a named directory.
-Phase 3 (corpus questions) is not started, and Private → Public is open. **Read
+Phase 3 (corpus questions) is not started. **Read
 `docs/roadmap/roadmap.md` for what is done**; this paragraph goes stale and the checkboxes do not.
 
-**Remotes exist since 2026-09-17** — a private-server `origin` and a **private** GitHub repository,
+**Remotes exist since 2026-09-17** — a private-server `origin` and a GitHub repository, created
+private and made public the same day ([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)),
 both with `develop` and `main`; URLs are in `CLAUDE.local.md`. The project was local-only before
 that, which is why nothing recorded a remote for it.
 
@@ -139,9 +145,9 @@ Follows the [AI-Assisted Project Orchestration patterns](https://github.com/jrjs
   — re-read it against `git diff --cached`, not against intent
 - **Git workflow**: gitflow (`main`/`develop`/`feature/*`), matching the `ansible-bom` sibling
   ([ADR-0002](docs/adr/0002-adopt-development-best-practices.md)). Work lands on `develop`;
-  **`main` advances at releases**, which is where the tag belongs. Fast-forwarding `main`
-  between releases is not part of the workflow — it happened three times by hand on
-  2026-09-17, which is why this now says so
+  **`main` advances at releases**, which is where the tag belongs — now by a **release pull
+  request** from `develop`, since `main` requires five status checks with admins enforced and
+  refuses a direct push (`GH006`)
 - **Testing**: table-driven Go tests over committed BOM fixtures, including the **cyclic** ones,
   plus **BDD with Gherkin** (godog) for the user-facing contract ([ADR-0008](docs/adr/0008-adopt-bdd-and-align-audiences.md)).
   ⚠ BDD describes the contract; **correctness is proven by mutation testing over the unit tests** —

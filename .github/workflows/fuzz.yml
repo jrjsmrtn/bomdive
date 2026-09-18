@@ -1,0 +1,39 @@
+# Fuzzing the parser and the reference resolver — the code that reads documents nobody here
+# wrote. Not on every push: the seed corpus already runs as ordinary tests in ci.yml, and what
+# fuzzing adds is time, which belongs on a schedule.
+name: Fuzz
+
+on:
+  schedule:
+    - cron: '7 3 * * 2'
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        description: how long to fuzz each target
+        default: 10m
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [FuzzLoad, FuzzResolve]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+      - run: go test ./internal/bom/ -run XXX -fuzz ${{ matrix.target }} -fuzztime ${{ inputs.fuzztime || '10m' }}
+      # A crash writes its input to testdata/fuzz/<target>/; keep it, because that file IS the
+      # regression test — committing it makes the seed corpus fail until the bug is fixed.
+      - if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: internal/bom/testdata/fuzz/
