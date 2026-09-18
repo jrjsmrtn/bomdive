@@ -7,23 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-18
+
+### Changed
+
+- `tcell` 2.8.1 → 2.13.10 (#1). Verified by driving both builds through identical keystrokes in a
+  tmux session: 16 snapshots, every pane byte-identical.
+
 ### Added
 
-- **Gherkin scenarios for `browse`** — eight, tagged to the two audiences who read a BOM at a
-  terminal. They drive the column model rather than `cli.Run`, because `browse` refuses without a
-  terminal by design; what is *drawn* stays covered by `internal/tui` against a simulation screen.
-  Writing them corrected two of my own assumptions: the entry column of a BOM with a declared root
-  is titled `roots`, not `roots (derived)` — that label belongs to a document with none — and
-  `Showing()` reports the traversal direction, not the axis.
-- **`bdd` is its own pre-push gate line.** `go test ./...` already ran the scenarios, so this adds
-  no coverage; it makes a scenario failure read as `bdd ✗` instead of being buried in a package's
-  test output, which matters because ADR-0008 makes the features the user-facing contract.
+- Eight Gherkin scenarios for `browse`, including the coverage-honesty promise that `ls` and
+  `tree` already pin. They drive the column model, since `browse` refuses without a terminal.
+- `bdd` as its own pre-push gate line, so a scenario failure reads as `bdd ✗` rather than as a
+  buried `go test` failure.
 
 ### Fixed
 
-- **Dependabot targeted `main`.** It defaults to the default branch, so its first pull request
-  aimed at the release branch, bypassing `develop` — which every other change goes through
-  ([ADR-0002](docs/adr/0002-adopt-development-best-practices.md)). Both ecosystems now set
+- Dependabot targeted `main`, the default branch, bypassing `develop`. Both ecosystems now set
   `target-branch: develop`.
 
 ## [0.1.1] - 2026-09-18
@@ -330,6 +330,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `man`, and GitHub repository search on 2026-09-10. (`lsxbom` was itself renamed to `bomdive` on
   2026-09-17 — see ADR-0010; this entry records what was checked at the time.)
 
-[Unreleased]: https://github.com/jrjsmrtn/bomdive/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/jrjsmrtn/bomdive/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/jrjsmrtn/bomdive/releases/tag/v0.1.2
 [0.1.1]: https://github.com/jrjsmrtn/bomdive/releases/tag/v0.1.1
 [0.1.0]: https://github.com/jrjsmrtn/bomdive/releases/tag/v0.1.0
