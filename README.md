@@ -12,6 +12,29 @@ carried inside one or shipped beside it — with the muscle memory of `ls(1)` an
 
 ## Installation
 
+Download a signed release — no Go needed:
+
+```bash
+tag=v0.1.2 os=darwin arch=arm64   # linux/darwin, amd64/arm64
+gh release download $tag --repo jrjsmrtn/bomdive \
+  -p "bomdive_${tag}_${os}_${arch}.tar.gz" -p checksums.txt -p checksums.txt.sigstore.json
+```
+
+**Verify it before you run it.** Each release is signed with cosign (keyless) and carries SLSA L2
+provenance; each archive ships its own CycloneDX SBOM, which `bomdive` itself can read.
+
+```bash
+# the signature over the checksums — the identity is the workflow that built it
+cosign verify-blob --bundle checksums.txt.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/jrjsmrtn/bomdive/\.github/workflows/release\.yml@refs/tags/' \
+  checksums.txt
+shasum -a 256 -c checksums.txt --ignore-missing          # the archive against the checksums
+gh attestation verify "bomdive_${tag}_${os}_${arch}.tar.gz" --repo jrjsmrtn/bomdive
+```
+
+Or with Go:
+
 ```bash
 go install github.com/jrjsmrtn/bomdive/cmd/bomdive@latest   # Go 1.26 or newer
 ```

@@ -102,7 +102,11 @@ phase is complete as documentation and no engine is ever linked.
       measured **0.05s** end to end on a real 10 MB BOM, and **13ms** for load+walk of a synthetic
       10k-component one. `BenchmarkLoad10k` / `BenchmarkWalk10k` and a budget test make it
       reproducible without depending on any particular file
-- [ ] A decision on Private → Public, which needs its own ADR
+- [x] A decision on Private → Public — **public since 2026-09-17**
+      ([ADR-0011](../adr/0011-go-public-under-apache-2.md))
+- [x] **Signed release artifacts** ([ADR-0012](../adr/0012-ship-signed-release-artifacts.md)):
+      four platforms, an SBOM per artifact, SLSA L2 provenance, cosign signature, verified in-run
+- [x] **Fuzzing the parser and the link resolver**, weekly; seeds run with every test
 
 ## Not phases
 
