@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `main` requires five status checks with admins enforced: it advances by a release PR from
+  `develop`, and a direct push is refused. Verified by attempting one.
+
 ## [0.1.2] - 2026-09-18
 
 ### Changed

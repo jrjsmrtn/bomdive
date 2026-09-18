@@ -139,9 +139,9 @@ Follows the [AI-Assisted Project Orchestration patterns](https://github.com/jrjs
   — re-read it against `git diff --cached`, not against intent
 - **Git workflow**: gitflow (`main`/`develop`/`feature/*`), matching the `ansible-bom` sibling
   ([ADR-0002](docs/adr/0002-adopt-development-best-practices.md)). Work lands on `develop`;
-  **`main` advances at releases**, which is where the tag belongs. Fast-forwarding `main`
-  between releases is not part of the workflow — it happened three times by hand on
-  2026-09-17, which is why this now says so
+  **`main` advances at releases**, which is where the tag belongs — now by a **release pull
+  request** from `develop`, since `main` requires five status checks with admins enforced and
+  refuses a direct push (`GH006`)
 - **Testing**: table-driven Go tests over committed BOM fixtures, including the **cyclic** ones,
   plus **BDD with Gherkin** (godog) for the user-facing contract ([ADR-0008](docs/adr/0008-adopt-bdd-and-align-audiences.md)).
   ⚠ BDD describes the contract; **correctness is proven by mutation testing over the unit tests** —
