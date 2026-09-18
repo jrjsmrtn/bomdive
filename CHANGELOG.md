@@ -7,12 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-18
+
 ### Changed
 
 - **The repository is public**, under Apache-2.0
   ([ADR-0011](docs/adr/0011-go-public-under-apache-2.md)). `develop` and `main` are both published;
   `feature/*` stays local. Branch protection on `main`: five required status checks, no required
   reviews. CodeQL, Scorecard and dependency review self-activated at the flip, as designed.
+- **The release pipeline is proven.** `v0.1.1-rc1` exercised it end to end as a prerelease: four
+  archives, four per-artifact SBOMs, checksums, SLSA L2 provenance and a keyless cosign signature,
+  every step green on the first run. Verified independently afterwards — checksums matched,
+  `cosign verify-blob` said *Verified OK*, `gh attestation verify` exited 0 — and each check was
+  shown able to fail, on a flipped byte, an altered checksums file and a wrong identity regex.
 - **`govulncheck` is pinned** to v1.8.0 in CI instead of `@latest`. OpenSSF Scorecard scored
   `Pinned-Dependencies` 8/10 on the first public run and was right to: an unpinned tool that
   downloads itself and then reads this code is the shape this project argues against.
@@ -304,5 +311,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `man`, and GitHub repository search on 2026-09-10. (`lsxbom` was itself renamed to `bomdive` on
   2026-09-17 — see ADR-0010; this entry records what was checked at the time.)
 
-[Unreleased]: https://github.com/jrjsmrtn/bomdive/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jrjsmrtn/bomdive/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/jrjsmrtn/bomdive/releases/tag/v0.1.1
 [0.1.0]: https://github.com/jrjsmrtn/bomdive/releases/tag/v0.1.0

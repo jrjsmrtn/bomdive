@@ -94,6 +94,21 @@ than leaking a name.
 
 **Risk**
 
-- **The first real release will fail at something**, most likely attestation permissions or the
-  certificate-identity regex in `verify-blob`. That is a prediction, not a hedge: three of the
-  four remaining unknowns are things only GitHub's own infrastructure can execute.
+- ~~**The first real release will fail at something**, most likely attestation permissions or the
+  certificate-identity regex in `verify-blob`.~~ **Wrong, and corrected 2026-09-18.** `v0.1.1-rc1`
+  ran every step green on the first attempt: build, per-artifact SBOMs and their assertion,
+  checksums, provenance, keyless signing, the in-run verification, and the upload. Recorded because
+  a prediction that fails quietly reads as foresight later.
+
+  What the rc **did** prove, verified independently after the run rather than trusted from it:
+  eight checksums matching, `cosign verify-blob` reporting *Verified OK*, `gh attestation verify`
+  exiting 0, the prerelease flag holding so GitHub's *Latest* stayed on v0.1.0, and the extracted
+  `darwin/arm64` binary reporting its own tag and reading its own SBOM.
+
+  And the checks were shown to be capable of failing — the distinction between *verification passed*
+  and *my verification command is broken*. A single flipped byte in an archive made
+  `gh attestation verify` exit 1 with no attestation for that digest; an altered `checksums.txt`
+  made `cosign verify-blob` exit 1 on an invalid signature; and a deliberately wrong identity regex
+  exited 1 while naming the real SAN,
+  `https://github.com/jrjsmrtn/bomdive/.github/workflows/release.yml@refs/tags/v0.1.1-rc1` — which
+  is the evidence that the certificate binds to this repository's release workflow at this tag.
