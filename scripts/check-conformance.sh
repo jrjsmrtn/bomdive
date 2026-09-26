@@ -48,10 +48,10 @@ if [ "$REFRESH" -eq 1 ] || [ ! -d "$CACHE" ]; then
     echo "fetching the $VERSION corpus (cached in $CACHE)…"
     gh api "repos/CycloneDX/specification/git/trees/master?recursive=1" \
       --jq ".tree[]|select(.path|test(\"tools/src/test/resources/$VERSION/(valid|invalid)-.*\\\\.json\$\"))|.path" \
-      2>/dev/null | while read -r p; do
+      | while read -r p; do
         out="$CACHE/$(basename "$p")"
         [ -f "$out" ] || gh api "repos/CycloneDX/specification/contents/$p?ref=master" \
-            --jq '.content' 2>/dev/null | base64 -d > "$out" 2>/dev/null
+            --jq '.content' | base64 -d > "$out"
     done
 fi
 
