@@ -16,3 +16,10 @@ updates:
     schedule:
       interval: weekly
     target-branch: develop
+  # validate-schema.py's imports are version-pinned in testdata/requirements.txt for the
+  # same reason the actions are SHA-pinned: a pin nothing watches is just a frozen version.
+  - package-ecosystem: pip
+    directory: /testdata
+    schedule:
+      interval: weekly
+    target-branch: develop

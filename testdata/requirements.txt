@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Georges Martin <jrjsmrtn@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# What testdata/validate-schema.py imports. It exits 2 when these are missing rather
+# than skipping, so CI has to install them; the Conformance job does, from this file.
+# Pinned because everything else this repo depends on is, and Dependabot's pip
+# ecosystem is what reports a pin falling behind.
+jsonschema==4.26.0
+referencing==0.37.0

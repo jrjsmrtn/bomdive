@@ -29,4 +29,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       # Also network-bound: it fetches each fixture's own CycloneDX schema, and fails loudly
       # offline rather than skipping — so it belongs here and not in ci.yml.
+      # validate-schema.py exits 2 when jsonschema/referencing are absent rather than
+      # skipping. Nothing installed them, so this step had never run: the corpus fetch
+      # above failed first and masked it until 2026-09-26.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - run: python3 -m pip install --disable-pip-version-check -r testdata/requirements.txt
       - run: python3 testdata/validate-schema.py
